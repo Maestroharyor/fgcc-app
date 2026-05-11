@@ -1,0 +1,52 @@
+import type { ReactNode } from "react";
+import { cn } from "@/lib/utils/cn";
+
+interface Props {
+  id?: string;
+  eyebrow?: string;
+  title?: string;
+  description?: string;
+  children: ReactNode;
+  className?: string;
+  contentClassName?: string;
+}
+
+export function Section({
+  id,
+  eyebrow,
+  title,
+  description,
+  children,
+  className,
+  contentClassName,
+}: Props) {
+  return (
+    <section
+      id={id}
+      className={cn("relative px-6 sm:px-10 py-16 sm:py-24", className)}
+    >
+      <div className={cn("mx-auto max-w-6xl", contentClassName)}>
+        {(eyebrow || title || description) && (
+          <div className="mb-10 sm:mb-14 max-w-2xl">
+            {eyebrow && (
+              <span className="inline-block rounded-full border border-[var(--color-primary-blue)]/15 bg-[var(--color-primary-blue)]/5 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary-blue)]">
+                {eyebrow}
+              </span>
+            )}
+            {title && (
+              <h2 className="mt-4 font-display text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-[var(--color-text-navy)] leading-[1.05]">
+                {title}
+              </h2>
+            )}
+            {description && (
+              <p className="mt-4 text-base sm:text-lg leading-relaxed text-[var(--color-text-navy)]/70">
+                {description}
+              </p>
+            )}
+          </div>
+        )}
+        {children}
+      </div>
+    </section>
+  );
+}

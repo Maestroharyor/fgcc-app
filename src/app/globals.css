@@ -1,0 +1,103 @@
+@import "@heroui/styles";
+
+@theme inline {
+  /* Foursquare-rooted palette */
+  --color-primary-blue: #003da5;
+  --color-primary-blue-50: #e6ebf6;
+  --color-primary-blue-100: #ccd8ed;
+  --color-primary-blue-600: #00307f;
+  --color-primary-blue-700: #002a6e;
+  --color-warm-gold: #f59e0b;
+  --color-warm-gold-50: #fff7ec;
+  --color-warm-gold-100: #ffead0;
+  --color-warm-gold-600: #d97706;
+  --color-accent-coral: #dc2626;
+  --color-accent-coral-50: #fdecec;
+  --color-accent-coral-600: #b91c1c;
+  --color-neutral-cream: #fafaf8;
+  --color-neutral-cream-100: #f3f3ee;
+  --color-text-navy: #0f172a;
+  --color-text-navy-muted: #475569;
+
+  /* Type system — set as CSS vars by next/font on <html>.
+     Bricolage Grotesque (display) + Inter (body) + Geist Mono (accent). */
+  --font-display: var(--font-bricolage);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-geist-mono);
+
+  /* Radii + shadows */
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 61 165 / 0.06);
+  --shadow-lift:
+    0 4px 12px rgb(0 61 165 / 0.08), 0 20px 48px rgb(0 61 165 / 0.1);
+}
+
+html,
+body {
+  background: var(--color-neutral-cream);
+  color: var(--color-text-navy);
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  font-family:
+    var(--font-sans), system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Anchor-target offset for the sticky marketing header (~70px). Applies to any
+   element with an id under the marketing chrome, so the section heading lands
+   below the header instead of being hidden by it. */
+[id] {
+  scroll-margin-top: 80px;
+}
+
+@layer components {
+  .form-input {
+    @apply h-11 w-full rounded-xl border border-[var(--color-text-navy)]/12 bg-white px-3.5 font-sans text-sm text-[var(--color-text-navy)] outline-none transition placeholder:text-[var(--color-text-navy)]/40 focus:border-[var(--color-primary-blue)]/40 focus:ring-2 focus:ring-[var(--color-primary-blue)]/15;
+  }
+
+  select.form-input {
+    @apply appearance-none bg-[length:16px_16px] bg-no-repeat bg-[right_0.875rem_center] pr-9;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230F172A' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  }
+
+  textarea.form-input {
+    @apply h-auto min-h-[6rem] py-3;
+  }
+}
+
+/* Subtle cream-to-gold gradient mesh — opt-in via .hero-mesh wrapper */
+.hero-mesh {
+  position: relative;
+  isolation: isolate;
+}
+
+.hero-mesh::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(
+      ellipse 60% 50% at 20% 30%,
+      rgb(245 158 11 / 0.08),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 50% 40% at 80% 60%,
+      rgb(0 61 165 / 0.06),
+      transparent 60%
+    );
+  pointer-events: none;
+}

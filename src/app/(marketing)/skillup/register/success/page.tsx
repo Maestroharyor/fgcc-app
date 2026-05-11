@@ -1,0 +1,191 @@
+import { ArrowRight, CheckCircle2, MessageCircle } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { TRACKS_BY_CODE } from "@/content/tracks";
+import { getRegistrationByReference } from "@/lib/db/registrations";
+import { getTrackByCode } from "@/lib/db/tracks";
+import { qrDataUrl } from "@/lib/qr/generate";
+import { parseReference } from "@/lib/ref-code/generate";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "You're confirmed · SkillUp 1.0",
+};
+
+interface PageProps {
+  searchParams: Promise<{ ref?: string; batch?: string }>;
+}
+
+export default async function SuccessPage({ searchParams }: PageProps) {
+  const { ref, batch } = await searchParams;
+  if (batch) {
+    return <BatchSuccess batchId={batch} />;
+  }
+  if (!ref || !parseReference(ref)) {
+    return <Fallback />;
+  }
+  const registration = await getRegistrationByReference(ref);
+  if (!registration) {
+    return <Fallback />;
+  }
+  const track = await getTrackByCode(
+    parseReference(registration.reference_number)?.trackCode ?? "",
+  );
+  const staticTrack =
+    TRACKS_BY_CODE[
+      parseReference(registration.reference_number)?.trackCode ?? ""
+    ];
+  const qr = await qrDataUrl(registration.reference_number);
+
+  return (
+    <div className="px-6 sm:px-10 py-12 sm:py-20">
+      <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 sm:p-12 shadow-[var(--shadow-lift)] border border-[var(--color-text-navy)]/8">
+        <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary-blue)]">
+          <CheckCircle2 className="h-4 w-4" aria-hidden /> Confirmed
+        </div>
+        <h1 className="mt-3 font-display text-3xl sm:text-4xl font-semibold tracking-tight text-[var(--color-text-navy)]">
+          You’re in, {firstName(registration.full_name)}.
+        </h1>
+        <p className="mt-2 text-[var(--color-text-navy)]/70">
+          Your spot is locked for SkillUp 1.0 · June 12 – 14, 2026 at Cement
+          Missionary HQ, Lagos. Screenshot this page — your QR code is your
+          fast-pass at the door.
+        </p>
+
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-6 items-center">
+          <div>
+            <div className="rounded-2xl bg-[var(--color-neutral-cream-100)] p-5">
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-navy)]/55">
+                Reference number
+              </div>
+              <div className="mt-1 font-mono text-2xl font-bold tracking-[0.04em] text-[var(--color-text-navy)]">
+                {registration.reference_number}
+              </div>
+            </div>
+
+            <dl className="mt-5 grid grid-cols-1 gap-3 text-sm">
+              <Row label="Track" value={track?.name ?? "—"} />
+              <Row
+                label="Facilitator"
+                value={track?.facilitator_name ?? "TBA"}
+              />
+              <Row label="Dates" value="June 12 – 14, 2026" />
+              <Row label="Venue" value="Cement Missionary HQ, Lagos" />
+            </dl>
+          </div>
+
+          {/* biome-ignore lint/performance/noImgElement: data URL, no remote optimisation */}
+          <img
+            src={qr}
+            alt={`QR code for ${registration.reference_number}`}
+            width={180}
+            height={180}
+            className="rounded-2xl border border-[var(--color-text-navy)]/8 self-start"
+          />
+        </div>
+
+        <div className="mt-8 flex flex-col sm:flex-row gap-3">
+          {staticTrack?.whatsappUrl && (
+            <a
+              href={staticTrack.whatsappUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-primary-blue)] px-6 py-3 font-display font-semibold text-white shadow-[var(--shadow-card)] hover:bg-[var(--color-primary-blue-700)]"
+            >
+              <MessageCircle className="h-4 w-4" aria-hidden />
+              Join the WhatsApp group
+            </a>
+          )}
+          <a
+            href="/skillup#tracks"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--color-text-navy)]/15 px-6 py-3 font-display font-semibold text-[var(--color-text-navy)] hover:bg-[var(--color-neutral-cream-100)]"
+          >
+            Back to programme
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </a>
+        </div>
+
+        <p className="mt-6 text-xs text-[var(--color-text-navy)]/55">
+          A confirmation email with your QR is on the way to{" "}
+          <strong>{registration.email}</strong>.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+async function BatchSuccess({ batchId }: { batchId: string }) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("batches")
+    .select("submitter_name, total_registrants")
+    .eq("id", batchId)
+    .maybeSingle();
+  return (
+    <div className="px-6 sm:px-10 py-12 sm:py-20">
+      <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 sm:p-12 shadow-[var(--shadow-lift)] border border-[var(--color-text-navy)]/8 text-center">
+        <div className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary-blue)]/8 px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary-blue)]">
+          <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> Submitted
+        </div>
+        <h1 className="mt-4 font-display text-3xl sm:text-4xl font-semibold tracking-tight text-[var(--color-text-navy)]">
+          Thank you
+          {data?.submitter_name ? `, ${firstName(data.submitter_name)}` : ""}.
+        </h1>
+        <p className="mt-3 text-[var(--color-text-navy)]/70">
+          You registered {data?.total_registrants ?? "several"}{" "}
+          {data?.total_registrants === 1 ? "person" : "people"} for SkillUp 1.0.
+          A summary email with every reference code is on the way to your inbox
+          now — share each code with the person it belongs to.
+        </p>
+        <a
+          href="/skillup#tracks"
+          className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-primary-blue)] px-6 py-3 font-display font-semibold text-white hover:bg-[var(--color-primary-blue-700)]"
+        >
+          Back to programme
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function Fallback() {
+  return (
+    <div className="px-6 sm:px-10 py-20 text-center">
+      <div className="mx-auto max-w-md rounded-3xl bg-white p-10 shadow-[var(--shadow-card)] border border-[var(--color-text-navy)]/8">
+        <h1 className="font-display text-2xl font-semibold text-[var(--color-text-navy)]">
+          Couldn’t find that reference.
+        </h1>
+        <p className="mt-2 text-sm text-[var(--color-text-navy)]/65">
+          Try clicking the link in your confirmation email again, or register
+          fresh.
+        </p>
+        <Link
+          href="/skillup/register"
+          className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-primary-blue)] px-5 py-2.5 font-display font-semibold text-white hover:bg-[var(--color-primary-blue-700)]"
+        >
+          Go to registration
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-[var(--color-text-navy)]/6 last:border-b-0 pb-2 last:pb-0">
+      <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-navy)]/55">
+        {label}
+      </dt>
+      <dd className="text-sm font-medium text-[var(--color-text-navy)] text-right">
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function firstName(full: string) {
+  return full.trim().split(/\s+/)[0] ?? full;
+}

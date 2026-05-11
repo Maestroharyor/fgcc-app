@@ -1,0 +1,295 @@
+import { ArrowRight } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { FAQItem } from "@/components/ui/FAQItem";
+import { FacilitatorCard } from "@/components/ui/FacilitatorCard";
+import { HeroSection } from "@/components/ui/HeroSection";
+import { Section } from "@/components/ui/Section";
+import { StatsWidget } from "@/components/ui/StatsWidget";
+import { TrackCard } from "@/components/ui/TrackCard";
+import { FAQS } from "@/content/faqs";
+import { SCHEDULE } from "@/content/schedule";
+import { TRACKS, type Track, type TrackCategory } from "@/content/tracks";
+import { listTrackCapacity } from "@/lib/db/tracks";
+import type { DBTrackCapacity } from "@/lib/db/types";
+
+export const revalidate = 60;
+
+export const metadata: Metadata = {
+  title: "SkillUp 1.0 — From Skills to Income",
+  description:
+    "Three days of hands-on training across 20 skill tracks. Free youth empowerment programme by Foursquare Gospel Church, Cement Missionary HQ. June 12–14, 2026.",
+};
+
+const CATEGORY_LABELS: Record<TrackCategory, string> = {
+  digital: "Digital",
+  creative: "Creative",
+  vocational: "Vocational",
+};
+
+const CATEGORY_BLURB: Record<TrackCategory, string> = {
+  digital: "Skills that travel anywhere a screen does.",
+  creative: "Express, document, brand.",
+  vocational: "Make. Sell. Repeat.",
+};
+
+export default async function SkillupLandingPage() {
+  const capacityRows = await listTrackCapacity();
+  const capacityByCode = new Map(capacityRows.map((r) => [r.code, r]));
+
+  return (
+    <>
+      <HeroSection />
+      <AboutSection />
+      <TracksSection capacityByCode={capacityByCode} />
+      <StatsSection capacityRows={capacityRows} />
+      <FacilitatorsSection />
+      <ScheduleSection />
+      <FAQSection />
+      <FinalCTA />
+    </>
+  );
+}
+
+function AboutSection() {
+  return (
+    <Section
+      id="about"
+      eyebrow="About the programme"
+      title="A three-day boot for the next generation of marketplace leaders."
+      description="SkillUp 1.0 brings together facilitators across digital, creative, and vocational disciplines to equip Nigerian youth — church members and the broader public — with practical skill that turns into income."
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        <Stat label="Skill tracks" value="20" tone="blue" />
+        <Stat label="Days of training" value="3" tone="gold" />
+        <Stat label="Cost to attend" value="Free" tone="coral" />
+      </div>
+    </Section>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "blue" | "gold" | "coral";
+}) {
+  const toneClasses = {
+    blue: "from-[var(--color-primary-blue)]/8 to-[var(--color-primary-blue)]/0 text-[var(--color-primary-blue)]",
+    gold: "from-[var(--color-warm-gold)]/12 to-[var(--color-warm-gold)]/0 text-[var(--color-warm-gold-600)]",
+    coral:
+      "from-[var(--color-accent-coral)]/8 to-[var(--color-accent-coral)]/0 text-[var(--color-accent-coral)]",
+  }[tone];
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl border border-[var(--color-text-navy)]/8 bg-white p-6 shadow-[var(--shadow-card)] bg-gradient-to-br ${toneClasses}`}
+    >
+      <div className="font-mono text-[10px] uppercase tracking-[0.2em] opacity-80">
+        {label}
+      </div>
+      <div className="mt-2 font-display text-5xl font-semibold tracking-tight text-[var(--color-text-navy)]">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function TracksSection({
+  capacityByCode,
+}: {
+  capacityByCode: Map<string, DBTrackCapacity>;
+}) {
+  const groups: Array<{ category: TrackCategory; tracks: Track[] }> = [
+    {
+      category: "digital",
+      tracks: TRACKS.filter((t) => t.category === "digital"),
+    },
+    {
+      category: "creative",
+      tracks: TRACKS.filter((t) => t.category === "creative"),
+    },
+    {
+      category: "vocational",
+      tracks: TRACKS.filter((t) => t.category === "vocational"),
+    },
+  ];
+
+  return (
+    <Section
+      id="tracks"
+      eyebrow="The 20 tracks"
+      title="Pick the skill you want to walk away with."
+      description="Each track runs for the full three days, led by a facilitator already practising professionally. Choose one and go deep."
+      className="bg-[var(--color-neutral-cream-100)]"
+    >
+      <div className="flex flex-col gap-12">
+        {groups.map(({ category, tracks }) => (
+          <div key={category}>
+            <div className="mb-6 flex items-baseline justify-between gap-3 flex-wrap">
+              <div>
+                <h3 className="font-display text-2xl font-semibold tracking-tight text-[var(--color-text-navy)]">
+                  {CATEGORY_LABELS[category]}
+                </h3>
+                <p className="text-sm text-[var(--color-text-navy)]/65">
+                  {CATEGORY_BLURB[category]}
+                </p>
+              </div>
+              <span className="font-mono text-xs uppercase tracking-[0.18em] text-[var(--color-text-navy)]/45">
+                {tracks.length} tracks
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {tracks.map((track) => {
+                const cap = capacityByCode.get(track.code);
+                return (
+                  <TrackCard
+                    key={track.code}
+                    track={track}
+                    remaining={cap?.remaining}
+                    capacity={cap?.capacity ?? track.capacity}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function StatsSection({ capacityRows }: { capacityRows: DBTrackCapacity[] }) {
+  if (capacityRows.length === 0) return null;
+  const totalRegistered = capacityRows.reduce(
+    (acc, r) => acc + r.current_count,
+    0,
+  );
+  const totalCapacity = capacityRows.reduce((acc, r) => acc + r.capacity, 0);
+  return (
+    <Section
+      id="stats"
+      eyebrow="Live numbers"
+      title="Spots are filling up — see the running totals."
+      description="These numbers update as people register. Don’t wait too long if you have your eye on a competitive track."
+    >
+      <StatsWidget
+        rows={capacityRows}
+        totalRegistered={totalRegistered}
+        totalCapacity={totalCapacity}
+      />
+    </Section>
+  );
+}
+
+function FacilitatorsSection() {
+  return (
+    <Section
+      id="facilitators"
+      eyebrow="Facilitators"
+      title="Practitioners who do the work."
+      description="Every track is led by a practitioner — many running businesses or shipping work in this exact field today."
+      className="bg-[var(--color-neutral-cream-100)]"
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {TRACKS.map((track) => (
+          <FacilitatorCard key={track.code} track={track} />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function ScheduleSection() {
+  return (
+    <Section
+      id="schedule"
+      eyebrow="Programme schedule"
+      title="Three days, paced for both depth and momentum."
+      description="Track time is the heart of the programme — surrounded by short plenaries, a marketplace talk, and a community-wide showcase."
+    >
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {SCHEDULE.map((day) => (
+          <div
+            key={day.label}
+            className="rounded-2xl border border-[var(--color-text-navy)]/8 bg-white p-6 shadow-[var(--shadow-card)]"
+          >
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary-blue)]">
+              {day.label}
+            </div>
+            <div className="mt-1 font-display text-lg font-semibold text-[var(--color-text-navy)]">
+              {day.date}
+            </div>
+            <div className="mt-1 text-sm text-[var(--color-text-navy)]/65">
+              {day.theme}
+            </div>
+            <ul className="mt-5 flex flex-col gap-4">
+              {day.blocks.map((block) => (
+                <li
+                  key={`${day.label}-${block.title}`}
+                  className="flex flex-col gap-1 border-l-2 border-[var(--color-warm-gold)]/40 pl-3"
+                >
+                  <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-navy)]/55">
+                    {block.time}
+                  </span>
+                  <span className="font-display text-sm font-semibold text-[var(--color-text-navy)]">
+                    {block.title}
+                  </span>
+                  <span className="text-xs text-[var(--color-text-navy)]/65 leading-relaxed">
+                    {block.description}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function FAQSection() {
+  return (
+    <Section
+      id="faq"
+      eyebrow="Questions"
+      title="The things people usually ask."
+      description="Still curious about something? Reach us at skillup@fgccement.org."
+      className="bg-[var(--color-neutral-cream-100)]"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {FAQS.map((faq) => (
+          <FAQItem key={faq.q} q={faq.q} a={faq.a} />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function FinalCTA() {
+  return (
+    <section className="px-6 sm:px-10 py-20">
+      <div className="mx-auto max-w-6xl rounded-3xl bg-[var(--color-primary-blue)] p-10 sm:p-16 text-center text-white shadow-[var(--shadow-lift)]">
+        <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/80">
+          Free admission
+        </span>
+        <h2 className="mt-4 font-display text-3xl sm:text-5xl font-semibold tracking-tight">
+          Your seat at SkillUp 1.0 is waiting.
+        </h2>
+        <p className="mt-3 max-w-xl mx-auto text-white/80">
+          Register in under two minutes. You will receive your reference code,
+          QR check-in pass, and track group link by email.
+        </p>
+        <Link
+          href="/skillup/register"
+          className="mt-8 inline-flex h-14 items-center justify-center gap-2 rounded-full bg-[var(--color-warm-gold)] px-8 font-display font-semibold text-white shadow-[var(--shadow-lift)] transition hover:bg-[var(--color-warm-gold-600)]"
+        >
+          Register your spot
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </Link>
+      </div>
+    </section>
+  );
+}
