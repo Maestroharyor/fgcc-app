@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+# SkillUp 1.0 — pre-commit gate
+# 1. Run Biome (lint + format) on staged files only — auto-fixes safe issues
+#    and re-stages the fixed files (lint-staged handles the re-staging).
+# 2. Run the full Vitest suite (it's ~5s; cheap insurance).
+# Bypass with `git commit --no-verify` if you genuinely need to.
+
+set -e
+
+echo "▸ lint-staged"
+bunx lint-staged
+
+echo "▸ bun run test"
+bun run test
