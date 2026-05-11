@@ -106,7 +106,9 @@ export async function GET(request: NextRequest) {
 
     await supabase
       .from("registrations")
-      .update({ [sentColumn]: new Date().toISOString() })
+      // Cast to `never` while DB types are hand-rolled — running
+      // `supabase gen types` will narrow this naturally.
+      .update({ [sentColumn]: new Date().toISOString() } as never)
       .eq("id", r.id);
   }
 

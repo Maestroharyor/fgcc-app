@@ -16,7 +16,7 @@ export default async function AdminLayout({
   if (!session) redirect("/admin/login");
 
   return (
-    <div className="flex flex-col md:flex-row min-h-dvh bg-[var(--color-neutral-cream)]">
+    <div className="flex flex-col md:flex-row min-h-dvh bg-cream">
       <AdminSidebar role={session.role} email={session.email} />
       <main className="flex-1 min-w-0">{children}</main>
     </div>

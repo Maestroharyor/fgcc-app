@@ -20,11 +20,11 @@ export function RegistrationsTable({
 }: Props) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   return (
-    <div className="rounded-2xl border border-[var(--color-text-navy)]/8 bg-white shadow-[var(--shadow-card)] overflow-hidden">
+    <div className="rounded-2xl border border-navy/8 bg-white shadow-card overflow-hidden">
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
-          <thead className="bg-[var(--color-neutral-cream-100)]">
-            <tr className="text-left font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-navy)]/55">
+          <thead className="bg-cream-100">
+            <tr className="text-left font-mono text-[10px] uppercase tracking-[0.18em] text-navy/55">
               <Th>Ref</Th>
               <Th>Name</Th>
               <Th>Track</Th>
@@ -40,7 +40,7 @@ export function RegistrationsTable({
               <tr>
                 <td
                   colSpan={8}
-                  className="px-4 py-10 text-center text-sm text-[var(--color-text-navy)]/55"
+                  className="px-4 py-10 text-center text-sm text-navy/55"
                 >
                   No registrations match these filters yet.
                 </td>
@@ -51,31 +51,27 @@ export function RegistrationsTable({
               return (
                 <tr
                   key={r.id}
-                  className="border-t border-[var(--color-text-navy)]/6 hover:bg-[var(--color-neutral-cream)]"
+                  className="border-t border-navy/6 hover:bg-cream"
                 >
                   <Td>
-                    <span className="font-mono text-[12px] text-[var(--color-primary-blue)]">
+                    <span className="font-mono text-[12px] text-primary">
                       {r.reference_number}
                     </span>
                   </Td>
                   <Td>
-                    <div className="font-display font-medium text-[var(--color-text-navy)]">
+                    <div className="font-display font-medium text-navy">
                       {r.full_name}
                     </div>
-                    <div className="text-xs text-[var(--color-text-navy)]/55">
-                      {r.email}
-                    </div>
+                    <div className="text-xs text-navy/55">{r.email}</div>
                   </Td>
                   <Td>{track?.name ?? "—"}</Td>
-                  <Td className="text-[var(--color-text-navy)]/70">
-                    {r.church ?? "—"}
-                  </Td>
+                  <Td className="text-navy/70">{r.church ?? "—"}</Td>
                   <Td>
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] ${
                         r.registered_via === "self"
-                          ? "bg-[var(--color-primary-blue)]/8 text-[var(--color-primary-blue)]"
-                          : "bg-[var(--color-warm-gold)]/12 text-[var(--color-warm-gold-600)]"
+                          ? "bg-primary/8 text-primary"
+                          : "bg-gold/12 text-gold-600"
                       }`}
                     >
                       {r.registered_via === "self" ? "Self" : "Via others"}
@@ -86,19 +82,19 @@ export function RegistrationsTable({
                       className={`inline-flex rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] ${
                         r.attended
                           ? "bg-emerald-100 text-emerald-700"
-                          : "bg-[var(--color-text-navy)]/8 text-[var(--color-text-navy)]/60"
+                          : "bg-navy/8 text-navy/60"
                       }`}
                     >
                       {r.attended ? "Yes" : "No"}
                     </span>
                   </Td>
-                  <Td className="whitespace-nowrap text-[var(--color-text-navy)]/65">
+                  <Td className="whitespace-nowrap text-navy/65">
                     {new Date(r.created_at).toLocaleDateString()}
                   </Td>
                   <Td>
                     <Link
                       href={`/admin/registrations/${r.id}`}
-                      className="inline-flex items-center rounded-full bg-[var(--color-primary-blue)]/8 px-3 py-1 font-display text-xs font-semibold text-[var(--color-primary-blue)] hover:bg-[var(--color-primary-blue)]/15"
+                      className="inline-flex items-center rounded-full bg-primary/8 px-3 py-1 font-display text-xs font-semibold text-primary hover:bg-primary/15"
                     >
                       Open
                     </Link>
@@ -109,8 +105,8 @@ export function RegistrationsTable({
           </tbody>
         </table>
       </div>
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-[var(--color-text-navy)]/6 text-xs">
-        <span className="text-[var(--color-text-navy)]/55">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-navy/6 text-xs">
+        <span className="text-navy/55">
           {total === 0
             ? "0 records"
             : `Showing ${(page - 1) * pageSize + 1} – ${Math.min(page * pageSize, total)} of ${total}`}
@@ -119,18 +115,18 @@ export function RegistrationsTable({
           {page > 1 && (
             <Link
               href={buildHref({ page: page - 1 })}
-              className="rounded-full border border-[var(--color-text-navy)]/15 px-3 py-1 font-display font-medium text-[var(--color-text-navy)] hover:bg-[var(--color-neutral-cream-100)]"
+              className="rounded-full border border-navy/15 px-3 py-1 font-display font-medium text-navy hover:bg-cream-100"
             >
               Previous
             </Link>
           )}
-          <span className="font-mono text-[var(--color-text-navy)]/55">
+          <span className="font-mono text-navy/55">
             {page} / {totalPages}
           </span>
           {page < totalPages && (
             <Link
               href={buildHref({ page: page + 1 })}
-              className="rounded-full border border-[var(--color-text-navy)]/15 px-3 py-1 font-display font-medium text-[var(--color-text-navy)] hover:bg-[var(--color-neutral-cream-100)]"
+              className="rounded-full border border-navy/15 px-3 py-1 font-display font-medium text-navy hover:bg-cream-100"
             >
               Next
             </Link>

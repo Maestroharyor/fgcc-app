@@ -35,17 +35,14 @@ export function CheckinForm() {
   };
 
   return (
-    <div className="rounded-3xl border border-[var(--color-text-navy)]/8 bg-white p-6 sm:p-8 shadow-[var(--shadow-card)]">
+    <div className="rounded-3xl border border-navy/8 bg-white p-6 sm:p-8 shadow-card">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5">
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-navy)]/60">
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/60">
             Reference number
           </span>
           <div className="flex items-center gap-2">
-            <ScanLine
-              className="h-4 w-4 text-[var(--color-text-navy)]/55"
-              aria-hidden
-            />
+            <ScanLine className="h-4 w-4 text-navy/55" aria-hidden />
             <input
               placeholder="SKU-UXD-001"
               value={ref}
@@ -57,7 +54,7 @@ export function CheckinForm() {
         <button
           type="submit"
           disabled={pending || ref.length < 5}
-          className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--color-primary-blue)] px-6 font-display font-semibold text-white hover:bg-[var(--color-primary-blue-700)] disabled:opacity-60"
+          className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-6 font-display font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
         >
           {pending ? "Checking in…" : "Mark present"}
         </button>
@@ -69,8 +66,8 @@ export function CheckinForm() {
             result.ok
               ? "border-emerald-200 bg-emerald-50 text-emerald-800"
               : result.alreadyChecked
-                ? "border-[var(--color-warm-gold)]/30 bg-[var(--color-warm-gold)]/8 text-[var(--color-warm-gold-600)]"
-                : "border-[var(--color-accent-coral)]/30 bg-[var(--color-accent-coral)]/8 text-[var(--color-accent-coral)]"
+                ? "border-gold/30 bg-gold/8 text-gold-600"
+                : "border-coral/30 bg-coral/8 text-coral"
           }`}
         >
           {result.ok && result.registrant && (

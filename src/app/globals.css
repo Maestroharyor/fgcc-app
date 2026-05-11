@@ -1,31 +1,41 @@
+/* HeroUI v3 styles (which itself imports tailwindcss + tw-animate-css).
+   Fonts are loaded via next/font/google in src/app/layout.tsx — see there. */
 @import "@heroui/styles";
 
 @theme inline {
-  /* Foursquare-rooted palette */
-  --color-primary-blue: #003da5;
-  --color-primary-blue-50: #e6ebf6;
-  --color-primary-blue-100: #ccd8ed;
-  --color-primary-blue-600: #00307f;
-  --color-primary-blue-700: #002a6e;
-  --color-warm-gold: #f59e0b;
-  --color-warm-gold-50: #fff7ec;
-  --color-warm-gold-100: #ffead0;
-  --color-warm-gold-600: #d97706;
-  --color-accent-coral: #dc2626;
-  --color-accent-coral-50: #fdecec;
-  --color-accent-coral-600: #b91c1c;
-  --color-neutral-cream: #fafaf8;
-  --color-neutral-cream-100: #f3f3ee;
-  --color-text-navy: #0f172a;
-  --color-text-navy-muted: #475569;
+  /* ── Brand palette ───────────────────────────────────────────────────────
+     Tailwind v4 picks these up as `bg-primary`, `text-navy`, etc. Shades
+     follow the standard scale (50–900). */
+  --color-primary: #003da5;
+  --color-primary-50: #e6ebf6;
+  --color-primary-100: #ccd8ed;
+  --color-primary-600: #00307f;
+  --color-primary-700: #002a6e;
 
-  /* Type system — set as CSS vars by next/font on <html>.
-     Bricolage Grotesque (display) + Inter (body) + Geist Mono (accent). */
-  --font-display: var(--font-bricolage);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-geist-mono);
+  --color-gold: #f59e0b;
+  --color-gold-50: #fff7ec;
+  --color-gold-100: #ffead0;
+  --color-gold-600: #d97706;
 
-  /* Radii + shadows */
+  --color-coral: #dc2626;
+  --color-coral-50: #fdecec;
+  --color-coral-600: #b91c1c;
+
+  --color-cream: #fafaf8;
+  --color-cream-100: #f3f3ee;
+
+  --color-navy: #0f172a;
+  --color-navy-muted: #475569;
+
+  /* ── Typography ──────────────────────────────────────────────────────────
+     next/font/google in src/app/layout.tsx sets --font-bricolage, --font-inter,
+     and --font-geist-mono on <html>. Tailwind utilities `font-display`,
+     `font-sans`, `font-mono` resolve through the mappings below. */
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+
+  /* ── Radii + shadows ─────────────────────────────────────────────────── */
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 61 165 / 0.06);
@@ -35,8 +45,8 @@
 
 html,
 body {
-  background: var(--color-neutral-cream);
-  color: var(--color-text-navy);
+  background: var(--color-cream);
+  color: var(--color-navy);
   scroll-behavior: smooth;
 }
 
@@ -48,23 +58,19 @@ body {
 }
 
 body {
-  font-family:
-    var(--font-sans), system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Anchor-target offset for the sticky marketing header (~70px). Applies to any
-   element with an id under the marketing chrome, so the section heading lands
-   below the header instead of being hidden by it. */
+/* Anchor-target offset for the sticky marketing header. */
 [id] {
   scroll-margin-top: 80px;
 }
 
 @layer components {
   .form-input {
-    @apply h-11 w-full rounded-xl border border-[var(--color-text-navy)]/12 bg-white px-3.5 font-sans text-sm text-[var(--color-text-navy)] outline-none transition placeholder:text-[var(--color-text-navy)]/40 focus:border-[var(--color-primary-blue)]/40 focus:ring-2 focus:ring-[var(--color-primary-blue)]/15;
+    @apply h-11 w-full rounded-xl border border-navy/12 bg-white px-3.5 font-sans text-sm text-navy outline-none transition placeholder:text-navy/40 focus:border-primary/40 focus:ring-2 focus:ring-primary/15;
   }
 
   select.form-input {

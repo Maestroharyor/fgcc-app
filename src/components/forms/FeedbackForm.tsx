@@ -5,8 +5,13 @@ import { Star } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
+import type { z } from "zod";
 import { submitFeedbackAction } from "@/app/(marketing)/skillup/feedback/actions";
-import { type FeedbackInput, FeedbackSchema } from "@/lib/validation/schemas";
+import { FeedbackSchema } from "@/lib/validation/schemas";
+
+// RHF wants the schema's INPUT type (before transforms / defaults) so the
+// optional-vs-required tagging lines up between defaults and the resolver.
+type FeedbackFormValues = z.input<typeof FeedbackSchema>;
 
 export function FeedbackForm() {
   const router = useRouter();
@@ -22,7 +27,7 @@ export function FeedbackForm() {
     setValue,
     watch,
     formState: { errors },
-  } = useForm<FeedbackInput>({
+  } = useForm<FeedbackFormValues>({
     resolver: zodResolver(FeedbackSchema),
     defaultValues: {
       reference_number: initialRef,
@@ -62,7 +67,7 @@ export function FeedbackForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="flex flex-col gap-6 rounded-3xl border border-[var(--color-text-navy)]/8 bg-white p-6 sm:p-8 shadow-[var(--shadow-card)]"
+      className="flex flex-col gap-6 rounded-3xl border border-navy/8 bg-white p-6 sm:p-8 shadow-card"
     >
       <Field
         label="Your reference number"
@@ -127,7 +132,7 @@ export function FeedbackForm() {
         <textarea className="form-input" rows={3} {...register("testimony")} />
       </Field>
 
-      <label className="flex items-center gap-2 text-sm text-[var(--color-text-navy)]/75">
+      <label className="flex items-center gap-2 text-sm text-navy/75">
         <input
           type="checkbox"
           className="h-4 w-4"
@@ -136,16 +141,12 @@ export function FeedbackForm() {
         It’s OK to share my testimony publicly with attribution.
       </label>
 
-      {serverError && (
-        <p className="text-sm text-[var(--color-accent-coral)]">
-          {serverError}
-        </p>
-      )}
+      {serverError && <p className="text-sm text-coral">{serverError}</p>}
 
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex h-12 items-center justify-center rounded-full bg-[var(--color-primary-blue)] px-7 font-display font-semibold text-white hover:bg-[var(--color-primary-blue-700)] disabled:opacity-60"
+        className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-7 font-display font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
       >
         {pending ? "Submitting…" : "Submit feedback"}
       </button>
@@ -165,15 +166,11 @@ function Field({
   return (
     // biome-ignore lint/a11y/noLabelWithoutControl: the input is the children prop — nested-input pattern is valid.
     <label className="flex flex-col gap-1.5">
-      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-navy)]/60">
+      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/60">
         {label}
       </span>
       {children}
-      {error && (
-        <span className="text-xs text-[var(--color-accent-coral)]">
-          {error}
-        </span>
-      )}
+      {error && <span className="text-xs text-coral">{error}</span>}
     </label>
   );
 }
@@ -189,7 +186,7 @@ function RatingField({
 }) {
   return (
     <div>
-      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-navy)]/60">
+      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/60">
         {label}
       </div>
       <div className="mt-2 flex items-center gap-1.5">
@@ -203,8 +200,8 @@ function RatingField({
               aria-label={`${n} of 5`}
               className={`grid h-10 w-10 place-items-center rounded-xl transition ${
                 filled
-                  ? "bg-[var(--color-warm-gold)] text-white"
-                  : "bg-[var(--color-text-navy)]/8 text-[var(--color-text-navy)]/55 hover:bg-[var(--color-text-navy)]/12"
+                  ? "bg-gold text-white"
+                  : "bg-navy/8 text-navy/55 hover:bg-navy/12"
               }`}
             >
               <Star

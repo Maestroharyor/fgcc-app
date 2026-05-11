@@ -9,20 +9,20 @@ interface Props {
 
 export function StatsWidget({ rows, totalRegistered, totalCapacity }: Props) {
   return (
-    <div className="rounded-3xl border border-[var(--color-text-navy)]/8 bg-white p-6 sm:p-8 shadow-[var(--shadow-card)]">
+    <div className="rounded-3xl border border-navy/8 bg-white p-6 sm:p-8 shadow-card">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary-blue)]">
+          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
             Live registrations
           </div>
-          <div className="mt-1 font-display text-3xl font-semibold text-[var(--color-text-navy)]">
+          <div className="mt-1 font-display text-3xl font-semibold text-navy">
             {totalRegistered}{" "}
-            <span className="text-[var(--color-text-navy)]/40 text-2xl font-normal">
+            <span className="text-navy/40 text-2xl font-normal">
               / {totalCapacity}
             </span>
           </div>
         </div>
-        <div className="font-mono text-xs uppercase tracking-[0.18em] text-[var(--color-text-navy)]/55">
+        <div className="font-mono text-xs uppercase tracking-[0.18em] text-navy/55">
           Updated live
         </div>
       </div>
@@ -36,21 +36,21 @@ export function StatsWidget({ rows, totalRegistered, totalCapacity }: Props) {
           return (
             <div
               key={row.id}
-              className="flex flex-col gap-1.5 rounded-xl border border-[var(--color-text-navy)]/6 bg-[var(--color-neutral-cream)] p-3"
+              className="flex flex-col gap-1.5 rounded-xl border border-navy/6 bg-cream p-3"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate font-display text-sm font-medium text-[var(--color-text-navy)]">
+                <span className="truncate font-display text-sm font-medium text-navy">
                   {row.name}
                 </span>
                 <CategoryBadge category={row.category} />
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-[var(--color-text-navy)]/8">
+              <div className="h-1.5 overflow-hidden rounded-full bg-navy/8">
                 <div
-                  className="h-full rounded-full bg-[var(--color-primary-blue)]"
+                  className="h-full rounded-full bg-primary"
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-navy)]/55">
+              <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.16em] text-navy/55">
                 <span>
                   {row.current_count} of {row.capacity} filled
                 </span>

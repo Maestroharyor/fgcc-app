@@ -177,16 +177,12 @@ describe("FeedbackSchema", () => {
     expect(() => FeedbackSchema.parse(base)).not.toThrow();
   });
 
-  it("coerces numeric strings to numbers", () => {
-    const parsed = FeedbackSchema.parse({
-      ...base,
-      overall_rating: "5",
-      track_rating: "4",
-      facilitator_rating: "3",
-      share_as_testimonial: "true",
-    });
-    expect(parsed.overall_rating).toBe(5);
-    expect(parsed.share_as_testimonial).toBe(true);
+  it("requires ratings as numbers (no auto-coercion)", () => {
+    // The form sends numbers directly; coercion was dropped so input/output
+    // shapes match and zodResolver can type RHF cleanly.
+    expect(() =>
+      FeedbackSchema.parse({ ...base, overall_rating: "5" }),
+    ).toThrow();
   });
 
   it("rejects rating outside 1-5", () => {

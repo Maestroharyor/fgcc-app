@@ -96,7 +96,7 @@ function Cell({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-xl border border-[var(--color-primary-blue)]/8 bg-white shadow-[var(--shadow-card)]",
+        "flex flex-col items-center justify-center rounded-xl border border-primary/8 bg-white shadow-card",
         isHero
           ? "min-w-[5.5rem] sm:min-w-[6.5rem] px-4 py-4 sm:px-5 sm:py-5"
           : "min-w-[3.5rem] px-3 py-2",
@@ -104,7 +104,7 @@ function Cell({
     >
       <span
         className={cn(
-          "font-display font-semibold tabular-nums tracking-tight text-[var(--color-text-navy)]",
+          "font-display font-semibold tabular-nums tracking-tight text-navy",
           isHero ? "text-4xl sm:text-5xl" : "text-xl",
         )}
         suppressHydrationWarning
@@ -113,7 +113,7 @@ function Cell({
       </span>
       <span
         className={cn(
-          "mt-1 font-mono uppercase tracking-[0.18em] text-[var(--color-text-navy)]/55",
+          "mt-1 font-mono uppercase tracking-[0.18em] text-navy/55",
           isHero ? "text-[10px] sm:text-xs" : "text-[9px]",
         )}
       >

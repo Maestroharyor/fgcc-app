@@ -3,6 +3,9 @@ import { Bricolage_Grotesque, Geist_Mono, Inter } from "next/font/google";
 import { HeroUIProvider } from "@/components/providers/HeroUIProvider";
 import "./globals.css";
 
+// Google Fonts via next/font — auto subsetting + preload + self-hosting.
+// Each font exposes a CSS variable on <html> which globals.css maps to the
+// `--font-display`, `--font-sans`, `--font-mono` Tailwind tokens.
 const sans = Inter({
   subsets: ["latin"],
   variable: "--font-inter",

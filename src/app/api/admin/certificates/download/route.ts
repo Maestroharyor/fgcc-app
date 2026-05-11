@@ -23,24 +23,17 @@ export async function GET(request: NextRequest) {
         { status: 404 },
       );
     }
-    const track = Array.isArray((data as { tracks?: unknown }).tracks)
-      ? (
-          data as {
-            tracks: Array<{ name: string; facilitator_name: string | null }>;
-          }
-        ).tracks[0]
-      : (
-          data as {
-            tracks: { name: string; facilitator_name: string | null } | null;
-          }
-        ).tracks;
+    type TrackRow = { name: string; facilitator_name: string | null };
+    const tracksValue = (data as { tracks: TrackRow | TrackRow[] | null })
+      .tracks;
+    const track = Array.isArray(tracksValue) ? tracksValue[0] : tracksValue;
     const pdf = await buildCertificate({
       fullName: data.full_name,
       referenceNumber: data.reference_number,
       trackName: track?.name ?? "SkillUp track",
       facilitatorName: track?.facilitator_name ?? null,
     });
-    return new NextResponse(pdf, {
+    return new NextResponse(new Uint8Array(pdf), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
@@ -76,7 +69,7 @@ export async function GET(request: NextRequest) {
     zip.file(`SkillUp-${r.reference_number}.pdf`, pdf);
   }
   const buf = await zip.generateAsync({ type: "nodebuffer" });
-  return new NextResponse(buf, {
+  return new NextResponse(new Uint8Array(buf), {
     status: 200,
     headers: {
       "Content-Type": "application/zip",

@@ -31,13 +31,13 @@ export default async function AdminTracksPage() {
 
   return (
     <div className="px-6 md:px-10 py-10">
-      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary-blue)]">
+      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
         Tracks
       </span>
-      <h1 className="font-display text-3xl font-semibold tracking-tight text-[var(--color-text-navy)]">
+      <h1 className="font-display text-3xl font-semibold tracking-tight text-navy">
         Tracks &amp; waitlists
       </h1>
-      <p className="text-sm text-[var(--color-text-navy)]/65">
+      <p className="text-sm text-navy/65">
         Capacity, facilitator status, and waitlist per track. WhatsApp/Telegram
         links are managed in{" "}
         <code className="text-xs">src/content/tracks.ts</code>.
@@ -64,66 +64,66 @@ function TrackPanel({
     (track.current_count / Math.max(track.capacity, 1)) * 100,
   );
   return (
-    <article className="rounded-2xl border border-[var(--color-text-navy)]/8 bg-white p-5 shadow-[var(--shadow-card)]">
+    <article className="rounded-2xl border border-navy/8 bg-white p-5 shadow-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <CategoryBadge category={track.category as TrackCategory} />
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-navy)]/55">
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/55">
               {track.code}
             </span>
           </div>
-          <h2 className="mt-2 font-display text-lg font-semibold text-[var(--color-text-navy)]">
+          <h2 className="mt-2 font-display text-lg font-semibold text-navy">
             {track.name}
           </h2>
-          <p className="text-xs text-[var(--color-text-navy)]/55 mt-1">
+          <p className="text-xs text-navy/55 mt-1">
             Facilitator: {track.facilitator_name ?? "TBA"}
           </p>
         </div>
         <div className="text-right shrink-0">
-          <div className="font-mono text-xs text-[var(--color-text-navy)]/60">
+          <div className="font-mono text-xs text-navy/60">
             {track.current_count} / {track.capacity}
           </div>
           {track.is_full ? (
-            <span className="mt-1 inline-flex rounded-full bg-[var(--color-accent-coral)]/8 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-accent-coral)]">
+            <span className="mt-1 inline-flex rounded-full bg-coral/8 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-coral">
               Full
             </span>
           ) : (
-            <span className="mt-1 inline-flex rounded-full bg-[var(--color-primary-blue)]/8 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-primary-blue)]">
+            <span className="mt-1 inline-flex rounded-full bg-primary/8 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
               {track.remaining} left
             </span>
           )}
         </div>
       </div>
 
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--color-text-navy)]/8">
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-navy/8">
         <div
-          className="h-full rounded-full bg-[var(--color-primary-blue)]"
+          className="h-full rounded-full bg-primary"
           style={{ width: `${pct}%` }}
         />
       </div>
 
       {waitlist.length > 0 && (
         <div className="mt-5">
-          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-warm-gold-600)]">
+          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-gold-600">
             Waitlist ({waitlist.length})
           </div>
           <ul className="mt-2 flex flex-col gap-1.5">
             {waitlist.slice(0, 5).map((w) => (
               <li
                 key={w.id}
-                className="flex items-center justify-between gap-2 rounded-lg bg-[var(--color-neutral-cream)] px-3 py-2 text-sm"
+                className="flex items-center justify-between gap-2 rounded-lg bg-cream px-3 py-2 text-sm"
               >
-                <span className="font-display font-medium text-[var(--color-text-navy)]">
+                <span className="font-display font-medium text-navy">
                   #{w.position} · {w.full_name}
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-navy)]/55">
+                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-navy/55">
                   {w.notified_at ? "Offered" : "Waiting"}
                 </span>
               </li>
             ))}
             {waitlist.length > 5 && (
-              <li className="text-xs text-[var(--color-text-navy)]/55">
+              <li className="text-xs text-navy/55">
                 + {waitlist.length - 5} more
               </li>
             )}

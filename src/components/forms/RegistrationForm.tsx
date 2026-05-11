@@ -5,6 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
+import type { z } from "zod";
 import {
   type ActionResult,
   registerOthersAction,
@@ -14,11 +15,14 @@ import type { DBTrackCapacity } from "@/lib/db/types";
 import { cn } from "@/lib/utils/cn";
 import {
   type OthersRegistrantInput,
-  type RegisterOthersInput,
   RegisterOthersSchema,
-  type RegistrationInput,
   RegistrationSchema,
 } from "@/lib/validation/schemas";
+
+// RHF works with the schema's INPUT shape (pre-transform). The action then
+// re-parses to get the OUTPUT shape on the server.
+type RegistrationFormValues = z.input<typeof RegistrationSchema>;
+type RegisterOthersFormValues = z.input<typeof RegisterOthersSchema>;
 
 interface Props {
   tracks: DBTrackCapacity[];
@@ -32,7 +36,7 @@ export function RegistrationForm({ tracks }: Props) {
   const initialTrack = searchParams.get("track")?.toUpperCase();
 
   return (
-    <div className="rounded-3xl border border-[var(--color-text-navy)]/8 bg-white p-6 sm:p-8 shadow-[var(--shadow-card)]">
+    <div className="rounded-3xl border border-navy/8 bg-white p-6 sm:p-8 shadow-card">
       <ModeToggle mode={mode} setMode={setMode} />
       <div className="mt-8">
         {mode === "self" ? (
@@ -54,10 +58,10 @@ function ModeToggle({
 }) {
   return (
     <div>
-      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-primary-blue)]">
+      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
         Who are you registering for?
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2 rounded-full bg-[var(--color-neutral-cream-100)] p-1 max-w-md">
+      <div className="mt-3 grid grid-cols-2 gap-2 rounded-full bg-cream-100 p-1 max-w-md">
         <button
           type="button"
           onClick={() => setMode("self")}
@@ -65,8 +69,8 @@ function ModeToggle({
           className={cn(
             "rounded-full px-4 py-2.5 font-display text-sm font-semibold transition",
             mode === "self"
-              ? "bg-white text-[var(--color-text-navy)] shadow-sm"
-              : "text-[var(--color-text-navy)]/60 hover:text-[var(--color-text-navy)]",
+              ? "bg-white text-navy shadow-sm"
+              : "text-navy/60 hover:text-navy",
           )}
         >
           Myself
@@ -78,8 +82,8 @@ function ModeToggle({
           className={cn(
             "rounded-full px-4 py-2.5 font-display text-sm font-semibold transition",
             mode === "others"
-              ? "bg-white text-[var(--color-text-navy)] shadow-sm"
-              : "text-[var(--color-text-navy)]/60 hover:text-[var(--color-text-navy)]",
+              ? "bg-white text-navy shadow-sm"
+              : "text-navy/60 hover:text-navy",
           )}
         >
           Someone else
@@ -115,7 +119,7 @@ function SelfForm({
     formState: { errors },
     setValue,
     watch,
-  } = useForm<RegistrationInput>({
+  } = useForm<RegistrationFormValues>({
     resolver: zodResolver(RegistrationSchema),
     defaultValues: {
       track_code: initialTrack ?? tracks.find((t) => !t.is_full)?.code ?? "",
@@ -181,14 +185,14 @@ function SelfForm({
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5">
       {duplicate && (
-        <div className="rounded-2xl border border-[var(--color-warm-gold)]/30 bg-[var(--color-warm-gold)]/8 p-4">
-          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-warm-gold-600)]">
+        <div className="rounded-2xl border border-gold/30 bg-gold/8 p-4">
+          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-gold-600">
             You're already registered
           </div>
-          <div className="mt-1 font-display text-sm font-semibold text-[var(--color-text-navy)]">
+          <div className="mt-1 font-display text-sm font-semibold text-navy">
             {duplicate.fullName} · {duplicate.trackName}
           </div>
-          <div className="mt-1 font-mono text-sm text-[var(--color-text-navy)]/70">
+          <div className="mt-1 font-mono text-sm text-navy/70">
             {duplicate.referenceNumber}
           </div>
         </div>
@@ -263,20 +267,16 @@ function SelfForm({
         </select>
       </Field>
 
-      {serverError && (
-        <p className="text-sm text-[var(--color-accent-coral)]">
-          {serverError}
-        </p>
-      )}
+      {serverError && <p className="text-sm text-coral">{serverError}</p>}
 
       <div className="mt-2 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-        <p className="text-xs text-[var(--color-text-navy)]/55">
+        <p className="text-xs text-navy/55">
           We use your details only for SkillUp 1.0 communications.
         </p>
         <button
           type="submit"
           disabled={pending || Boolean(duplicate)}
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-primary-blue)] px-7 font-display font-semibold text-white shadow-[var(--shadow-lift)] transition hover:bg-[var(--color-primary-blue-700)] disabled:opacity-60"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-7 font-display font-semibold text-white shadow-lift transition hover:bg-primary-700 disabled:opacity-60"
         >
           {pending ? "Registering…" : "Confirm registration"}
         </button>
@@ -307,7 +307,7 @@ function OthersForm({
     formState: { errors },
     setValue,
     watch,
-  } = useForm<RegisterOthersInput>({
+  } = useForm<RegisterOthersFormValues>({
     resolver: zodResolver(RegisterOthersSchema),
     defaultValues: {
       registrants: [
@@ -339,10 +339,10 @@ function OthersForm({
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-7">
       <div>
-        <div className="font-display text-lg font-semibold text-[var(--color-text-navy)]">
+        <div className="font-display text-lg font-semibold text-navy">
           Your details
         </div>
-        <p className="text-sm text-[var(--color-text-navy)]/60 mt-1">
+        <p className="text-sm text-navy/60 mt-1">
           So we have a point of contact for the people you’re registering.
         </p>
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -401,11 +401,11 @@ function OthersForm({
         </div>
       </div>
 
-      <div className="border-t border-[var(--color-text-navy)]/8 pt-7">
-        <div className="font-display text-lg font-semibold text-[var(--color-text-navy)]">
+      <div className="border-t border-navy/8 pt-7">
+        <div className="font-display text-lg font-semibold text-navy">
           People you’re registering
         </div>
-        <p className="text-sm text-[var(--color-text-navy)]/60 mt-1">
+        <p className="text-sm text-navy/60 mt-1">
           Add as many as you like, up to 20 in one submission.
         </p>
 
@@ -435,27 +435,23 @@ function OthersForm({
               track_code: tracks.find((t) => !t.is_full)?.code ?? "",
             } as OthersRegistrantInput)
           }
-          className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--color-text-navy)]/15 bg-white px-4 py-2 font-display text-sm font-semibold text-[var(--color-text-navy)] hover:bg-[var(--color-neutral-cream-100)]"
+          className="mt-4 inline-flex items-center gap-2 rounded-full border border-navy/15 bg-white px-4 py-2 font-display text-sm font-semibold text-navy hover:bg-cream-100"
         >
           <Plus className="h-4 w-4" aria-hidden /> Add another person
         </button>
       </div>
 
-      {serverError && (
-        <p className="text-sm text-[var(--color-accent-coral)]">
-          {serverError}
-        </p>
-      )}
+      {serverError && <p className="text-sm text-coral">{serverError}</p>}
 
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-        <p className="text-xs text-[var(--color-text-navy)]/55">
+        <p className="text-xs text-navy/55">
           You receive a summary email; each person with an email gets their own
           confirmation.
         </p>
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--color-primary-blue)] px-7 font-display font-semibold text-white shadow-[var(--shadow-lift)] transition hover:bg-[var(--color-primary-blue-700)] disabled:opacity-60"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-7 font-display font-semibold text-white shadow-lift transition hover:bg-primary-700 disabled:opacity-60"
         >
           {pending
             ? "Registering…"
@@ -477,26 +473,26 @@ function RegistrantBlock({
 }: {
   index: number;
   tracks: DBTrackCapacity[];
-  register: ReturnType<typeof useForm<RegisterOthersInput>>["register"];
-  setValue: ReturnType<typeof useForm<RegisterOthersInput>>["setValue"];
-  watch: ReturnType<typeof useForm<RegisterOthersInput>>["watch"];
+  register: ReturnType<typeof useForm<RegisterOthersFormValues>>["register"];
+  setValue: ReturnType<typeof useForm<RegisterOthersFormValues>>["setValue"];
+  watch: ReturnType<typeof useForm<RegisterOthersFormValues>>["watch"];
   errors: ReturnType<
-    typeof useForm<RegisterOthersInput>
+    typeof useForm<RegisterOthersFormValues>
   >["formState"]["errors"];
   onRemove?: () => void;
 }) {
   const rErr = errors.registrants?.[index];
   return (
-    <div className="rounded-2xl border border-[var(--color-text-navy)]/8 bg-[var(--color-neutral-cream)] p-5">
+    <div className="rounded-2xl border border-navy/8 bg-cream p-5">
       <div className="flex items-center justify-between">
-        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-primary-blue)]">
+        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
           Registrant {index + 1}
         </div>
         {onRemove && (
           <button
             type="button"
             onClick={onRemove}
-            className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs text-[var(--color-text-navy)]/60 hover:text-[var(--color-accent-coral)]"
+            className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs text-navy/60 hover:text-coral"
           >
             <Trash2 className="h-3.5 w-3.5" aria-hidden /> Remove
           </button>
@@ -588,15 +584,11 @@ function Field({
   return (
     // biome-ignore lint/a11y/noLabelWithoutControl: the input is the children prop — nested-input pattern is valid.
     <label className={cn("flex flex-col gap-1.5", wide && "sm:col-span-2")}>
-      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-navy)]/60">
+      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/60">
         {label}
       </span>
       {children}
-      {error && (
-        <span className="text-xs text-[var(--color-accent-coral)]">
-          {error}
-        </span>
-      )}
+      {error && <span className="text-xs text-coral">{error}</span>}
     </label>
   );
 }

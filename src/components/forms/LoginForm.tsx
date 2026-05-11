@@ -47,7 +47,7 @@ export function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1.5">
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-navy)]/60">
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/60">
           Email
         </span>
         <input
@@ -57,13 +57,11 @@ export function LoginForm() {
           {...register("email")}
         />
         {errors.email && (
-          <span className="text-xs text-[var(--color-accent-coral)]">
-            {errors.email.message}
-          </span>
+          <span className="text-xs text-coral">{errors.email.message}</span>
         )}
       </label>
       <label className="flex flex-col gap-1.5">
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-navy)]/60">
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/60">
           Password
         </span>
         <input
@@ -73,20 +71,14 @@ export function LoginForm() {
           {...register("password")}
         />
         {errors.password && (
-          <span className="text-xs text-[var(--color-accent-coral)]">
-            {errors.password.message}
-          </span>
+          <span className="text-xs text-coral">{errors.password.message}</span>
         )}
       </label>
-      {serverError && (
-        <p className="text-sm text-[var(--color-accent-coral)]">
-          {serverError}
-        </p>
-      )}
+      {serverError && <p className="text-sm text-coral">{serverError}</p>}
       <button
         type="submit"
         disabled={pending}
-        className="mt-2 inline-flex h-12 items-center justify-center rounded-full bg-[var(--color-primary-blue)] px-7 font-display font-semibold text-white shadow-[var(--shadow-card)] hover:bg-[var(--color-primary-blue-700)] disabled:opacity-60"
+        className="mt-2 inline-flex h-12 items-center justify-center rounded-full bg-primary px-7 font-display font-semibold text-white shadow-card hover:bg-primary-700 disabled:opacity-60"
       >
         {pending ? "Signing in…" : "Sign in"}
       </button>

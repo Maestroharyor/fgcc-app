@@ -121,17 +121,17 @@ export const FeedbackSchema = z.object({
       /^SKU-[A-Z]{2,4}-\d{1,5}$/,
       "Enter a valid reference like SKU-UXD-001",
     ),
-  overall_rating: z.coerce
+  overall_rating: z
     .number({ message: "Give us a rating from 1 to 5" })
     .int()
     .min(1, "Rating must be between 1 and 5")
     .max(5, "Rating must be between 1 and 5"),
-  track_rating: z.coerce
+  track_rating: z
     .number({ message: "Rate your track from 1 to 5" })
     .int()
     .min(1, "Rating must be between 1 and 5")
     .max(5, "Rating must be between 1 and 5"),
-  facilitator_rating: z.coerce
+  facilitator_rating: z
     .number({ message: "Rate your facilitator from 1 to 5" })
     .int()
     .min(1, "Rating must be between 1 and 5")
@@ -144,7 +144,7 @@ export const FeedbackSchema = z.object({
     })
     .optional(),
   testimony: optionalString,
-  share_as_testimonial: z.coerce.boolean().optional().default(false),
+  share_as_testimonial: z.boolean().optional().default(false),
 });
 
 export type FeedbackInput = z.infer<typeof FeedbackSchema>;

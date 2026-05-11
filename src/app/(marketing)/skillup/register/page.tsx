@@ -40,20 +40,20 @@ export default async function RegisterPage() {
     <div className="px-6 sm:px-10 py-12 sm:py-16">
       <div className="mx-auto max-w-3xl">
         <div className="flex flex-col gap-2">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[var(--color-primary-blue)]/15 bg-[var(--color-primary-blue)]/5 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary-blue)]">
+          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
             Registration
           </span>
-          <h1 className="font-display text-3xl sm:text-5xl font-semibold tracking-tight text-[var(--color-text-navy)] leading-tight">
+          <h1 className="font-display text-3xl sm:text-5xl font-semibold tracking-tight text-navy leading-tight">
             Save your seat at SkillUp 1.0.
           </h1>
-          <p className="mt-2 text-base sm:text-lg text-[var(--color-text-navy)]/70 max-w-2xl">
+          <p className="mt-2 text-base sm:text-lg text-navy/70 max-w-2xl">
             Free to attend. One track, three days, real income skill. Fill the
             short form below — confirmation lands in your inbox in seconds.
           </p>
         </div>
 
         <div className="mt-6 flex items-center gap-4">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-navy)]/55">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-navy/55">
             Time to event
           </span>
           <CountdownTimer
@@ -74,17 +74,17 @@ export default async function RegisterPage() {
 
 function FormSkeleton() {
   return (
-    <div className="rounded-3xl border border-[var(--color-text-navy)]/8 bg-white p-8 shadow-[var(--shadow-card)] animate-pulse">
-      <div className="h-4 w-40 bg-[var(--color-text-navy)]/10 rounded" />
+    <div className="rounded-3xl border border-navy/8 bg-white p-8 shadow-card animate-pulse">
+      <div className="h-4 w-40 bg-navy/10 rounded" />
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
         {["name", "email", "phone", "church", "gender", "age"].map((key) => (
           <div
             key={`skeleton-field-${key}`}
-            className="h-11 rounded-xl bg-[var(--color-text-navy)]/6"
+            className="h-11 rounded-xl bg-navy/6"
           />
         ))}
       </div>
-      <div className="mt-6 h-12 w-48 rounded-full bg-[var(--color-text-navy)]/10 ml-auto" />
+      <div className="mt-6 h-12 w-48 rounded-full bg-navy/10 ml-auto" />
     </div>
   );
 }

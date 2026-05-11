@@ -59,10 +59,10 @@ export default async function AdminDashboardPage() {
   return (
     <div className="px-6 md:px-10 py-10">
       <div className="flex flex-col gap-1">
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary-blue)]">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
           Overview
         </span>
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-[var(--color-text-navy)]">
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-navy">
           SkillUp 1.0 — live snapshot
         </h1>
       </div>
@@ -105,16 +105,16 @@ export default async function AdminDashboardPage() {
               return (
                 <div key={c.id} className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-display font-medium text-[var(--color-text-navy)]">
+                    <span className="font-display font-medium text-navy">
                       {c.name}
                     </span>
-                    <span className="font-mono text-xs text-[var(--color-text-navy)]/60">
+                    <span className="font-mono text-xs text-navy/60">
                       {c.current_count} / {c.capacity}
                     </span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-[var(--color-text-navy)]/8">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-navy/8">
                     <div
-                      className="h-full rounded-full bg-[var(--color-primary-blue)]"
+                      className="h-full rounded-full bg-primary"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -122,7 +122,7 @@ export default async function AdminDashboardPage() {
               );
             })}
             {capacity.length === 0 && (
-              <p className="text-sm text-[var(--color-text-navy)]/55">
+              <p className="text-sm text-navy/55">
                 No tracks yet. Apply the 002 seed migration to populate them.
               </p>
             )}
@@ -135,7 +135,7 @@ export default async function AdminDashboardPage() {
           action={
             <Link
               href="/admin/registrations"
-              className="inline-flex items-center gap-1 font-display text-xs font-semibold text-[var(--color-primary-blue)]"
+              className="inline-flex items-center gap-1 font-display text-xs font-semibold text-primary"
             >
               View all <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
             </Link>
@@ -143,25 +143,23 @@ export default async function AdminDashboardPage() {
         >
           <div className="flex flex-col gap-2">
             {recent.length === 0 && (
-              <p className="text-sm text-[var(--color-text-navy)]/55">
-                No registrations yet.
-              </p>
+              <p className="text-sm text-navy/55">No registrations yet.</p>
             )}
             {recent.map((r) => (
               <Link
                 key={r.id}
                 href={`/admin/registrations/${r.id}`}
-                className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-text-navy)]/8 bg-white px-3 py-2 hover:bg-[var(--color-neutral-cream-100)]"
+                className="flex items-center justify-between gap-3 rounded-lg border border-navy/8 bg-white px-3 py-2 hover:bg-cream-100"
               >
                 <div className="min-w-0">
-                  <div className="truncate font-display text-sm font-medium text-[var(--color-text-navy)]">
+                  <div className="truncate font-display text-sm font-medium text-navy">
                     {r.full_name}
                   </div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-navy)]/55">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/55">
                     {r.reference_number}
                   </div>
                 </div>
-                <div className="text-right text-xs text-[var(--color-text-navy)]/60 shrink-0">
+                <div className="text-right text-xs text-navy/60 shrink-0">
                   {new Date(r.created_at ?? "").toLocaleDateString()}
                 </div>
               </Link>
@@ -185,15 +183,14 @@ function StatCard({
   tone: "blue" | "gold" | "coral" | "navy";
 }) {
   const map = {
-    blue: "from-[var(--color-primary-blue)]/8 text-[var(--color-primary-blue)]",
-    gold: "from-[var(--color-warm-gold)]/12 text-[var(--color-warm-gold-600)]",
-    coral:
-      "from-[var(--color-accent-coral)]/8 text-[var(--color-accent-coral)]",
-    navy: "from-[var(--color-text-navy)]/6 text-[var(--color-text-navy)]",
+    blue: "from-primary/8 text-primary",
+    gold: "from-gold/12 text-gold-600",
+    coral: "from-coral/8 text-coral",
+    navy: "from-navy/6 text-navy",
   };
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border border-[var(--color-text-navy)]/8 bg-white p-5 shadow-[var(--shadow-card)] bg-gradient-to-br ${map[tone]} to-transparent`}
+      className={`relative overflow-hidden rounded-2xl border border-navy/8 bg-white p-5 shadow-card bg-linear-to-br ${map[tone]} to-transparent`}
     >
       <div className="flex items-center justify-between">
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] opacity-80">
@@ -201,7 +198,7 @@ function StatCard({
         </span>
         <Icon className="h-4 w-4 opacity-60" aria-hidden />
       </div>
-      <div className="mt-3 font-display text-3xl font-semibold tracking-tight text-[var(--color-text-navy)]">
+      <div className="mt-3 font-display text-3xl font-semibold tracking-tight text-navy">
         {value}
       </div>
     </div>
@@ -220,17 +217,13 @@ function Panel({
   action?: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-[var(--color-text-navy)]/8 bg-white p-6 shadow-[var(--shadow-card)]">
+    <section className="rounded-2xl border border-navy/8 bg-white p-6 shadow-card">
       <header className="mb-5 flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-lg font-semibold text-[var(--color-text-navy)]">
+          <h2 className="font-display text-lg font-semibold text-navy">
             {title}
           </h2>
-          {subtitle && (
-            <p className="text-xs text-[var(--color-text-navy)]/55">
-              {subtitle}
-            </p>
-          )}
+          {subtitle && <p className="text-xs text-navy/55">{subtitle}</p>}
         </div>
         {action}
       </header>

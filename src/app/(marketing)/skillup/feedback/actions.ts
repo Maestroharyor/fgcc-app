@@ -1,6 +1,6 @@
 "use server";
 
-import { ZodError } from "zod";
+import { ZodError, type z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { type FeedbackInput, FeedbackSchema } from "@/lib/validation/schemas";
 
@@ -9,8 +9,10 @@ export interface FeedbackActionResult {
   message?: string;
 }
 
+// Accept the schema's INPUT shape — callers (the RHF form) hand us values
+// before transforms run. We parse internally to get the OUTPUT shape.
 export async function submitFeedbackAction(
-  payload: FeedbackInput,
+  payload: z.input<typeof FeedbackSchema>,
 ): Promise<FeedbackActionResult> {
   let parsed: FeedbackInput;
   try {

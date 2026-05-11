@@ -78,19 +78,18 @@ function Stat({
   tone: "blue" | "gold" | "coral";
 }) {
   const toneClasses = {
-    blue: "from-[var(--color-primary-blue)]/8 to-[var(--color-primary-blue)]/0 text-[var(--color-primary-blue)]",
-    gold: "from-[var(--color-warm-gold)]/12 to-[var(--color-warm-gold)]/0 text-[var(--color-warm-gold-600)]",
-    coral:
-      "from-[var(--color-accent-coral)]/8 to-[var(--color-accent-coral)]/0 text-[var(--color-accent-coral)]",
+    blue: "from-primary/8 to-primary/0 text-primary",
+    gold: "from-gold/12 to-gold/0 text-gold-600",
+    coral: "from-coral/8 to-coral/0 text-coral",
   }[tone];
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border border-[var(--color-text-navy)]/8 bg-white p-6 shadow-[var(--shadow-card)] bg-gradient-to-br ${toneClasses}`}
+      className={`relative overflow-hidden rounded-2xl border border-navy/8 bg-white p-6 shadow-card bg-linear-to-br ${toneClasses}`}
     >
       <div className="font-mono text-[10px] uppercase tracking-[0.2em] opacity-80">
         {label}
       </div>
-      <div className="mt-2 font-display text-5xl font-semibold tracking-tight text-[var(--color-text-navy)]">
+      <div className="mt-2 font-display text-5xl font-semibold tracking-tight text-navy">
         {value}
       </div>
     </div>
@@ -123,21 +122,21 @@ function TracksSection({
       eyebrow="The 20 tracks"
       title="Pick the skill you want to walk away with."
       description="Each track runs for the full three days, led by a facilitator already practising professionally. Choose one and go deep."
-      className="bg-[var(--color-neutral-cream-100)]"
+      className="bg-cream-100"
     >
       <div className="flex flex-col gap-12">
         {groups.map(({ category, tracks }) => (
           <div key={category}>
             <div className="mb-6 flex items-baseline justify-between gap-3 flex-wrap">
               <div>
-                <h3 className="font-display text-2xl font-semibold tracking-tight text-[var(--color-text-navy)]">
+                <h3 className="font-display text-2xl font-semibold tracking-tight text-navy">
                   {CATEGORY_LABELS[category]}
                 </h3>
-                <p className="text-sm text-[var(--color-text-navy)]/65">
+                <p className="text-sm text-navy/65">
                   {CATEGORY_BLURB[category]}
                 </p>
               </div>
-              <span className="font-mono text-xs uppercase tracking-[0.18em] text-[var(--color-text-navy)]/45">
+              <span className="font-mono text-xs uppercase tracking-[0.18em] text-navy/45">
                 {tracks.length} tracks
               </span>
             </div>
@@ -191,7 +190,7 @@ function FacilitatorsSection() {
       eyebrow="Facilitators"
       title="Practitioners who do the work."
       description="Every track is led by a practitioner — many running businesses or shipping work in this exact field today."
-      className="bg-[var(--color-neutral-cream-100)]"
+      className="bg-cream-100"
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {TRACKS.map((track) => (
@@ -214,30 +213,28 @@ function ScheduleSection() {
         {SCHEDULE.map((day) => (
           <div
             key={day.label}
-            className="rounded-2xl border border-[var(--color-text-navy)]/8 bg-white p-6 shadow-[var(--shadow-card)]"
+            className="rounded-2xl border border-navy/8 bg-white p-6 shadow-card"
           >
-            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary-blue)]">
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
               {day.label}
             </div>
-            <div className="mt-1 font-display text-lg font-semibold text-[var(--color-text-navy)]">
+            <div className="mt-1 font-display text-lg font-semibold text-navy">
               {day.date}
             </div>
-            <div className="mt-1 text-sm text-[var(--color-text-navy)]/65">
-              {day.theme}
-            </div>
+            <div className="mt-1 text-sm text-navy/65">{day.theme}</div>
             <ul className="mt-5 flex flex-col gap-4">
               {day.blocks.map((block) => (
                 <li
                   key={`${day.label}-${block.title}`}
-                  className="flex flex-col gap-1 border-l-2 border-[var(--color-warm-gold)]/40 pl-3"
+                  className="flex flex-col gap-1 border-l-2 border-gold/40 pl-3"
                 >
-                  <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-navy)]/55">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/55">
                     {block.time}
                   </span>
-                  <span className="font-display text-sm font-semibold text-[var(--color-text-navy)]">
+                  <span className="font-display text-sm font-semibold text-navy">
                     {block.title}
                   </span>
-                  <span className="text-xs text-[var(--color-text-navy)]/65 leading-relaxed">
+                  <span className="text-xs text-navy/65 leading-relaxed">
                     {block.description}
                   </span>
                 </li>
@@ -257,7 +254,7 @@ function FAQSection() {
       eyebrow="Questions"
       title="The things people usually ask."
       description="Still curious about something? Reach us at skillup@fgccement.org."
-      className="bg-[var(--color-neutral-cream-100)]"
+      className="bg-cream-100"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {FAQS.map((faq) => (
@@ -271,7 +268,7 @@ function FAQSection() {
 function FinalCTA() {
   return (
     <section className="px-6 sm:px-10 py-20">
-      <div className="mx-auto max-w-6xl rounded-3xl bg-[var(--color-primary-blue)] p-10 sm:p-16 text-center text-white shadow-[var(--shadow-lift)]">
+      <div className="mx-auto max-w-6xl rounded-3xl bg-primary p-10 sm:p-16 text-center text-white shadow-lift">
         <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/80">
           Free admission
         </span>
@@ -284,7 +281,7 @@ function FinalCTA() {
         </p>
         <Link
           href="/skillup/register"
-          className="mt-8 inline-flex h-14 items-center justify-center gap-2 rounded-full bg-[var(--color-warm-gold)] px-8 font-display font-semibold text-white shadow-[var(--shadow-lift)] transition hover:bg-[var(--color-warm-gold-600)]"
+          className="mt-8 inline-flex h-14 items-center justify-center gap-2 rounded-full bg-gold px-8 font-display font-semibold text-white shadow-lift transition hover:bg-gold-600"
         >
           Register your spot
           <ArrowRight className="h-4 w-4" aria-hidden />

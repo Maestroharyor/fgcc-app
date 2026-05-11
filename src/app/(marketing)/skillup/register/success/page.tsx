@@ -41,14 +41,14 @@ export default async function SuccessPage({ searchParams }: PageProps) {
 
   return (
     <div className="px-6 sm:px-10 py-12 sm:py-20">
-      <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 sm:p-12 shadow-[var(--shadow-lift)] border border-[var(--color-text-navy)]/8">
-        <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary-blue)]">
+      <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 sm:p-12 shadow-lift border border-navy/8">
+        <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
           <CheckCircle2 className="h-4 w-4" aria-hidden /> Confirmed
         </div>
-        <h1 className="mt-3 font-display text-3xl sm:text-4xl font-semibold tracking-tight text-[var(--color-text-navy)]">
+        <h1 className="mt-3 font-display text-3xl sm:text-4xl font-semibold tracking-tight text-navy">
           You’re in, {firstName(registration.full_name)}.
         </h1>
-        <p className="mt-2 text-[var(--color-text-navy)]/70">
+        <p className="mt-2 text-navy/70">
           Your spot is locked for SkillUp 1.0 · June 12 – 14, 2026 at Cement
           Missionary HQ, Lagos. Screenshot this page — your QR code is your
           fast-pass at the door.
@@ -56,11 +56,11 @@ export default async function SuccessPage({ searchParams }: PageProps) {
 
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-6 items-center">
           <div>
-            <div className="rounded-2xl bg-[var(--color-neutral-cream-100)] p-5">
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-navy)]/55">
+            <div className="rounded-2xl bg-cream-100 p-5">
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-navy/55">
                 Reference number
               </div>
-              <div className="mt-1 font-mono text-2xl font-bold tracking-[0.04em] text-[var(--color-text-navy)]">
+              <div className="mt-1 font-mono text-2xl font-bold tracking-[0.04em] text-navy">
                 {registration.reference_number}
               </div>
             </div>
@@ -82,7 +82,7 @@ export default async function SuccessPage({ searchParams }: PageProps) {
             alt={`QR code for ${registration.reference_number}`}
             width={180}
             height={180}
-            className="rounded-2xl border border-[var(--color-text-navy)]/8 self-start"
+            className="rounded-2xl border border-navy/8 self-start"
           />
         </div>
 
@@ -92,7 +92,7 @@ export default async function SuccessPage({ searchParams }: PageProps) {
               href={staticTrack.whatsappUrl}
               target="_blank"
               rel="noreferrer noopener"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-primary-blue)] px-6 py-3 font-display font-semibold text-white shadow-[var(--shadow-card)] hover:bg-[var(--color-primary-blue-700)]"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 font-display font-semibold text-white shadow-card hover:bg-primary-700"
             >
               <MessageCircle className="h-4 w-4" aria-hidden />
               Join the WhatsApp group
@@ -100,14 +100,14 @@ export default async function SuccessPage({ searchParams }: PageProps) {
           )}
           <a
             href="/skillup#tracks"
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--color-text-navy)]/15 px-6 py-3 font-display font-semibold text-[var(--color-text-navy)] hover:bg-[var(--color-neutral-cream-100)]"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-navy/15 px-6 py-3 font-display font-semibold text-navy hover:bg-cream-100"
           >
             Back to programme
             <ArrowRight className="h-4 w-4" aria-hidden />
           </a>
         </div>
 
-        <p className="mt-6 text-xs text-[var(--color-text-navy)]/55">
+        <p className="mt-6 text-xs text-navy/55">
           A confirmation email with your QR is on the way to{" "}
           <strong>{registration.email}</strong>.
         </p>
@@ -125,15 +125,15 @@ async function BatchSuccess({ batchId }: { batchId: string }) {
     .maybeSingle();
   return (
     <div className="px-6 sm:px-10 py-12 sm:py-20">
-      <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 sm:p-12 shadow-[var(--shadow-lift)] border border-[var(--color-text-navy)]/8 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary-blue)]/8 px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary-blue)]">
+      <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 sm:p-12 shadow-lift border border-navy/8 text-center">
+        <div className="inline-flex items-center gap-2 rounded-full bg-primary/8 px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
           <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> Submitted
         </div>
-        <h1 className="mt-4 font-display text-3xl sm:text-4xl font-semibold tracking-tight text-[var(--color-text-navy)]">
+        <h1 className="mt-4 font-display text-3xl sm:text-4xl font-semibold tracking-tight text-navy">
           Thank you
           {data?.submitter_name ? `, ${firstName(data.submitter_name)}` : ""}.
         </h1>
-        <p className="mt-3 text-[var(--color-text-navy)]/70">
+        <p className="mt-3 text-navy/70">
           You registered {data?.total_registrants ?? "several"}{" "}
           {data?.total_registrants === 1 ? "person" : "people"} for SkillUp 1.0.
           A summary email with every reference code is on the way to your inbox
@@ -141,7 +141,7 @@ async function BatchSuccess({ batchId }: { batchId: string }) {
         </p>
         <a
           href="/skillup#tracks"
-          className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-primary-blue)] px-6 py-3 font-display font-semibold text-white hover:bg-[var(--color-primary-blue-700)]"
+          className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 font-display font-semibold text-white hover:bg-primary-700"
         >
           Back to programme
           <ArrowRight className="h-4 w-4" aria-hidden />
@@ -154,17 +154,17 @@ async function BatchSuccess({ batchId }: { batchId: string }) {
 function Fallback() {
   return (
     <div className="px-6 sm:px-10 py-20 text-center">
-      <div className="mx-auto max-w-md rounded-3xl bg-white p-10 shadow-[var(--shadow-card)] border border-[var(--color-text-navy)]/8">
-        <h1 className="font-display text-2xl font-semibold text-[var(--color-text-navy)]">
+      <div className="mx-auto max-w-md rounded-3xl bg-white p-10 shadow-card border border-navy/8">
+        <h1 className="font-display text-2xl font-semibold text-navy">
           Couldn’t find that reference.
         </h1>
-        <p className="mt-2 text-sm text-[var(--color-text-navy)]/65">
+        <p className="mt-2 text-sm text-navy/65">
           Try clicking the link in your confirmation email again, or register
           fresh.
         </p>
         <Link
           href="/skillup/register"
-          className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-primary-blue)] px-5 py-2.5 font-display font-semibold text-white hover:bg-[var(--color-primary-blue-700)]"
+          className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 font-display font-semibold text-white hover:bg-primary-700"
         >
           Go to registration
         </Link>
@@ -175,13 +175,11 @@ function Fallback() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-[var(--color-text-navy)]/6 last:border-b-0 pb-2 last:pb-0">
-      <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-navy)]/55">
+    <div className="flex items-center justify-between gap-4 border-b border-navy/6 last:border-b-0 pb-2 last:pb-0">
+      <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/55">
         {label}
       </dt>
-      <dd className="text-sm font-medium text-[var(--color-text-navy)] text-right">
-        {value}
-      </dd>
+      <dd className="text-sm font-medium text-navy text-right">{value}</dd>
     </div>
   );
 }

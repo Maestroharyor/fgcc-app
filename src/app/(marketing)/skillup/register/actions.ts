@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { ZodError } from "zod";
+import { ZodError, type z } from "zod";
 import { TRACKS_BY_CODE } from "@/content/tracks";
 import { nextWaitlistPosition } from "@/lib/db/waitlist";
 import {
@@ -192,7 +192,8 @@ export async function registerSelfAction(
 //  registerOthersAction — batch registration on behalf of others.
 // ─────────────────────────────────────────────────────────────────────────────
 export async function registerOthersAction(
-  payload: RegisterOthersInput,
+  // Accept the schema's INPUT shape — RHF passes pre-transform values.
+  payload: z.input<typeof RegisterOthersSchema>,
 ): Promise<ActionResult> {
   let parsed: RegisterOthersInput;
   try {

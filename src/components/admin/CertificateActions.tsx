@@ -51,7 +51,7 @@ export function CertificateActions({ reference, bulk }: Props) {
         type="button"
         onClick={onSend}
         disabled={pending}
-        className="inline-flex items-center gap-2 rounded-full bg-[var(--color-accent-coral)] px-4 py-2 font-display text-sm font-semibold text-white hover:bg-[var(--color-accent-coral)]/90 disabled:opacity-60"
+        className="inline-flex items-center gap-2 rounded-full bg-coral px-4 py-2 font-display text-sm font-semibold text-white hover:bg-coral/90 disabled:opacity-60"
       >
         <Mail className="h-4 w-4" aria-hidden />
         {pending ? "Sending…" : "Send to ALL attendees"}
@@ -65,7 +65,7 @@ export function CertificateActions({ reference, bulk }: Props) {
       <a
         href={`/api/admin/certificates/download?ref=${reference}`}
         download
-        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-text-navy)]/15 bg-white px-3 py-1 font-display text-xs font-semibold text-[var(--color-text-navy)] hover:bg-[var(--color-neutral-cream-100)]"
+        className="inline-flex items-center gap-1.5 rounded-full border border-navy/15 bg-white px-3 py-1 font-display text-xs font-semibold text-navy hover:bg-cream-100"
       >
         <Download className="h-3.5 w-3.5" aria-hidden /> PDF
       </a>
@@ -73,16 +73,12 @@ export function CertificateActions({ reference, bulk }: Props) {
         type="button"
         onClick={onSend}
         disabled={pending}
-        className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary-blue)]/8 px-3 py-1 font-display text-xs font-semibold text-[var(--color-primary-blue)] hover:bg-[var(--color-primary-blue)]/15 disabled:opacity-60"
+        className="inline-flex items-center gap-1.5 rounded-full bg-primary/8 px-3 py-1 font-display text-xs font-semibold text-primary hover:bg-primary/15 disabled:opacity-60"
       >
         <Mail className="h-3.5 w-3.5" aria-hidden />{" "}
         {pending ? "Sending…" : "Send"}
       </button>
-      {message && (
-        <span className="text-xs text-[var(--color-text-navy)]/60">
-          {message}
-        </span>
-      )}
+      {message && <span className="text-xs text-navy/60">{message}</span>}
     </div>
   );
 }

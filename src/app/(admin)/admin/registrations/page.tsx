@@ -64,13 +64,13 @@ export default async function RegistrationsPage({ searchParams }: PageProps) {
     <div className="px-6 md:px-10 py-10">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary-blue)]">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
             Records
           </span>
-          <h1 className="font-display text-3xl font-semibold tracking-tight text-[var(--color-text-navy)]">
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-navy">
             Registrations
           </h1>
-          <p className="text-sm text-[var(--color-text-navy)]/65">
+          <p className="text-sm text-navy/65">
             {total.toLocaleString()} total · search and filter to slice.
           </p>
         </div>
@@ -120,7 +120,7 @@ export default async function RegistrationsPage({ searchParams }: PageProps) {
         </select>
         <button
           type="submit"
-          className="rounded-full bg-[var(--color-primary-blue)] px-5 py-2.5 font-display text-sm font-semibold text-white hover:bg-[var(--color-primary-blue-700)]"
+          className="rounded-full bg-primary px-5 py-2.5 font-display text-sm font-semibold text-white hover:bg-primary-700"
         >
           Apply
         </button>

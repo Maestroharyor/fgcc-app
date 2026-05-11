@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
         value: (r) => new Date(r.created_at),
       },
     ]);
-    return new NextResponse(buf, {
+    return new NextResponse(new Uint8Array(buf), {
       status: 200,
       headers: {
         "Content-Type":
@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
         },
       ],
     );
-    return new NextResponse(buf, {
+    return new NextResponse(new Uint8Array(buf), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
