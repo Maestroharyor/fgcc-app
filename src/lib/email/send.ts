@@ -46,7 +46,7 @@ async function dispatch<P>({
 }: SendArgs<P>): Promise<{ ok: boolean; error?: string }> {
   if (!isEmailConfigured()) {
     console.warn(
-      `[email] Skipping send to ${Array.isArray(to) ? to.join(",") : to} — Resend not configured.`,
+      `[email] Skipping send to ${Array.isArray(to) ? to.join(",") : to} - Resend not configured.`,
     );
     return { ok: false, error: "resend-not-configured" };
   }
@@ -73,7 +73,7 @@ export function sendConfirmationEmail(
 ) {
   return dispatch({
     to,
-    subject: `You're in — SkillUp 1.0 · ${props.trackName}`,
+    subject: `You're in - SkillUp 1.0 · ${props.trackName}`,
     Component: ConfirmationEmail,
     props,
   });
@@ -85,7 +85,7 @@ export function sendSubmitterSummaryEmail(
 ) {
   return dispatch({
     to,
-    subject: `Registration confirmed — you registered ${props.registrants.length} people for SkillUp 1.0`,
+    subject: `Registration confirmed - you registered ${props.registrants.length} people for SkillUp 1.0`,
     Component: SubmitterSummaryEmail,
     props,
   });
@@ -113,7 +113,7 @@ export function sendWaitlistConfirmEmail(
 ) {
   return dispatch({
     to,
-    subject: `You're on the waitlist — SkillUp 1.0 · ${props.trackName}`,
+    subject: `You're on the waitlist - SkillUp 1.0 · ${props.trackName}`,
     Component: WaitlistConfirmEmail,
     props,
   });
@@ -125,7 +125,7 @@ export function sendWaitlistOfferEmail(
 ) {
   return dispatch({
     to,
-    subject: `A spot just opened — SkillUp 1.0 · ${props.trackName}`,
+    subject: `A spot just opened - SkillUp 1.0 · ${props.trackName}`,
     Component: WaitlistOfferEmail,
     props,
   });
@@ -137,7 +137,7 @@ export function sendReminder3DayEmail(
 ) {
   return dispatch({
     to,
-    subject: `SkillUp 1.0 is in 3 days — ${props.trackName}`,
+    subject: `SkillUp 1.0 is in 3 days - ${props.trackName}`,
     Component: Reminder3DayEmail,
     props,
   });

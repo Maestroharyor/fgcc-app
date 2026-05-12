@@ -4,7 +4,7 @@ import { env } from "@/lib/utils/env";
 
 /**
  * Supabase client for Route Handlers. Can both read and write cookies.
- * Falls back to a placeholder URL when env is missing so the route compiles —
+ * Falls back to a placeholder URL when env is missing so the route compiles -
  * queries through it will surface as `{ error }` for downstream handlers.
  */
 export async function createSupabaseRouteClient() {

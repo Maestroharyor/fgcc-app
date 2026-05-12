@@ -66,7 +66,7 @@ async function resolveTrack(code: string) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  registerSelfAction — single registration via the public form.
+//  registerSelfAction - single registration via the public form.
 // ─────────────────────────────────────────────────────────────────────────────
 export async function registerSelfAction(
   formData: FormData,
@@ -80,7 +80,7 @@ export async function registerSelfAction(
 
   const supabase = await createSupabaseServerClient();
 
-  // Dedupe by email — return existing reference if any.
+  // Dedupe by email - return existing reference if any.
   const { data: existing } = await supabase
     .from("registrations")
     .select("reference_number")
@@ -127,7 +127,7 @@ export async function registerSelfAction(
     return {
       ok: false,
       error: "waitlisted",
-      message: "Track is full — you're on the waitlist.",
+      message: "Track is full - you're on the waitlist.",
     };
   }
 
@@ -157,7 +157,7 @@ export async function registerSelfAction(
 
   const ref = inserted.reference_number;
 
-  // Fire-and-forget emails — we don't block the redirect.
+  // Fire-and-forget emails - we don't block the redirect.
   const qr = await qrDataUrl(ref).catch(() => "");
   await Promise.allSettled([
     sendConfirmationEmail(parsed.email, {
@@ -190,10 +190,10 @@ export async function registerSelfAction(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  registerOthersAction — batch registration on behalf of others.
+//  registerOthersAction - batch registration on behalf of others.
 // ─────────────────────────────────────────────────────────────────────────────
 export async function registerOthersAction(
-  // Accept the schema's INPUT shape — RHF passes pre-transform values.
+  // Accept the schema's INPUT shape - RHF passes pre-transform values.
   payload: z.input<typeof RegisterOthersSchema>,
 ): Promise<ActionResult> {
   let parsed: RegisterOthersInput;
@@ -273,7 +273,7 @@ export async function registerOthersAction(
       continue;
     }
 
-    // Synthesise a unique placeholder email when none provided — the DB
+    // Synthesise a unique placeholder email when none provided - the DB
     // requires a unique email per row.
     const emailToUse =
       r.email ??

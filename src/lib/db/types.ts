@@ -2,7 +2,7 @@
  * Hand-typed mirrors of the Supabase row shapes for the DB-backed tables.
  *
  * Track metadata, FAQs, schedule, zone-churches all live in `src/content/*.ts`
- * — they're source-controlled and never round-trip through the DB.
+ * - they're source-controlled and never round-trip through the DB.
  *
  * Generate via `bunx supabase gen types typescript --project-id <id>` once
  * Supabase is connected, and replace this file.
@@ -41,7 +41,7 @@ export interface DBRegistration {
   gender: Gender;
   age_group: AgeGroup;
   church: string | null;
-  /** 3-letter code from `src/content/tracks.ts` — e.g. "UXD", "CWD". */
+  /** 3-letter code from `src/content/tracks.ts` - e.g. "UXD", "CWD". */
   track_code: string;
   registered_via: RegistrationVia;
   batch_id: string | null;
@@ -92,7 +92,7 @@ export interface DBUserRole {
 
 /**
  * Derived shape (static track metadata + live count). Built in code by
- * `withCapacity(counts)` in `src/lib/db/tracks.ts` — never fetched directly.
+ * `withCapacity(counts)` in `src/lib/db/tracks.ts` - never fetched directly.
  */
 export interface TrackWithCapacity {
   code: string;

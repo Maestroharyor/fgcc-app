@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { CheckinForm } from "@/components/admin/CheckinForm";
 import { requireRole } from "@/lib/auth/require-role";
 import { countAttended } from "@/lib/db/registrations";
@@ -13,15 +14,10 @@ export const metadata: Metadata = {
 
 export default async function CheckinPage() {
   await requireRole("admin");
-  const supabase = await createSupabaseServerClient();
-  const [attended, { count: total }] = await Promise.all([
-    countAttended(),
-    supabase.from("registrations").select("*", { count: "exact", head: true }),
-  ]);
 
   return (
     <div className="px-6 md:px-10 py-10">
-      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+      <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
         Event day
       </span>
       <h1 className="font-display text-3xl font-semibold tracking-tight text-navy">
@@ -34,22 +30,45 @@ export default async function CheckinPage() {
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         <CheckinForm />
-        <aside className="rounded-3xl border border-navy/8 bg-white p-6 shadow-card">
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
-            Tally
-          </div>
-          <div className="mt-2 font-display text-5xl font-semibold text-navy">
-            {attended}
-            <span className="text-2xl text-navy/40">
-              {" / "}
-              {total ?? "—"}
-            </span>
-          </div>
-          <p className="mt-2 text-xs text-navy/55">
-            People marked present so far.
-          </p>
-        </aside>
+        <Suspense fallback={<TallySkeleton />}>
+          <TallyAside />
+        </Suspense>
       </div>
     </div>
+  );
+}
+
+async function TallyAside() {
+  const supabase = await createSupabaseServerClient();
+  const [attended, { count: total }] = await Promise.all([
+    countAttended(),
+    supabase.from("registrations").select("*", { count: "exact", head: true }),
+  ]);
+  return (
+    <aside className="rounded-3xl border border-navy/8 bg-white p-6 shadow-card">
+      <div className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
+        Tally
+      </div>
+      <div className="mt-2 font-display text-5xl font-semibold text-navy">
+        {attended}
+        <span className="text-2xl text-navy/40">
+          {" / "}
+          {total ?? "-"}
+        </span>
+      </div>
+      <p className="mt-2 text-xs text-navy/55">People marked present so far.</p>
+    </aside>
+  );
+}
+
+function TallySkeleton() {
+  return (
+    <aside className="rounded-3xl border border-navy/8 bg-white p-6 shadow-card">
+      <div className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
+        Tally
+      </div>
+      <div className="mt-2 h-12 w-32 rounded-md bg-navy/8 animate-pulse" />
+      <p className="mt-2 text-xs text-navy/55">People marked present so far.</p>
+    </aside>
   );
 }

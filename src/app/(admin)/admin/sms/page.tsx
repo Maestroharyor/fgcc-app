@@ -10,10 +10,10 @@ export const metadata: Metadata = {
 
 export default async function AdminSMSPage() {
   await requireRole("superadmin");
-  // No data to fetch — tracks are static, no Suspense needed.
+  // No data to fetch - tracks are static, no Suspense needed.
   return (
     <div className="px-6 md:px-10 py-10">
-      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+      <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
         Superadmin · SMS
       </span>
       <h1 className="font-display text-3xl font-semibold tracking-tight text-navy">

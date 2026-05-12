@@ -38,7 +38,7 @@ export function CheckinForm() {
     <div className="rounded-3xl border border-navy/8 bg-white p-6 sm:p-8 shadow-card">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5">
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/60">
+          <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
             Reference number
           </span>
           <div className="flex items-center gap-2">
@@ -77,7 +77,7 @@ export function CheckinForm() {
                 <div className="font-display font-semibold">
                   {result.registrant.fullName} · {result.registrant.trackName}
                 </div>
-                <div className="font-mono text-xs">
+                <div className="font-sans text-xs">
                   {result.registrant.referenceNumber} marked present
                 </div>
               </div>
@@ -93,7 +93,7 @@ export function CheckinForm() {
                     : "Couldn't check in"}
                 </div>
                 {result.registrant && (
-                  <div className="font-mono text-xs">
+                  <div className="font-sans text-xs">
                     {result.registrant.referenceNumber} ·{" "}
                     {result.registrant.fullName}
                   </div>

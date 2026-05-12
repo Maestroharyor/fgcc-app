@@ -58,7 +58,7 @@ export function TrackCard({ track, remaining, capacity }: Props) {
 
       <div className="mt-5 flex items-center justify-between gap-3 border-t border-navy/8 pt-4">
         <div className="min-w-0">
-          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/45">
+          <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/45">
             Facilitator
           </div>
           <div className="truncate font-display text-sm font-medium text-navy">
@@ -107,27 +107,27 @@ function CapacityPill({
 }) {
   if (remaining === undefined) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-cream-100 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-navy/55">
+      <span className="inline-flex items-center gap-1 rounded-full bg-cream-100 px-2.5 py-1 font-sans text-[10px] uppercase tracking-[0.16em] text-navy/55">
         <Users className="h-3 w-3" aria-hidden /> {capacity} seats
       </span>
     );
   }
   if (isFull) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-navy/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-navy/70">
+      <span className="inline-flex items-center gap-1 rounded-full bg-navy/10 px-2.5 py-1 font-sans text-[10px] uppercase tracking-[0.16em] text-navy/70">
         Full
       </span>
     );
   }
   if (isFilling) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-coral/8 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-coral">
+      <span className="inline-flex items-center gap-1 rounded-full bg-coral/8 px-2.5 py-1 font-sans text-[10px] uppercase tracking-[0.16em] text-coral">
         {remaining} left
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-primary/8 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
+    <span className="inline-flex items-center gap-1 rounded-full bg-primary/8 px-2.5 py-1 font-sans text-[10px] uppercase tracking-[0.16em] text-primary">
       {remaining}/{capacity}
     </span>
   );

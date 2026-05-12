@@ -1,11 +1,11 @@
 import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { FAQItem } from "@/components/ui/FAQItem";
 import { FacilitatorCard } from "@/components/ui/FacilitatorCard";
 import { HeroSection } from "@/components/ui/HeroSection";
 import { Section } from "@/components/ui/Section";
-import { StatsWidget } from "@/components/ui/StatsWidget";
 import { TrackCard } from "@/components/ui/TrackCard";
 import { FAQS } from "@/content/faqs";
 import { SCHEDULE } from "@/content/schedule";
@@ -16,7 +16,7 @@ import type { TrackWithCapacity } from "@/lib/db/types";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "SkillUp 1.0 — From Skills to Income",
+  title: "SkillUp 1.0 - From Skills to Income",
   description:
     "Three days of hands-on training across 20 skill tracks. Free youth empowerment programme by Foursquare Gospel Church, Cement Missionary HQ. June 12–14, 2026.",
 };
@@ -33,16 +33,29 @@ const CATEGORY_BLURB: Record<TrackCategory, string> = {
   vocational: "Make. Sell. Repeat.",
 };
 
-export default async function SkillupLandingPage() {
-  const capacityRows = withCapacity(await getTrackCounts());
-  const capacityByCode = new Map(capacityRows.map((r) => [r.code, r]));
+const TRACK_GROUPS: Array<{ category: TrackCategory; tracks: Track[] }> = [
+  {
+    category: "digital",
+    tracks: TRACKS.filter((t) => t.category === "digital"),
+  },
+  {
+    category: "creative",
+    tracks: TRACKS.filter((t) => t.category === "creative"),
+  },
+  {
+    category: "vocational",
+    tracks: TRACKS.filter((t) => t.category === "vocational"),
+  },
+];
 
+export default function SkillupLandingPage() {
   return (
     <>
       <HeroSection />
       <AboutSection />
-      <TracksSection capacityByCode={capacityByCode} />
-      <StatsSection capacityRows={capacityRows} />
+      <Suspense fallback={<TracksSectionSkeleton />}>
+        <TracksSectionAsync />
+      </Suspense>
       <FacilitatorsSection />
       <ScheduleSection />
       <FAQSection />
@@ -57,7 +70,7 @@ function AboutSection() {
       id="about"
       eyebrow="About the programme"
       title="A three-day boot for the next generation of marketplace leaders."
-      description="SkillUp 1.0 brings together facilitators across digital, creative, and vocational disciplines to equip Nigerian youth — church members and the broader public — with practical skill that turns into income."
+      description="SkillUp 1.0 brings together facilitators across digital, creative, and vocational disciplines to equip Nigerian youth - church members and the broader public - with practical skill that turns into income."
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         <Stat label="Skill tracks" value="20" tone="blue" />
@@ -86,7 +99,7 @@ function Stat({
     <div
       className={`relative overflow-hidden rounded-2xl border border-navy/8 bg-white p-6 shadow-card bg-linear-to-br ${toneClasses}`}
     >
-      <div className="font-mono text-[10px] uppercase tracking-[0.2em] opacity-80">
+      <div className="font-sans text-[10px] uppercase tracking-[0.2em] opacity-80">
         {label}
       </div>
       <div className="mt-2 font-display text-5xl font-semibold tracking-tight text-navy">
@@ -96,26 +109,17 @@ function Stat({
   );
 }
 
+async function TracksSectionAsync() {
+  const capacityRows = withCapacity(await getTrackCounts());
+  const capacityByCode = new Map(capacityRows.map((r) => [r.code, r]));
+  return <TracksSection capacityByCode={capacityByCode} />;
+}
+
 function TracksSection({
   capacityByCode,
 }: {
   capacityByCode: Map<string, TrackWithCapacity>;
 }) {
-  const groups: Array<{ category: TrackCategory; tracks: Track[] }> = [
-    {
-      category: "digital",
-      tracks: TRACKS.filter((t) => t.category === "digital"),
-    },
-    {
-      category: "creative",
-      tracks: TRACKS.filter((t) => t.category === "creative"),
-    },
-    {
-      category: "vocational",
-      tracks: TRACKS.filter((t) => t.category === "vocational"),
-    },
-  ];
-
   return (
     <Section
       id="tracks"
@@ -125,7 +129,7 @@ function TracksSection({
       className="bg-cream-100"
     >
       <div className="flex flex-col gap-12">
-        {groups.map(({ category, tracks }) => (
+        {TRACK_GROUPS.map(({ category, tracks }) => (
           <div key={category}>
             <div className="mb-6 flex items-baseline justify-between gap-3 flex-wrap">
               <div>
@@ -136,7 +140,7 @@ function TracksSection({
                   {CATEGORY_BLURB[category]}
                 </p>
               </div>
-              <span className="font-mono text-xs uppercase tracking-[0.18em] text-navy/45">
+              <span className="font-sans text-xs uppercase tracking-[0.18em] text-navy/45">
                 {tracks.length} tracks
               </span>
             </div>
@@ -160,25 +164,46 @@ function TracksSection({
   );
 }
 
-function StatsSection({ capacityRows }: { capacityRows: TrackWithCapacity[] }) {
-  if (capacityRows.length === 0) return null;
-  const totalRegistered = capacityRows.reduce(
-    (acc, r) => acc + r.current_count,
-    0,
-  );
-  const totalCapacity = capacityRows.reduce((acc, r) => acc + r.capacity, 0);
+function TracksSectionSkeleton() {
+  // Render the section chrome and the same per-category headers immediately so
+  // the layout doesn't jump when live counts arrive - only the per-card
+  // capacity badges differ.
   return (
     <Section
-      id="stats"
-      eyebrow="Live numbers"
-      title="Spots are filling up — see the running totals."
-      description="These numbers update as people register. Don’t wait too long if you have your eye on a competitive track."
+      id="tracks"
+      eyebrow="The 20 tracks"
+      title="Pick the skill you want to walk away with."
+      description="Each track runs for the full three days, led by a facilitator already practising professionally. Choose one and go deep."
+      className="bg-cream-100"
     >
-      <StatsWidget
-        rows={capacityRows}
-        totalRegistered={totalRegistered}
-        totalCapacity={totalCapacity}
-      />
+      <div className="flex flex-col gap-12">
+        {TRACK_GROUPS.map(({ category, tracks }) => (
+          <div key={category}>
+            <div className="mb-6 flex items-baseline justify-between gap-3 flex-wrap">
+              <div>
+                <h3 className="font-display text-2xl font-semibold tracking-tight text-navy">
+                  {CATEGORY_LABELS[category]}
+                </h3>
+                <p className="text-sm text-navy/65">
+                  {CATEGORY_BLURB[category]}
+                </p>
+              </div>
+              <span className="font-sans text-xs uppercase tracking-[0.18em] text-navy/45">
+                {tracks.length} tracks
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {tracks.map((track) => (
+                <TrackCard
+                  key={track.code}
+                  track={track}
+                  capacity={track.capacity}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </Section>
   );
 }
@@ -189,7 +214,7 @@ function FacilitatorsSection() {
       id="facilitators"
       eyebrow="Facilitators"
       title="Practitioners who do the work."
-      description="Every track is led by a practitioner — many running businesses or shipping work in this exact field today."
+      description="Every track is led by a practitioner - many running businesses or shipping work in this exact field today."
       className="bg-cream-100"
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -207,7 +232,7 @@ function ScheduleSection() {
       id="schedule"
       eyebrow="Programme schedule"
       title="Three days, paced for both depth and momentum."
-      description="Track time is the heart of the programme — surrounded by short plenaries, a marketplace talk, and a community-wide showcase."
+      description="Track time is the heart of the programme - surrounded by short plenaries, a marketplace talk, and a community-wide showcase."
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {SCHEDULE.map((day) => (
@@ -215,7 +240,7 @@ function ScheduleSection() {
             key={day.label}
             className="rounded-2xl border border-navy/8 bg-white p-6 shadow-card"
           >
-            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+            <div className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
               {day.label}
             </div>
             <div className="mt-1 font-display text-lg font-semibold text-navy">
@@ -228,7 +253,7 @@ function ScheduleSection() {
                   key={`${day.label}-${block.title}`}
                   className="flex flex-col gap-1 border-l-2 border-gold/40 pl-3"
                 >
-                  <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/55">
+                  <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
                     {block.time}
                   </span>
                   <span className="font-display text-sm font-semibold text-navy">
@@ -256,7 +281,7 @@ function FAQSection() {
       description="Still curious about something? Reach us at skillup@fgccement.org."
       className="bg-cream-100"
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
         {FAQS.map((faq) => (
           <FAQItem key={faq.q} q={faq.q} a={faq.a} />
         ))}
@@ -269,7 +294,7 @@ function FinalCTA() {
   return (
     <section className="px-6 sm:px-10 py-20">
       <div className="mx-auto max-w-6xl rounded-3xl bg-primary p-10 sm:p-16 text-center text-white shadow-lift">
-        <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/80">
+        <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-sans text-[10px] uppercase tracking-[0.2em] text-white/80">
           Free admission
         </span>
         <h2 className="mt-4 font-display text-3xl sm:text-5xl font-semibold tracking-tight">

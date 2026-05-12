@@ -143,7 +143,7 @@ function buildChain(
           return proxy;
         };
       }
-      // Unknown method — still return chainable to be tolerant.
+      // Unknown method - still return chainable to be tolerant.
       return (...args: unknown[]) => {
         call.filters.push({ method: prop, args });
         return proxy;

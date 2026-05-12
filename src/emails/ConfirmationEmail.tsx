@@ -21,7 +21,7 @@ export default function ConfirmationEmail({
   siteUrl = "https://register.fgccement.org",
 }: ConfirmationEmailProps) {
   return (
-    <EmailLayout preview={`You're confirmed for SkillUp 1.0 — ${trackName}`}>
+    <EmailLayout preview={`You're confirmed for SkillUp 1.0 - ${trackName}`}>
       <Heading
         as="h1"
         style={{
@@ -122,7 +122,7 @@ export default function ConfirmationEmail({
       </Section>
 
       <Text style={{ fontSize: 13, color: palette.navy, marginTop: 18 }}>
-        See you at SkillUp 1.0 —{" "}
+        See you at SkillUp 1.0 -{" "}
         <a href={siteUrl} style={{ color: palette.blue }}>
           {siteUrl.replace(/^https?:\/\//, "")}
         </a>

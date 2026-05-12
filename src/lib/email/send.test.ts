@@ -50,7 +50,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("send helpers — happy paths", () => {
+describe("send helpers - happy paths", () => {
   it("sendConfirmationEmail passes from/to/subject and a react element", async () => {
     const result = await sendConfirmationEmail("john@example.com", {
       firstName: "John",
@@ -173,7 +173,7 @@ describe("send helpers — happy paths", () => {
   });
 });
 
-describe("send helpers — failure paths", () => {
+describe("send helpers - failure paths", () => {
   it("returns ok:false when Resend isn't configured", async () => {
     isConfiguredMock.mockReturnValueOnce(false);
     const result = await sendConfirmationEmail("x@y.com", {
@@ -224,7 +224,7 @@ describe("send helpers — failure paths", () => {
   });
 });
 
-describe("admin notification — empty recipients", () => {
+describe("admin notification - empty recipients", () => {
   it("returns no-admin-emails error when env list is empty", async () => {
     vi.resetModules();
     vi.doMock("@/lib/email/client", () => ({

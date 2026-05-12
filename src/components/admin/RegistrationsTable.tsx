@@ -26,7 +26,7 @@ export function RegistrationsTable({
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead className="bg-cream-100">
-            <tr className="text-left font-mono text-[10px] uppercase tracking-[0.18em] text-navy/55">
+            <tr className="text-left font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
               <Th>Ref</Th>
               <Th>Name</Th>
               <Th>Track</Th>
@@ -56,7 +56,7 @@ export function RegistrationsTable({
                   className="border-t border-navy/6 hover:bg-cream"
                 >
                   <Td>
-                    <span className="font-mono text-[12px] text-primary">
+                    <span className="font-sans text-[12px] text-primary">
                       {r.reference_number}
                     </span>
                   </Td>
@@ -66,11 +66,11 @@ export function RegistrationsTable({
                     </div>
                     <div className="text-xs text-navy/55">{r.email}</div>
                   </Td>
-                  <Td>{track?.name ?? "—"}</Td>
-                  <Td className="text-navy/70">{r.church ?? "—"}</Td>
+                  <Td>{track?.name ?? "-"}</Td>
+                  <Td className="text-navy/70">{r.church ?? "-"}</Td>
                   <Td>
                     <span
-                      className={`inline-flex rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] ${
+                      className={`inline-flex rounded-full px-2 py-0.5 font-sans text-[10px] uppercase tracking-[0.16em] ${
                         r.registered_via === "self"
                           ? "bg-primary/8 text-primary"
                           : "bg-gold/12 text-gold-600"
@@ -81,7 +81,7 @@ export function RegistrationsTable({
                   </Td>
                   <Td>
                     <span
-                      className={`inline-flex rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] ${
+                      className={`inline-flex rounded-full px-2 py-0.5 font-sans text-[10px] uppercase tracking-[0.16em] ${
                         r.attended
                           ? "bg-emerald-100 text-emerald-700"
                           : "bg-navy/8 text-navy/60"
@@ -122,7 +122,7 @@ export function RegistrationsTable({
               Previous
             </Link>
           )}
-          <span className="font-mono text-navy/55">
+          <span className="font-sans text-navy/55">
             {page} / {totalPages}
           </span>
           {page < totalPages && (

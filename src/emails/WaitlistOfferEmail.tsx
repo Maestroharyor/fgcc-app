@@ -35,7 +35,7 @@ export default function WaitlistOfferEmail({
           marginTop: 12,
         }}
       >
-        Great news — a place has opened up in <strong>{trackName}</strong>. It’s
+        Great news - a place has opened up in <strong>{trackName}</strong>. It’s
         yours if you claim it within {expiresAt}.
       </Text>
 

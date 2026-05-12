@@ -7,7 +7,7 @@ export function createSupabaseBrowserClient() {
   if (cached) return cached;
   if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     throw new Error(
-      "Supabase URL/Anon key missing — set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+      "Supabase URL/Anon key missing - set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
     );
   }
   cached = createBrowserClient(

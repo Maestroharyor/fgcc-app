@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { BrandMark } from "@/components/ui/BrandMark";
 
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
@@ -16,14 +17,12 @@ function SiteHeader() {
     <header className="sticky top-0 z-30 border-b border-navy/8 bg-cream/85 backdrop-blur supports-[backdrop-filter]:bg-cream/70">
       <div className="mx-auto max-w-6xl px-6 sm:px-10 py-4 flex items-center justify-between gap-4">
         <Link href="/skillup" className="flex items-center gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-white font-display font-bold text-xs tracking-tighter">
-            FGC
-          </div>
+          <BrandMark size={36} />
           <div className="flex flex-col leading-tight">
             <span className="font-display text-sm font-semibold text-navy">
               SkillUp 1.0
             </span>
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/55">
+            <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
               Foursquare · Cement HQ
             </span>
           </div>
@@ -70,9 +69,7 @@ function SiteFooter() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div>
             <div className="flex items-center gap-3">
-              <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-white font-display font-bold text-xs tracking-tighter">
-                FGC
-              </div>
+              <BrandMark size={36} />
               <span className="font-display font-semibold text-navy">
                 Foursquare Gospel Church
               </span>
@@ -82,7 +79,7 @@ function SiteFooter() {
             </p>
           </div>
           <div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-navy/55">
+            <div className="font-sans text-[10px] uppercase tracking-[0.2em] text-navy/55">
               Programme
             </div>
             <ul className="mt-3 space-y-2 text-sm">
@@ -113,7 +110,7 @@ function SiteFooter() {
             </ul>
           </div>
           <div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-navy/55">
+            <div className="font-sans text-[10px] uppercase tracking-[0.2em] text-navy/55">
               Support
             </div>
             <ul className="mt-3 space-y-2 text-sm">
@@ -133,9 +130,9 @@ function SiteFooter() {
             </ul>
           </div>
         </div>
-        <div className="mt-10 pt-6 border-t border-navy/8 flex flex-col sm:flex-row items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-navy/45">
+        <div className="mt-10 pt-6 border-t border-navy/8 flex flex-col sm:flex-row items-center justify-between gap-2 font-sans text-[11px] uppercase tracking-[0.18em] text-navy/45">
           <span>© 2026 Foursquare Gospel Church</span>
-          <span>SkillUp 1.0 — From Skills to Income</span>
+          <span>SkillUp 1.0 - From Skills to Income</span>
         </div>
       </div>
     </footer>

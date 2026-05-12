@@ -29,7 +29,7 @@ export default function AdminNotificationEmail({
 }: AdminNotificationEmailProps) {
   return (
     <EmailLayout
-      preview={`New registration: ${registrants[0]?.fullName ?? "—"} (${registrants[0]?.trackName ?? "—"})`}
+      preview={`New registration: ${registrants[0]?.fullName ?? "-"} (${registrants[0]?.trackName ?? "-"})`}
     >
       <Heading
         as="h1"
@@ -90,7 +90,7 @@ export default function AdminNotificationEmail({
           >
             {r.referenceNumber}
           </span>{" "}
-          — {r.fullName} · {r.trackName} · {r.email} · {r.phone}
+          - {r.fullName} · {r.trackName} · {r.email} · {r.phone}
           {r.church ? ` · ${r.church}` : ""}
         </Text>
       ))}

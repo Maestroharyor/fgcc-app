@@ -34,7 +34,7 @@ export default function Reminder1DayEmail({
         }}
       >
         SkillUp 1.0 starts <strong>tomorrow at 9:00 AM</strong> sharp. Aim to be
-        at Cement Missionary HQ a few minutes early — registration and check-in
+        at Cement Missionary HQ a few minutes early - registration and check-in
         start at the door.
       </Text>
 

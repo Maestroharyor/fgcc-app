@@ -61,9 +61,9 @@ function fd(values: Record<string, string | undefined>) {
 /**
  * Build a registrations-table handler that distinguishes the three call
  * shapes the action makes:
- *   1. dedupe   — `.select("reference_number").eq("email", …).maybeSingle()`
- *   2. capacity — `.select("*", { count: "exact", head: true }).eq("track_code", …)`
- *   3. insert   — `.insert(…).select("reference_number").single()`
+ *   1. dedupe   - `.select("reference_number").eq("email", …).maybeSingle()`
+ *   2. capacity - `.select("*", { count: "exact", head: true }).eq("track_code", …)`
+ *   3. insert   - `.insert(…).select("reference_number").single()`
  */
 function registrationsHandler(opts: {
   dedupe?: MockResult;

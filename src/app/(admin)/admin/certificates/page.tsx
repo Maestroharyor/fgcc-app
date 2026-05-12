@@ -1,6 +1,8 @@
 import { Download } from "lucide-react";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { CertificateActions } from "@/components/admin/CertificateActions";
+import { TRACKS_BY_CODE } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -13,37 +15,18 @@ export const metadata: Metadata = {
 
 export default async function CertificatesPage() {
   await requireRole("superadmin");
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("registrations")
-    .select(
-      "id, full_name, email, reference_number, attended, certificate_sent_at, tracks(name)",
-    )
-    .eq("attended", true)
-    .order("created_at", { ascending: false });
-
-  type Row = {
-    id: string;
-    full_name: string;
-    email: string;
-    reference_number: string;
-    attended: boolean;
-    certificate_sent_at: string | null;
-    tracks: { name: string } | { name: string }[] | null;
-  };
-  const rows = (data ?? []) as Row[];
 
   return (
     <div className="px-6 md:px-10 py-10">
-      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+      <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
         Superadmin · Certificates
       </span>
       <h1 className="font-display text-3xl font-semibold tracking-tight text-navy">
         Certificates of participation
       </h1>
       <p className="mt-1 text-sm text-navy/65">
-        {rows.length} checked-in attendees. Preview, download, or email — every
-        send requires explicit confirmation in the UI below.
+        Preview, download, or email checked-in attendees - every send requires
+        explicit confirmation in the UI below.
       </p>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -60,7 +43,7 @@ export default async function CertificatesPage() {
       <div className="mt-6 overflow-hidden rounded-2xl border border-navy/8 bg-white shadow-card">
         <table className="min-w-full text-sm">
           <thead className="bg-cream-100">
-            <tr className="text-left font-mono text-[10px] uppercase tracking-[0.18em] text-navy/55">
+            <tr className="text-left font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
               <th className="px-4 py-3">Ref</th>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Track</th>
@@ -68,57 +51,113 @@ export default async function CertificatesPage() {
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody>
-            {rows.length === 0 && (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="px-4 py-10 text-center text-sm text-navy/55"
-                >
-                  Nobody has been checked in yet. Mark attendance first.
-                </td>
-              </tr>
-            )}
-            {rows.map((r) => {
-              const trackName = Array.isArray(r.tracks)
-                ? (r.tracks[0]?.name ?? "")
-                : (r.tracks?.name ?? "");
-              const sent = Boolean(r.certificate_sent_at);
-              return (
-                <tr
-                  key={r.id}
-                  className="border-t border-navy/6 hover:bg-cream"
-                >
-                  <td className="px-4 py-3 font-mono text-[12px] text-primary">
-                    {r.reference_number}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="font-display font-medium text-navy">
-                      {r.full_name}
-                    </div>
-                    <div className="text-xs text-navy/55">{r.email}</div>
-                  </td>
-                  <td className="px-4 py-3">{trackName}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] ${
-                        sent
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-navy/8 text-navy/60"
-                      }`}
-                    >
-                      {sent ? "Sent" : "Not sent"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <CertificateActions reference={r.reference_number} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
+          <Suspense fallback={<CertificatesTbodySkeleton />}>
+            <CertificatesTbody />
+          </Suspense>
         </table>
       </div>
     </div>
+  );
+}
+
+async function CertificatesTbody() {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("registrations")
+    .select(
+      "id, full_name, email, reference_number, attended, certificate_sent_at, track_code",
+    )
+    .eq("attended", true)
+    .order("created_at", { ascending: false });
+
+  type Row = {
+    id: string;
+    full_name: string;
+    email: string;
+    reference_number: string;
+    attended: boolean;
+    certificate_sent_at: string | null;
+    track_code: string;
+  };
+  const rows = (data ?? []) as Row[];
+
+  return (
+    <tbody>
+      {rows.length === 0 && (
+        <tr>
+          <td
+            colSpan={5}
+            className="px-4 py-10 text-center text-sm text-navy/55"
+          >
+            Nobody has been checked in yet. Mark attendance first.
+          </td>
+        </tr>
+      )}
+      {rows.map((r) => {
+        const trackName = TRACKS_BY_CODE[r.track_code]?.name ?? r.track_code;
+        const sent = Boolean(r.certificate_sent_at);
+        return (
+          <tr key={r.id} className="border-t border-navy/6 hover:bg-cream">
+            <td className="px-4 py-3 font-sans text-[12px] text-primary">
+              {r.reference_number}
+            </td>
+            <td className="px-4 py-3">
+              <div className="font-display font-medium text-navy">
+                {r.full_name}
+              </div>
+              <div className="text-xs text-navy/55">{r.email}</div>
+            </td>
+            <td className="px-4 py-3">{trackName}</td>
+            <td className="px-4 py-3">
+              <span
+                className={`inline-flex rounded-full px-2 py-0.5 font-sans text-[10px] uppercase tracking-[0.16em] ${
+                  sent
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-navy/8 text-navy/60"
+                }`}
+              >
+                {sent ? "Sent" : "Not sent"}
+              </span>
+            </td>
+            <td className="px-4 py-3">
+              <CertificateActions reference={r.reference_number} />
+            </td>
+          </tr>
+        );
+      })}
+    </tbody>
+  );
+}
+
+function CertificatesTbodySkeleton() {
+  return (
+    <tbody>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <tr
+          key={`cert-skel-${
+            // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder
+            i
+          }`}
+          className="border-t border-navy/6"
+        >
+          <td className="px-4 py-3">
+            <span className="block h-3 w-20 rounded bg-navy/8 animate-pulse" />
+          </td>
+          <td className="px-4 py-3">
+            <span className="block h-4 w-40 rounded bg-navy/8 animate-pulse" />
+            <span className="mt-1 block h-3 w-32 rounded bg-navy/8 animate-pulse" />
+          </td>
+          <td className="px-4 py-3">
+            <span className="block h-3 w-32 rounded bg-navy/8 animate-pulse" />
+          </td>
+          <td className="px-4 py-3">
+            <span className="block h-5 w-16 rounded-full bg-navy/8 animate-pulse" />
+          </td>
+          <td className="px-4 py-3">
+            <span className="block h-7 w-20 rounded-full bg-navy/8 animate-pulse" />
+          </td>
+        </tr>
+      ))}
+    </tbody>
   );
 }

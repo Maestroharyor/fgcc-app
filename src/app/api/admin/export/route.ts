@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     pageSize: 5000,
   });
 
-  // Track names come from the static catalogue — no DB round-trip needed.
+  // Track names come from the static catalogue - no DB round-trip needed.
   const decorated = rows.map((r) => ({
     ...r,
     track_name: TRACKS_BY_CODE[r.track_code]?.name ?? r.track_code,
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
 
   if (format === "pdf") {
     const buf = buildPrintableList(
-      "SkillUp 1.0 — Registrations",
+      "SkillUp 1.0 - Registrations",
       `${decorated.length} records · ${new Date().toLocaleString()}`,
       decorated,
       [

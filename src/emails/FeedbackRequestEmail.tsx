@@ -34,7 +34,7 @@ export default function FeedbackRequestEmail({
         }}
       >
         Thank you for being part of {trackName}. Your honest feedback is what
-        shapes SkillUp 2.0 — it takes under two minutes.
+        shapes SkillUp 2.0 - it takes under two minutes.
       </Text>
       <Text style={{ textAlign: "center", marginTop: 22 }}>
         <Button

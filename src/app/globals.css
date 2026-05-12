@@ -1,5 +1,5 @@
 /* HeroUI v3 styles (which itself imports tailwindcss + tw-animate-css).
-   Fonts are loaded via next/font/google in src/app/layout.tsx — see there. */
+   Fonts are loaded via next/font/google in src/app/layout.tsx - see there. */
 @import "@heroui/styles";
 
 @theme inline {
@@ -28,13 +28,12 @@
   --color-navy-muted: #475569;
 
   /* ── Typography ──────────────────────────────────────────────────────────
-     next/font/google in src/app/layout.tsx sets --font-space-grotesk,
-     --font-inter, and --font-geist-mono on <html>. Tailwind utilities
-     `font-display`, `font-sans`, `font-mono` resolve through these mappings. */
+     next/font/google in src/app/layout.tsx sets --font-space-grotesk and
+     --font-inter on <html>. Tailwind utilities `font-display` and `font-sans`
+     resolve through these mappings. */
   --font-display:
     var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
 
   /* ── Radii + shadows ─────────────────────────────────────────────────── */
   --radius-lg: 1rem;
@@ -84,7 +83,7 @@ body {
   }
 }
 
-/* Subtle cream-to-gold gradient mesh — opt-in via .hero-mesh wrapper */
+/* Subtle cream-to-gold gradient mesh - opt-in via .hero-mesh wrapper */
 .hero-mesh {
   position: relative;
   isolation: isolate;

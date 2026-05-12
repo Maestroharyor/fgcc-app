@@ -45,7 +45,7 @@ describe("createSupabaseServerClient", () => {
       };
     };
     // The default cookie jar set() doesn't throw, but the wrapper has a
-    // try/catch — exercise both branches by patching the jar.
+    // try/catch - exercise both branches by patching the jar.
     expect(() =>
       opts.cookies.setAll([{ name: "a", value: "b", options: { path: "/" } }]),
     ).not.toThrow();

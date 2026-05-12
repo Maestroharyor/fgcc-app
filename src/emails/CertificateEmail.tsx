@@ -32,11 +32,11 @@ export default function CertificateEmail({
         }}
       >
         Congratulations on completing <strong>{trackName}</strong> at SkillUp
-        1.0. Attached is your Certificate of Participation — keep it, share it,
+        1.0. Attached is your Certificate of Participation - keep it, share it,
         and put it to work.
       </Text>
       <Text style={{ marginTop: 16, fontSize: 13, color: palette.muted }}>
-        Tag <strong>@foursquarecement</strong> when you share online — we love
+        Tag <strong>@foursquarecement</strong> when you share online - we love
         to see what you’re building.
       </Text>
     </EmailLayout>

@@ -1,5 +1,5 @@
 /**
- * Foursquare zone churches — used in the Register-for-Others form's
+ * Foursquare zone churches - used in the Register-for-Others form's
  * "Church or organisation" dropdown. Static so it's PR-reviewable; the
  * Register-for-Others flow also accepts free-text "Other" entries.
  */

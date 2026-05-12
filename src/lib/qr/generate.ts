@@ -1,7 +1,7 @@
 import QRCode from "qrcode";
 
 /**
- * Generate a QR code as a base64 data URL. Server-only — wraps `qrcode`'s
+ * Generate a QR code as a base64 data URL. Server-only - wraps `qrcode`'s
  * `toDataURL` with our brand-friendly defaults.
  */
 export async function qrDataUrl(
@@ -16,7 +16,7 @@ export async function qrDataUrl(
   });
 }
 
-/** Raw PNG buffer — used when embedding QR into a PDF or sending as attachment. */
+/** Raw PNG buffer - used when embedding QR into a PDF or sending as attachment. */
 export async function qrPngBuffer(
   payload: string,
   opts: { width?: number } = {},

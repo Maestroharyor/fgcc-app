@@ -23,7 +23,7 @@ export async function buildXlsx<T>(
     width: c.width ?? Math.max(12, c.header.length + 2),
   }));
 
-  // Header styling — Foursquare blue
+  // Header styling - Foursquare blue
   const headerRow = sheet.getRow(1);
   headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
   headerRow.fill = {

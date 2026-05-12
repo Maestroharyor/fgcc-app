@@ -17,7 +17,7 @@ export async function sendSMS({
   message: string;
 }): Promise<TermiiResponse> {
   if (!env.TERMII_API_KEY) {
-    console.warn("[sms] TERMII_API_KEY missing — skipping send to", to);
+    console.warn("[sms] TERMII_API_KEY missing - skipping send to", to);
     return { ok: false, message: "termii-not-configured" };
   }
   try {

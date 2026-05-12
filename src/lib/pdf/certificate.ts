@@ -102,7 +102,7 @@ export async function buildCertificate({
     const qr = await qrPngBuffer(referenceNumber, { width: 220 });
     doc.addImage(qr, "PNG", pageWidth - 50, pageHeight - 50, 32, 32);
   } catch {
-    // ignore — certificate still valid without QR.
+    // ignore - certificate still valid without QR.
   }
 
   doc.setFont("helvetica", "normal");

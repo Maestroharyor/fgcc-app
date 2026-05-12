@@ -4,7 +4,7 @@ import { env } from "@/lib/utils/env";
 
 /**
  * Supabase client for src/proxy.ts. Returns the supabase instance plus a
- * NextResponse that already has refreshed auth cookies attached — callers
+ * NextResponse that already has refreshed auth cookies attached - callers
  * should mutate that response (or return it) rather than constructing a new
  * NextResponse.
  */

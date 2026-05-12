@@ -10,7 +10,7 @@ export const FAQS: FaqItem[] = [
   },
   {
     q: "Who can register?",
-    a: "Any young person — secondary school graduates, undergraduates, NYSC corps members, and early-career youth. You do not need to be a church member to attend.",
+    a: "Any young person - secondary school graduates, undergraduates, NYSC corps members, and early-career youth. You do not need to be a church member to attend.",
   },
   {
     q: "How many tracks can I pick?",
@@ -26,7 +26,7 @@ export const FAQS: FaqItem[] = [
   },
   {
     q: "Can I register on behalf of someone else?",
-    a: "Yes. On the registration page choose 'Someone else' — pastors, parents, and church workers can register one or more people in a single submission.",
+    a: "Yes. On the registration page choose 'Someone else' - pastors, parents, and church workers can register one or more people in a single submission.",
   },
   {
     q: "What if a track is full?",

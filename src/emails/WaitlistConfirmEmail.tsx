@@ -36,7 +36,7 @@ export default function WaitlistConfirmEmail({
         }}
       >
         <strong>{trackName}</strong> is at capacity for now. You’ve been added
-        to the waitlist — if a spot opens, we’ll email you with a 24-hour window
+        to the waitlist - if a spot opens, we’ll email you with a 24-hour window
         to claim it.
       </Text>
 

@@ -24,7 +24,7 @@ interface PageProps {
 }
 
 export default async function RegistrationsPage({ searchParams }: PageProps) {
-  // Auth gate must resolve before render — the redirect (if any) needs to fire
+  // Auth gate must resolve before render - the redirect (if any) needs to fire
   // before any HTML streams to the client.
   await requireRole("admin");
   const params = await searchParams;
@@ -39,7 +39,7 @@ export default async function RegistrationsPage({ searchParams }: PageProps) {
     <div className="px-6 md:px-10 py-10">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+          <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
             Records
           </span>
           <h1 className="font-display text-3xl font-semibold tracking-tight text-navy">
@@ -50,7 +50,7 @@ export default async function RegistrationsPage({ searchParams }: PageProps) {
         <ExportMenu queryString={queryString} />
       </div>
 
-      {/* Filter form is static — render immediately. */}
+      {/* Filter form is static - render immediately. */}
       <form
         method="get"
         className="mt-6 grid grid-cols-1 md:grid-cols-[1fr_220px_180px_160px_auto] gap-3"

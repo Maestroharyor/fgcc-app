@@ -4,7 +4,7 @@
  * Source of truth for marketing pages, registration dropdowns, and confirmation
  * emails. The Supabase `tracks` table mirrors `code`, `name`, `category`,
  * `facilitator_name`, `glyph_key`, and `capacity` from this file (seed migration
- * derives from here). WhatsApp/Telegram group links live ONLY here — never the DB.
+ * derives from here). WhatsApp/Telegram group links live ONLY here - never the DB.
  */
 
 export type TrackCategory = "digital" | "creative" | "vocational";
@@ -49,10 +49,10 @@ export const TRACKS: Track[] = [
     code: "PHO",
     name: "Photography & Photo Editing",
     category: "creative",
-    facilitator: "Bro Ola",
+    facilitator: "Ola",
     glyph: "camera",
     description:
-      "Composition, lighting, and editing in Lightroom — from phone shots to portfolio pieces.",
+      "Composition, lighting, and editing in Lightroom - from phone shots to portfolio pieces.",
     capacity: 20,
     whatsappUrl: wa,
     telegramUrl: tg,
@@ -61,7 +61,7 @@ export const TRACKS: Track[] = [
     code: "VID",
     name: "Videography & Video Editing",
     category: "creative",
-    facilitator: "Bro Matthew",
+    facilitator: "Matthew",
     glyph: "video",
     description:
       "Tell stories that move. Shooting fundamentals, editing in CapCut/Premiere, and reels that convert.",
@@ -76,7 +76,7 @@ export const TRACKS: Track[] = [
     facilitator: "Joshomowole",
     glyph: "palette",
     description:
-      "Posters, flyers, social media kits — design that earns clients in Lagos and beyond.",
+      "Posters, flyers, social media kits - design that earns clients in Lagos and beyond.",
     capacity: 20,
     whatsappUrl: wa,
     telegramUrl: tg,
@@ -100,7 +100,7 @@ export const TRACKS: Track[] = [
     facilitator: "Mide / Emma",
     glyph: "megaphone",
     description:
-      "Turn attention into income — content strategy, paid ads, analytics, and brand growth.",
+      "Turn attention into income - content strategy, paid ads, analytics, and brand growth.",
     capacity: 20,
     whatsappUrl: wa,
     telegramUrl: tg,
@@ -109,7 +109,7 @@ export const TRACKS: Track[] = [
     code: "CCB",
     name: "Content Creation & Personal Branding",
     category: "digital",
-    facilitator: "Bro Idera Solomon",
+    facilitator: "Idera Solomon",
     glyph: "microphone",
     description:
       "Show up consistently. Build the on-camera and writing skills that compound into a personal brand.",
@@ -121,7 +121,7 @@ export const TRACKS: Track[] = [
     code: "DAT",
     name: "Data Analysis",
     category: "digital",
-    facilitator: "Bro Akintayo Akinyemi",
+    facilitator: "Akintayo Akinyemi",
     glyph: "chart",
     description:
       "Read data, shape insights. Excel, SQL basics, and dashboards that drive decisions.",
@@ -133,10 +133,10 @@ export const TRACKS: Track[] = [
     code: "GYP",
     name: "Gypsum & Resin Arts",
     category: "vocational",
-    facilitator: "Sis Victoria Odewale",
+    facilitator: "Victoria Odewale",
     glyph: "sparkles",
     description:
-      "Cast, mould, and finish gypsum and resin pieces — décor and giftware that sells.",
+      "Cast, mould, and finish gypsum and resin pieces - décor and giftware that sells.",
     capacity: 20,
     whatsappUrl: wa,
     telegramUrl: tg,
@@ -148,7 +148,7 @@ export const TRACKS: Track[] = [
     facilitator: "Mrs Balogun",
     glyph: "droplet",
     description:
-      "Liquid soap, bar soap, detergents — formulate, brand, and price for a real market.",
+      "Liquid soap, bar soap, detergents - formulate, brand, and price for a real market.",
     capacity: 20,
     whatsappUrl: wa,
     telegramUrl: tg,
@@ -160,7 +160,7 @@ export const TRACKS: Track[] = [
     facilitator: "Aramide",
     glyph: "gem",
     description:
-      "Bridal beads, everyday accessories — patterns, finishing, and pricing for profit.",
+      "Bridal beads, everyday accessories - patterns, finishing, and pricing for profit.",
     capacity: 20,
     whatsappUrl: wa,
     telegramUrl: tg,
@@ -172,7 +172,7 @@ export const TRACKS: Track[] = [
     facilitator: "Mrs Godslove",
     glyph: "fork",
     description:
-      "Run a small chops side hustle — recipes, packaging, costing, and customer flow.",
+      "Run a small chops side hustle - recipes, packaging, costing, and customer flow.",
     capacity: 20,
     whatsappUrl: wa,
     telegramUrl: tg,
@@ -196,7 +196,7 @@ export const TRACKS: Track[] = [
     facilitator: null,
     glyph: "briefcase",
     description:
-      "Work remotely for global clients — calendar, inbox, CRM, and the soft skills that retain them.",
+      "Work remotely for global clients - calendar, inbox, CRM, and the soft skills that retain them.",
     capacity: 20,
     whatsappUrl: wa,
     telegramUrl: tg,
@@ -208,7 +208,7 @@ export const TRACKS: Track[] = [
     facilitator: null,
     glyph: "flame",
     description:
-      "Blend fragrances, pour candles, and craft reed diffusers — beautifully packaged.",
+      "Blend fragrances, pour candles, and craft reed diffusers - beautifully packaged.",
     capacity: 20,
     whatsappUrl: wa,
     telegramUrl: tg,
@@ -244,7 +244,7 @@ export const TRACKS: Track[] = [
     facilitator: null,
     glyph: "leaf",
     description:
-      "Formulate clean skincare and cosmetics — safe ingredients, batch testing, and brand basics.",
+      "Formulate clean skincare and cosmetics - safe ingredients, batch testing, and brand basics.",
     capacity: 20,
     whatsappUrl: wa,
     telegramUrl: tg,
@@ -256,7 +256,7 @@ export const TRACKS: Track[] = [
     facilitator: null,
     glyph: "yarn",
     description:
-      "Crochet bags, knit tops, woven crafts — modern, sellable pieces from classic techniques.",
+      "Crochet bags, knit tops, woven crafts - modern, sellable pieces from classic techniques.",
     capacity: 20,
     whatsappUrl: wa,
     telegramUrl: tg,

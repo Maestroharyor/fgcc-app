@@ -9,7 +9,7 @@ export interface FeedbackActionResult {
   message?: string;
 }
 
-// Accept the schema's INPUT shape — callers (the RHF form) hand us values
+// Accept the schema's INPUT shape - callers (the RHF form) hand us values
 // before transforms run. We parse internally to get the OUTPUT shape.
 export async function submitFeedbackAction(
   payload: z.input<typeof FeedbackSchema>,

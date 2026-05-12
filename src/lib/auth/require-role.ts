@@ -14,7 +14,7 @@ export interface AuthorizedUser {
  * Handler, and Server Action. Returns the authorized user or redirects.
  *
  * Proxy is the first line of defense; this is the second. UI hiding is
- * UX only — every mutation MUST call this too.
+ * UX only - every mutation MUST call this too.
  */
 export async function requireRole(minRole: Role): Promise<AuthorizedUser> {
   const supabase = await createSupabaseServerClient();

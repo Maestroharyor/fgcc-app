@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { TRACKS, type Track } from "@/content/tracks";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { TrackWithCapacity } from "./types";
@@ -6,31 +7,36 @@ import type { TrackWithCapacity } from "./types";
  * Fetch live registration counts keyed by track code: `{ UXD: 3, CWD: 0, ... }`.
  *
  * Reads from the `v_track_counts` view (a thin `count(*) group by` over the
- * registrations table). Static track metadata never round-trips — it lives in
+ * registrations table). Static track metadata never round-trips - it lives in
  * `src/content/tracks.ts`.
+ *
+ * Wrapped in React `cache()` so multiple Suspense children rendering in the
+ * same request share one query.
  */
-export async function getTrackCounts(): Promise<Record<string, number>> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("v_track_counts")
-    .select("track_code, current_count");
-  if (error) {
-    console.warn("[db.tracks] getTrackCounts failed:", error.message);
-    return {};
-  }
-  const counts: Record<string, number> = {};
-  for (const row of (data ?? []) as Array<{
-    track_code: string;
-    current_count: number;
-  }>) {
-    counts[row.track_code] = row.current_count;
-  }
-  return counts;
-}
+export const getTrackCounts = cache(
+  async (): Promise<Record<string, number>> => {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("v_track_counts")
+      .select("track_code, current_count");
+    if (error) {
+      console.warn("[db.tracks] getTrackCounts failed:", error.message);
+      return {};
+    }
+    const counts: Record<string, number> = {};
+    for (const row of (data ?? []) as Array<{
+      track_code: string;
+      current_count: number;
+    }>) {
+      counts[row.track_code] = row.current_count;
+    }
+    return counts;
+  },
+);
 
 /**
  * Merge static track metadata with a counts map. Pure function; no I/O.
- * Pass `{}` for empty initial state — every track reads as zero.
+ * Pass `{}` for empty initial state - every track reads as zero.
  */
 export function withCapacity(
   counts: Record<string, number>,

@@ -7,7 +7,7 @@ import { env } from "@/lib/utils/env";
  *
  * Cookie writes throw inside RSCs (Next 16). We swallow that here so the same
  * client can be reused in Server Actions / Route Handlers via dynamic import
- * if needed — write attempts simply become no-ops in RSCs.
+ * if needed - write attempts simply become no-ops in RSCs.
  *
  * If Supabase env vars are missing, returns a client wired to a non-resolving
  * placeholder URL. Queries through that client return a clean `error` object
@@ -29,7 +29,7 @@ export async function createSupabaseServerClient() {
             cookieStore.set(name, value, options);
           }
         } catch {
-          // RSC context — ignore. The proxy refreshes the session.
+          // RSC context - ignore. The proxy refreshes the session.
         }
       },
     },

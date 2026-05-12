@@ -47,7 +47,7 @@ export function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1.5">
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/60">
+        <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
           Email
         </span>
         <input
@@ -61,7 +61,7 @@ export function LoginForm() {
         )}
       </label>
       <label className="flex flex-col gap-1.5">
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/60">
+        <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
           Password
         </span>
         <input

@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -19,6 +20,21 @@ import {
   RegistrationSchema,
 } from "@/lib/validation/schemas";
 
+function CapacityErrorNotice() {
+  return (
+    <div className="rounded-2xl border border-coral/30 bg-coral/8 p-4">
+      <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-coral">
+        Couldn't confirm live availability
+      </div>
+      <p className="mt-1 text-sm text-navy/75">
+        We couldn't reach the availability service. You can still register, but
+        the track you pick may already be full - we'll waitlist you in that case
+        and let you know.
+      </p>
+    </div>
+  );
+}
+
 // RHF works with the schema's INPUT shape (pre-transform). The action then
 // re-parses to get the OUTPUT shape on the server.
 type RegistrationFormValues = z.input<typeof RegistrationSchema>;
@@ -30,19 +46,63 @@ interface Props {
 
 type Mode = "self" | "others";
 
-export function RegistrationForm({ tracks }: Props) {
+export function RegistrationForm({ tracks: initialTracks }: Props) {
+  const [tracks, setTracks] = useState<TrackWithCapacity[]>(initialTracks);
+  const [capacitiesLoaded, setCapacitiesLoaded] = useState(false);
+  const [capacityFetchFailed, setCapacityFetchFailed] = useState(false);
   const [mode, setMode] = useState<Mode>("self");
   const searchParams = useSearchParams();
   const initialTrack = searchParams.get("track")?.toUpperCase();
+
+  // Fetch live capacities on mount. The page renders instantly with optimistic
+  // full-availability seed; once this resolves, dropdowns swap to live counts
+  // silently. Submit button stays disabled until either the fetch resolves or
+  // it fails (in which case the server action's capacity recheck is the safety
+  // net).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/register/tracks", { cache: "no-store" });
+        if (!res.ok) throw new Error(String(res.status));
+        const data = (await res.json()) as TrackWithCapacity[];
+        if (!cancelled) {
+          setTracks(data);
+          setCapacitiesLoaded(true);
+        }
+      } catch {
+        if (!cancelled) {
+          setCapacityFetchFailed(true);
+          toast.danger("Unable to get availability", {
+            description:
+              "Refresh to try again, or proceed and we'll waitlist you if the track is full.",
+          });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="rounded-3xl border border-navy/8 bg-white p-6 sm:p-8 shadow-card">
       <ModeToggle mode={mode} setMode={setMode} />
       <div className="mt-8">
         {mode === "self" ? (
-          <SelfForm tracks={tracks} initialTrack={initialTrack} />
+          <SelfForm
+            tracks={tracks}
+            initialTrack={initialTrack}
+            capacitiesLoaded={capacitiesLoaded}
+            capacityFetchFailed={capacityFetchFailed}
+          />
         ) : (
-          <OthersForm tracks={tracks} initialTrack={initialTrack} />
+          <OthersForm
+            tracks={tracks}
+            initialTrack={initialTrack}
+            capacitiesLoaded={capacitiesLoaded}
+            capacityFetchFailed={capacityFetchFailed}
+          />
         )}
       </div>
     </div>
@@ -58,7 +118,7 @@ function ModeToggle({
 }) {
   return (
     <div>
-      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
+      <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-primary">
         Who are you registering for?
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2 rounded-full bg-cream-100 p-1 max-w-md">
@@ -100,9 +160,13 @@ function ModeToggle({
 function SelfForm({
   tracks,
   initialTrack,
+  capacitiesLoaded,
+  capacityFetchFailed,
 }: {
   tracks: TrackWithCapacity[];
   initialTrack?: string | null;
+  capacitiesLoaded: boolean;
+  capacityFetchFailed: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -128,7 +192,7 @@ function SelfForm({
 
   const emailValue = watch("email");
 
-  // Email blur dedupe probe — non-blocking.
+  // Email blur dedupe probe - non-blocking.
   useEffect(() => {
     if (!emailValue || emailValue.length < 5 || !emailValue.includes("@")) {
       setDuplicate(null);
@@ -184,15 +248,16 @@ function SelfForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5">
+      {capacityFetchFailed && <CapacityErrorNotice />}
       {duplicate && (
         <div className="rounded-2xl border border-gold/30 bg-gold/8 p-4">
-          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-gold-600">
+          <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-gold-600">
             You're already registered
           </div>
           <div className="mt-1 font-display text-sm font-semibold text-navy">
             {duplicate.fullName} · {duplicate.trackName}
           </div>
-          <div className="mt-1 font-mono text-sm text-navy/70">
+          <div className="mt-1 font-sans text-sm text-navy/70">
             {duplicate.referenceNumber}
           </div>
         </div>
@@ -275,7 +340,11 @@ function SelfForm({
         </p>
         <button
           type="submit"
-          disabled={pending || Boolean(duplicate)}
+          disabled={
+            pending ||
+            Boolean(duplicate) ||
+            (!capacitiesLoaded && !capacityFetchFailed)
+          }
           className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-7 font-display font-semibold text-white shadow-lift transition hover:bg-primary-700 disabled:opacity-60"
         >
           {pending ? "Registering…" : "Confirm registration"}
@@ -292,9 +361,13 @@ function SelfForm({
 function OthersForm({
   tracks,
   initialTrack,
+  capacitiesLoaded,
+  capacityFetchFailed,
 }: {
   tracks: TrackWithCapacity[];
   initialTrack?: string | null;
+  capacitiesLoaded: boolean;
+  capacityFetchFailed: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -338,6 +411,7 @@ function OthersForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-7">
+      {capacityFetchFailed && <CapacityErrorNotice />}
       <div>
         <div className="font-display text-lg font-semibold text-navy">
           Your details
@@ -450,7 +524,7 @@ function OthersForm({
         </p>
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || (!capacitiesLoaded && !capacityFetchFailed)}
           className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-7 font-display font-semibold text-white shadow-lift transition hover:bg-primary-700 disabled:opacity-60"
         >
           {pending
@@ -485,7 +559,7 @@ function RegistrantBlock({
   return (
     <div className="rounded-2xl border border-navy/8 bg-cream p-5">
       <div className="flex items-center justify-between">
-        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
+        <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-primary">
           Registrant {index + 1}
         </div>
         {onRemove && (
@@ -582,9 +656,9 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    // biome-ignore lint/a11y/noLabelWithoutControl: the input is the children prop — nested-input pattern is valid.
+    // biome-ignore lint/a11y/noLabelWithoutControl: the input is the children prop - nested-input pattern is valid.
     <label className={cn("flex flex-col gap-1.5", wide && "sm:col-span-2")}>
-      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/60">
+      <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
         {label}
       </span>
       {children}

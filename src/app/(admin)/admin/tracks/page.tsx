@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { CategoryBadge } from "@/components/ui/CategoryBadge";
 import { requireRole } from "@/lib/auth/require-role";
 import { getTrackCounts, withCapacity } from "@/lib/db/tracks";
@@ -18,17 +19,10 @@ export const metadata: Metadata = {
 
 export default async function AdminTracksPage() {
   await requireRole("admin");
-  const tracks = withCapacity(await getTrackCounts()).sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
-
-  const waitlists = await Promise.all(
-    tracks.map((t) => listWaitlistForTrack(t.code)),
-  );
 
   return (
     <div className="px-6 md:px-10 py-10">
-      <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+      <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
         Tracks
       </span>
       <h1 className="font-display text-3xl font-semibold tracking-tight text-navy">
@@ -41,11 +35,53 @@ export default async function AdminTracksPage() {
       </p>
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {tracks.map((t, i) => (
-          <TrackPanel key={t.code} track={t} waitlist={waitlists[i] ?? []} />
-        ))}
+        <Suspense fallback={<TracksGridSkeleton />}>
+          <TracksGridAsync />
+        </Suspense>
       </div>
     </div>
+  );
+}
+
+async function TracksGridAsync() {
+  const tracks = withCapacity(await getTrackCounts()).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+  const waitlists = await Promise.all(
+    tracks.map((t) => listWaitlistForTrack(t.code)),
+  );
+  return (
+    <>
+      {tracks.map((t, i) => (
+        <TrackPanel key={t.code} track={t} waitlist={waitlists[i] ?? []} />
+      ))}
+    </>
+  );
+}
+
+function TracksGridSkeleton() {
+  return (
+    <>
+      {Array.from({ length: 10 }).map((_, i) => (
+        <article
+          key={`tracks-grid-skel-${
+            // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder
+            i
+          }`}
+          className="rounded-2xl border border-navy/8 bg-white p-5 shadow-card"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex flex-col gap-2">
+              <span className="h-3 w-16 rounded bg-navy/8 animate-pulse" />
+              <span className="h-5 w-44 rounded bg-navy/8 animate-pulse" />
+              <span className="h-3 w-32 rounded bg-navy/8 animate-pulse" />
+            </div>
+            <span className="h-6 w-14 rounded-full bg-navy/8 animate-pulse" />
+          </div>
+          <div className="mt-3 h-1.5 rounded-full bg-navy/8 animate-pulse" />
+        </article>
+      ))}
+    </>
   );
 }
 
@@ -66,7 +102,7 @@ function TrackPanel({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <CategoryBadge category={track.category as TrackCategory} />
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/55">
+            <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
               {track.code}
             </span>
           </div>
@@ -78,15 +114,15 @@ function TrackPanel({
           </p>
         </div>
         <div className="text-right shrink-0">
-          <div className="font-mono text-xs text-navy/60">
+          <div className="font-sans text-xs text-navy/60">
             {track.current_count} / {track.capacity}
           </div>
           {track.is_full ? (
-            <span className="mt-1 inline-flex rounded-full bg-coral/8 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-coral">
+            <span className="mt-1 inline-flex rounded-full bg-coral/8 px-2 py-0.5 font-sans text-[10px] uppercase tracking-[0.18em] text-coral">
               Full
             </span>
           ) : (
-            <span className="mt-1 inline-flex rounded-full bg-primary/8 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
+            <span className="mt-1 inline-flex rounded-full bg-primary/8 px-2 py-0.5 font-sans text-[10px] uppercase tracking-[0.18em] text-primary">
               {track.remaining} left
             </span>
           )}
@@ -102,7 +138,7 @@ function TrackPanel({
 
       {waitlist.length > 0 && (
         <div className="mt-5">
-          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-gold-600">
+          <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-gold-600">
             Waitlist ({waitlist.length})
           </div>
           <ul className="mt-2 flex flex-col gap-1.5">
@@ -114,7 +150,7 @@ function TrackPanel({
                 <span className="font-display font-medium text-navy">
                   #{w.position} · {w.full_name}
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-navy/55">
+                <span className="font-sans text-[10px] uppercase tracking-[0.16em] text-navy/55">
                   {w.notified_at ? "Offered" : "Waiting"}
                 </span>
               </li>

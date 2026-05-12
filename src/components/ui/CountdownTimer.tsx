@@ -37,7 +37,7 @@ export function CountdownTimer({ target, variant = "hero", className }: Props) {
     <div
       role="timer"
       className={cn(
-        "flex items-stretch gap-3 font-mono",
+        "flex items-stretch gap-3 font-sans",
         isHero ? "gap-3 sm:gap-4" : "gap-2",
         className,
       )}
@@ -113,7 +113,7 @@ function Cell({
       </span>
       <span
         className={cn(
-          "mt-1 font-mono uppercase tracking-[0.18em] text-navy/55",
+          "mt-1 font-sans uppercase tracking-[0.18em] text-navy/55",
           isHero ? "text-[10px] sm:text-xs" : "text-[9px]",
         )}
       >

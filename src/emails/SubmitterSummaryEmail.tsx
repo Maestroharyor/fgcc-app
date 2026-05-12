@@ -40,7 +40,7 @@ export default function SubmitterSummaryEmail({
       >
         You successfully registered {registrants.length}{" "}
         {registrants.length === 1 ? "person" : "people"} for SkillUp 1.0. Here
-        are the reference codes and group links — please share them with each
+        are the reference codes and group links - please share them with each
         person you registered.
       </Text>
 

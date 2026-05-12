@@ -47,7 +47,7 @@ export const HowHeardEnum = z.enum(
 
 /**
  * Used by both the public registration form (RHF) and the server action that
- * inserts the row. Re-validation on the server is non-negotiable — never trust
+ * inserts the row. Re-validation on the server is non-negotiable - never trust
  * the client-side parse alone.
  */
 export const RegistrationSchema = z.object({

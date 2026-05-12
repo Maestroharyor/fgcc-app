@@ -27,7 +27,7 @@ describe("createSupabaseRouteClient", () => {
     expect(url).toBeTypeOf("string");
     expect(key).toBeTypeOf("string");
     expect(opts.cookies.setAll).toBeInstanceOf(Function);
-    // No try/catch in route variant — writes must succeed unconditionally.
+    // No try/catch in route variant - writes must succeed unconditionally.
     expect(() => opts.cookies.setAll([])).not.toThrow();
   });
 });

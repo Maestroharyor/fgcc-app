@@ -166,5 +166,5 @@ describe("countAttended", () => {
 });
 
 // Reference fixture used to silence the unused-import lint when this file
-// runs on its own — but it's also valid data per the suite.
+// runs on its own - but it's also valid data per the suite.
 void fixtureAttendedRegistration;

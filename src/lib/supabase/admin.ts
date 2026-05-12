@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { requireEnv } from "@/lib/utils/env";
 
 /**
- * Service-role Supabase client. Server-only. Bypasses RLS — use sparingly
+ * Service-role Supabase client. Server-only. Bypasses RLS - use sparingly
  * (admin invitations, cron jobs, scripted ops). NEVER import from a Client
  * Component or surface its key to the browser.
  */

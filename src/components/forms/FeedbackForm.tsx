@@ -164,9 +164,9 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    // biome-ignore lint/a11y/noLabelWithoutControl: the input is the children prop — nested-input pattern is valid.
+    // biome-ignore lint/a11y/noLabelWithoutControl: the input is the children prop - nested-input pattern is valid.
     <label className="flex flex-col gap-1.5">
-      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/60">
+      <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
         {label}
       </span>
       {children}
@@ -186,7 +186,7 @@ function RatingField({
 }) {
   return (
     <div>
-      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/60">
+      <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
         {label}
       </div>
       <div className="mt-2 flex items-center gap-1.5">

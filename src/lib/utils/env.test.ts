@@ -12,7 +12,7 @@ describe("env", () => {
   it("treats optional vars as either undefined or non-empty strings", () => {
     // Optional Supabase / Resend / Termii / cron keys may be absent in CI.
     // The schema marks them `.optional()` so they're either a non-empty
-    // string or undefined — never an empty string.
+    // string or undefined - never an empty string.
     for (const v of [
       env.NEXT_PUBLIC_SUPABASE_URL,
       env.NEXT_PUBLIC_SUPABASE_ANON_KEY,

@@ -12,7 +12,7 @@ export function StatsWidget({ rows, totalRegistered, totalCapacity }: Props) {
     <div className="rounded-3xl border border-navy/8 bg-white p-6 sm:p-8 shadow-card">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+          <div className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
             Live registrations
           </div>
           <div className="mt-1 font-display text-3xl font-semibold text-navy">
@@ -22,7 +22,7 @@ export function StatsWidget({ rows, totalRegistered, totalCapacity }: Props) {
             </span>
           </div>
         </div>
-        <div className="font-mono text-xs uppercase tracking-[0.18em] text-navy/55">
+        <div className="font-sans text-xs uppercase tracking-[0.18em] text-navy/55">
           Updated live
         </div>
       </div>
@@ -50,7 +50,7 @@ export function StatsWidget({ rows, totalRegistered, totalCapacity }: Props) {
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.16em] text-navy/55">
+              <div className="flex items-center justify-between font-sans text-[10px] uppercase tracking-[0.16em] text-navy/55">
                 <span>
                   {row.current_count} of {row.capacity} filled
                 </span>

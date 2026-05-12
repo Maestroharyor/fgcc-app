@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { BrandMark } from "@/components/ui/BrandMark";
 import type { Role } from "@/lib/db/types";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils/cn";
@@ -52,14 +53,12 @@ export function AdminSidebar({ role, email }: Props) {
       <div className="flex md:flex-col md:h-full">
         <div className="px-5 py-5 border-b border-navy/8">
           <Link href="/admin/dashboard" className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-white font-display font-bold text-xs tracking-tighter">
-              FGC
-            </div>
+            <BrandMark size={36} />
             <div className="leading-tight">
               <div className="font-display text-sm font-semibold text-navy">
                 SkillUp Admin
               </div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
+              <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-primary">
                 {role}
               </div>
             </div>
@@ -76,7 +75,7 @@ export function AdminSidebar({ role, email }: Props) {
           ))}
           {role === "superadmin" && (
             <>
-              <div className="hidden md:block mt-3 mb-1 px-3 font-mono text-[9px] uppercase tracking-[0.2em] text-navy/45">
+              <div className="hidden md:block mt-3 mb-1 px-3 font-sans text-[9px] uppercase tracking-[0.2em] text-navy/45">
                 Superadmin
               </div>
               {superNav.map((item) => (

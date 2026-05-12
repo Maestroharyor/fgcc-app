@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { LoginForm } from "@/components/forms/LoginForm";
+import { BrandMark } from "@/components/ui/BrandMark";
 
 export const metadata: Metadata = {
   title: "Admin sign in · SkillUp 1.0",
@@ -13,14 +14,12 @@ export default function AdminLoginPage() {
     <main className="min-h-dvh hero-mesh flex flex-col">
       <div className="px-6 sm:px-10 pt-8">
         <Link href="/" className="inline-flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary text-white font-display font-bold text-xs tracking-tighter">
-            FGC
-          </div>
+          <BrandMark size={40} />
           <div className="leading-tight">
             <div className="font-display text-sm font-semibold text-navy">
               SkillUp 1.0
             </div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/55">
+            <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
               Admin
             </div>
           </div>

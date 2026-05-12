@@ -8,7 +8,7 @@ export function HeroSection() {
     <section className="hero-mesh relative px-6 sm:px-10 pt-12 sm:pt-16 pb-20">
       <div className="mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16 items-center">
         <div className="flex flex-col gap-7">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.2em] text-gold-600">
+          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-4 py-1.5 font-sans text-[11px] uppercase tracking-[0.2em] text-gold-600">
             <Sparkles className="h-3.5 w-3.5" aria-hidden />
             June 12 – 14, 2026 · Lagos
           </span>
@@ -20,7 +20,7 @@ export function HeroSection() {
 
           <p className="max-w-xl text-lg sm:text-xl leading-relaxed text-navy/75">
             SkillUp 1.0 is a three-day youth empowerment programme by Foursquare
-            Gospel Church, Cement Missionary HQ — 20 hands-on skill tracks
+            Gospel Church, Cement Missionary HQ - 20 hands-on skill tracks
             across digital, creative, and vocational disciplines. Free to
             attend.
           </p>
@@ -50,7 +50,7 @@ export function HeroSection() {
             </a>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-xs uppercase tracking-[0.18em] text-navy/55">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-sans text-xs uppercase tracking-[0.18em] text-navy/55">
             <span className="inline-flex items-center gap-1.5">
               <MapPin className="h-3 w-3" aria-hidden />
               Cement Missionary HQ
@@ -77,7 +77,7 @@ function HeroVisual() {
       </div>
       <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between">
         <div className="text-white">
-          <div className="font-mono text-[10px] uppercase tracking-[0.22em] opacity-70">
+          <div className="font-sans text-[10px] uppercase tracking-[0.22em] opacity-70">
             SkillUp 1.0
           </div>
           <div className="font-display text-2xl font-semibold leading-tight">

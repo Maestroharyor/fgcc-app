@@ -8,7 +8,7 @@ export function FacilitatorCard({ track }: { track: Track }) {
         <GlyphIcon name={track.glyph} size={26} />
       </div>
       <div className="min-w-0">
-        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/45">
+        <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/45">
           {track.code}
         </div>
         <div className="mt-0.5 font-display text-lg font-semibold leading-tight text-navy">

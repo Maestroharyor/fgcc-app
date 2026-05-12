@@ -15,7 +15,7 @@ export default function Reminder3DayEmail({
   qrDataUrl = "",
 }: Reminder3DayEmailProps) {
   return (
-    <EmailLayout preview={`3 days to SkillUp 1.0 — ${trackName}`}>
+    <EmailLayout preview={`3 days to SkillUp 1.0 - ${trackName}`}>
       <Heading
         as="h1"
         style={{
@@ -54,15 +54,15 @@ export default function Reminder3DayEmail({
       </Section>
 
       <Text style={{ fontSize: 13, color: palette.navy, marginTop: 16 }}>
-        <strong>What to bring:</strong> a notebook, a pen, and — if you’re on a
-        digital track — your laptop. Your facilitator will share anything
+        <strong>What to bring:</strong> a notebook, a pen, and - if you’re on a
+        digital track - your laptop. Your facilitator will share anything
         specific in the WhatsApp group before Friday.
       </Text>
 
       {qrDataUrl && (
         <Section style={{ marginTop: 18, textAlign: "center" }}>
           <Text style={{ fontSize: 11, color: palette.muted, margin: 0 }}>
-            Save this QR — show it at the door on day one.
+            Save this QR - show it at the door on day one.
           </Text>
           <Img
             src={qrDataUrl}

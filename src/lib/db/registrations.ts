@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { DBRegistration } from "./types";
 
@@ -27,18 +28,23 @@ export async function getRegistrationByEmail(
   return data as DBRegistration;
 }
 
-export async function getRegistrationById(
-  id: string,
-): Promise<DBRegistration | null> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("registrations")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-  if (error || !data) return null;
-  return data as DBRegistration;
-}
+/**
+ * Wrapped in React `cache()` so the registrant detail page can have a
+ * Suspense child for the profile and another for the QR card without
+ * issuing two identical queries.
+ */
+export const getRegistrationById = cache(
+  async (id: string): Promise<DBRegistration | null> => {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("registrations")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (error || !data) return null;
+    return data as DBRegistration;
+  },
+);
 
 export interface RegistrationsFilter {
   query?: string;

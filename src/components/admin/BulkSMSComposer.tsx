@@ -66,7 +66,7 @@ export function BulkSMSComposer({ tracks }: Props) {
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <label className="flex flex-col gap-1.5">
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/60">
+          <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
             Audience
           </span>
           <select
@@ -81,7 +81,7 @@ export function BulkSMSComposer({ tracks }: Props) {
         </label>
         {audience === "track" && (
           <label className="flex flex-col gap-1.5">
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/60">
+            <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
               Track
             </span>
             <select
@@ -101,7 +101,7 @@ export function BulkSMSComposer({ tracks }: Props) {
       </div>
 
       <label className="flex flex-col gap-1.5">
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/60">
+        <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
           Message
         </span>
         <textarea
@@ -113,7 +113,7 @@ export function BulkSMSComposer({ tracks }: Props) {
           onChange={(e) => setMessage(e.target.value)}
         />
         <span
-          className={`font-mono text-[10px] uppercase tracking-[0.18em] ${
+          className={`font-sans text-[10px] uppercase tracking-[0.18em] ${
             charsLeft < 20 ? "text-coral" : "text-navy/55"
           }`}
         >
@@ -124,7 +124,7 @@ export function BulkSMSComposer({ tracks }: Props) {
       <div className="flex items-center justify-between gap-3 border-t border-navy/8 pt-4">
         <div className="text-sm text-navy/65">
           Recipients:{" "}
-          <strong className="text-navy">{preview?.recipients ?? "—"}</strong>
+          <strong className="text-navy">{preview?.recipients ?? "-"}</strong>
         </div>
         <button
           type="submit"

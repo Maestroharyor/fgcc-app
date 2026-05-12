@@ -48,7 +48,7 @@ async function IndividualSuccess({ refNumber }: { refNumber: string }) {
   return (
     <div className="px-6 sm:px-10 py-12 sm:py-20">
       <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 sm:p-12 shadow-lift border border-navy/8">
-        <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+        <div className="flex items-center gap-3 font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
           <CheckCircle2 className="h-4 w-4" aria-hidden /> Confirmed
         </div>
         <h1 className="mt-3 font-display text-3xl sm:text-4xl font-semibold tracking-tight text-navy">
@@ -56,23 +56,23 @@ async function IndividualSuccess({ refNumber }: { refNumber: string }) {
         </h1>
         <p className="mt-2 text-navy/70">
           Your spot is locked for SkillUp 1.0 · June 12 – 14, 2026 at Cement
-          Missionary HQ, Lagos. Screenshot this page — your QR code is your
+          Missionary HQ, Lagos. Screenshot this page - your QR code is your
           fast-pass at the door.
         </p>
 
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-6 items-center">
           <div>
             <div className="rounded-2xl bg-cream-100 p-5">
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-navy/55">
+              <div className="font-sans text-[10px] uppercase tracking-[0.2em] text-navy/55">
                 Reference number
               </div>
-              <div className="mt-1 font-mono text-2xl font-bold tracking-[0.04em] text-navy">
+              <div className="mt-1 font-sans text-2xl font-bold tracking-[0.04em] text-navy">
                 {registration.reference_number}
               </div>
             </div>
 
             <dl className="mt-5 grid grid-cols-1 gap-3 text-sm">
-              <Row label="Track" value={track?.name ?? "—"} />
+              <Row label="Track" value={track?.name ?? "-"} />
               <Row label="Facilitator" value={track?.facilitator ?? "TBA"} />
               <Row label="Dates" value="June 12 – 14, 2026" />
               <Row label="Venue" value="Cement Missionary HQ, Lagos" />
@@ -129,7 +129,7 @@ async function BatchSuccess({ batchId }: { batchId: string }) {
   return (
     <div className="px-6 sm:px-10 py-12 sm:py-20">
       <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 sm:p-12 shadow-lift border border-navy/8 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full bg-primary/8 px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
+        <div className="inline-flex items-center gap-2 rounded-full bg-primary/8 px-4 py-1.5 font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
           <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> Submitted
         </div>
         <h1 className="mt-4 font-display text-3xl sm:text-4xl font-semibold tracking-tight text-navy">
@@ -140,7 +140,7 @@ async function BatchSuccess({ batchId }: { batchId: string }) {
           You registered {data?.total_registrants ?? "several"}{" "}
           {data?.total_registrants === 1 ? "person" : "people"} for SkillUp 1.0.
           A summary email with every reference code is on the way to your inbox
-          now — share each code with the person it belongs to.
+          now - share each code with the person it belongs to.
         </p>
         <a
           href="/skillup#tracks"
@@ -199,7 +199,7 @@ function Fallback() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-navy/6 last:border-b-0 pb-2 last:pb-0">
-      <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-navy/55">
+      <dt className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
         {label}
       </dt>
       <dd className="text-sm font-medium text-navy text-right">{value}</dd>
