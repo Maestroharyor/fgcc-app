@@ -27,7 +27,7 @@ const optionalString = z
   .optional()
   .transform((v) => (v?.length ? v : undefined));
 
-export const GenderEnum = z.enum(["male", "female", "other"], {
+export const GenderEnum = z.enum(["male", "female"], {
   message: "Pick a gender",
 });
 

@@ -1,6 +1,15 @@
 "use client";
 
-import { toast } from "@heroui/react";
+import {
+  Autocomplete,
+  EmptyState,
+  type Key,
+  ListBox,
+  SearchField,
+  Select,
+  toast,
+  useFilter,
+} from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -127,7 +136,7 @@ function ModeToggle({
           onClick={() => setMode("self")}
           aria-pressed={mode === "self"}
           className={cn(
-            "rounded-full px-4 py-2.5 font-display text-sm font-semibold transition",
+            "cursor-pointer rounded-full px-4 py-2.5 font-display text-sm font-semibold transition",
             mode === "self"
               ? "bg-white text-navy shadow-sm"
               : "text-navy/60 hover:text-navy",
@@ -140,7 +149,7 @@ function ModeToggle({
           onClick={() => setMode("others")}
           aria-pressed={mode === "others"}
           className={cn(
-            "rounded-full px-4 py-2.5 font-display text-sm font-semibold transition",
+            "cursor-pointer rounded-full px-4 py-2.5 font-display text-sm font-semibold transition",
             mode === "others"
               ? "bg-white text-navy shadow-sm"
               : "text-navy/60 hover:text-navy",
@@ -290,21 +299,26 @@ function SelfForm({
           <input className="form-input" {...register("church")} />
         </Field>
         <Field label="Gender" error={errors.gender?.message}>
-          <select className="form-input" {...register("gender")}>
-            <option value="">Select…</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Prefer not to say</option>
-          </select>
+          <OptionSelect
+            options={GENDER_OPTIONS}
+            value={watch("gender")}
+            onChange={(v) =>
+              setValue("gender", v as RegistrationFormValues["gender"], {
+                shouldValidate: true,
+              })
+            }
+          />
         </Field>
         <Field label="Age group" error={errors.age_group?.message}>
-          <select className="form-input" {...register("age_group")}>
-            <option value="">Select…</option>
-            <option value="under_18">Under 18</option>
-            <option value="18_25">18 – 25</option>
-            <option value="26_35">26 – 35</option>
-            <option value="36_plus">36 +</option>
-          </select>
+          <OptionSelect
+            options={AGE_GROUP_OPTIONS}
+            value={watch("age_group")}
+            onChange={(v) =>
+              setValue("age_group", v as RegistrationFormValues["age_group"], {
+                shouldValidate: true,
+              })
+            }
+          />
         </Field>
       </div>
 
@@ -322,14 +336,16 @@ function SelfForm({
         label="How did you hear about us? (optional)"
         error={errors.how_heard?.message}
       >
-        <select className="form-input" {...register("how_heard")}>
-          <option value="">Pick one…</option>
-          <option value="whatsapp">WhatsApp</option>
-          <option value="social_media">Social media</option>
-          <option value="church">Church / pastor</option>
-          <option value="friend">A friend</option>
-          <option value="other">Other</option>
-        </select>
+        <OptionSelect
+          placeholder="Pick one…"
+          options={HOW_HEARD_OPTIONS}
+          value={watch("how_heard")}
+          onChange={(v) =>
+            setValue("how_heard", v as RegistrationFormValues["how_heard"], {
+              shouldValidate: true,
+            })
+          }
+        />
       </Field>
 
       {serverError && <p className="text-sm text-coral">{serverError}</p>}
@@ -453,17 +469,17 @@ function OthersForm({
             label="Relationship to registrants"
             error={errors.submitter?.relationship?.message}
           >
-            <select
-              className="form-input"
-              {...register("submitter.relationship")}
-            >
-              <option value="">Select…</option>
-              <option value="pastor">Pastor</option>
-              <option value="parent">Parent</option>
-              <option value="friend">Friend</option>
-              <option value="church_worker">Church worker</option>
-              <option value="other">Other</option>
-            </select>
+            <OptionSelect
+              options={RELATIONSHIP_OPTIONS}
+              value={watch("submitter.relationship")}
+              onChange={(v) =>
+                setValue(
+                  "submitter.relationship",
+                  v as RegisterOthersFormValues["submitter"]["relationship"],
+                  { shouldValidate: true },
+                )
+              }
+            />
           </Field>
           <Field
             label="Church or organisation"
@@ -600,27 +616,30 @@ function RegistrantBlock({
           />
         </Field>
         <Field label="Gender" error={rErr?.gender?.message}>
-          <select
-            className="form-input"
-            {...register(`registrants.${index}.gender`)}
-          >
-            <option value="">Select…</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Prefer not to say</option>
-          </select>
+          <OptionSelect
+            options={GENDER_OPTIONS}
+            value={watch(`registrants.${index}.gender`)}
+            onChange={(v) =>
+              setValue(
+                `registrants.${index}.gender`,
+                v as OthersRegistrantInput["gender"],
+                { shouldValidate: true },
+              )
+            }
+          />
         </Field>
         <Field label="Age group" error={rErr?.age_group?.message}>
-          <select
-            className="form-input"
-            {...register(`registrants.${index}.age_group`)}
-          >
-            <option value="">Select…</option>
-            <option value="under_18">Under 18</option>
-            <option value="18_25">18 – 25</option>
-            <option value="26_35">26 – 35</option>
-            <option value="36_plus">36 +</option>
-          </select>
+          <OptionSelect
+            options={AGE_GROUP_OPTIONS}
+            value={watch(`registrants.${index}.age_group`)}
+            onChange={(v) =>
+              setValue(
+                `registrants.${index}.age_group`,
+                v as OthersRegistrantInput["age_group"],
+                { shouldValidate: true },
+              )
+            }
+          />
         </Field>
       </div>
       <div className="mt-4">
@@ -655,17 +674,93 @@ function Field({
   wide?: boolean;
   children: React.ReactNode;
 }) {
+  // Plain <div> wrapper (not <label>) so HeroUI's compositional Select /
+  // Autocomplete don't get their popover toggled off by a label-relayed click.
   return (
-    // biome-ignore lint/a11y/noLabelWithoutControl: the input is the children prop - nested-input pattern is valid.
-    <label className={cn("flex flex-col gap-1.5", wide && "sm:col-span-2")}>
+    <div className={cn("flex flex-col gap-1.5", wide && "sm:col-span-2")}>
       <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
         {label}
       </span>
       {children}
       {error && <span className="text-xs text-coral">{error}</span>}
-    </label>
+    </div>
   );
 }
+
+// Trigger styling that matches `.form-input` (h-11 + border + rounded-xl) so
+// HeroUI Select / Autocomplete sit at the same height as the text inputs and
+// share the cream-on-white border treatment.
+const TRIGGER_CLASS =
+  "h-11 w-full rounded-xl border border-navy/12 bg-white px-3.5 font-sans text-sm text-navy flex items-center justify-between gap-2 data-[focused]:border-primary/40 data-[focused]:ring-2 data-[focused]:ring-primary/15";
+
+function OptionSelect({
+  value,
+  onChange,
+  options,
+  placeholder = "Select…",
+}: {
+  value: string | undefined;
+  onChange: (value: string) => void;
+  options: ReadonlyArray<{ value: string; label: string }>;
+  placeholder?: string;
+}) {
+  return (
+    <Select
+      className="w-full"
+      placeholder={placeholder}
+      selectionMode="single"
+      value={value ?? null}
+      onChange={(key: Key | Key[] | null) => {
+        if (typeof key === "string") onChange(key);
+        else if (typeof key === "number") onChange(String(key));
+        else onChange("");
+      }}
+    >
+      <Select.Trigger className={TRIGGER_CLASS}>
+        <Select.Value />
+        <Select.Indicator />
+      </Select.Trigger>
+      <Select.Popover>
+        <ListBox>
+          {options.map((opt) => (
+            <ListBox.Item key={opt.value} id={opt.value} textValue={opt.label}>
+              {opt.label}
+              <ListBox.ItemIndicator />
+            </ListBox.Item>
+          ))}
+        </ListBox>
+      </Select.Popover>
+    </Select>
+  );
+}
+
+const GENDER_OPTIONS = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+] as const;
+
+const AGE_GROUP_OPTIONS = [
+  { value: "under_18", label: "Under 18" },
+  { value: "18_25", label: "18 – 25" },
+  { value: "26_35", label: "26 – 35" },
+  { value: "36_plus", label: "36 +" },
+] as const;
+
+const HOW_HEARD_OPTIONS = [
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "social_media", label: "Social media" },
+  { value: "church", label: "Church / pastor" },
+  { value: "friend", label: "A friend" },
+  { value: "other", label: "Other" },
+] as const;
+
+const RELATIONSHIP_OPTIONS = [
+  { value: "pastor", label: "Pastor" },
+  { value: "parent", label: "Parent" },
+  { value: "friend", label: "Friend" },
+  { value: "church_worker", label: "Church worker" },
+  { value: "other", label: "Other" },
+] as const;
 
 function TrackSelect({
   tracks,
@@ -676,23 +771,58 @@ function TrackSelect({
   value: string | undefined;
   onChange: (code: string) => void;
 }) {
+  const { contains } = useFilter({ sensitivity: "base" });
   return (
-    <select
-      className="form-input"
-      value={value ?? ""}
-      onChange={(e) => onChange(e.target.value)}
+    <Autocomplete
+      className="w-full"
+      placeholder="Search and pick a track…"
+      selectionMode="single"
+      value={value ?? null}
+      onChange={(key: Key | Key[] | null) => {
+        if (typeof key === "string") onChange(key);
+        else if (typeof key === "number") onChange(String(key));
+        else onChange("");
+      }}
     >
-      <option value="">Select a track…</option>
-      {tracks.map((t) => (
-        <option key={t.code} value={t.code} disabled={t.is_full}>
-          {t.name}
-          {t.is_full
-            ? " · Full (waitlist)"
-            : t.remaining <= 5
-              ? ` · ${t.remaining} left`
-              : ` · ${t.remaining} spots`}
-        </option>
-      ))}
-    </select>
+      <Autocomplete.Trigger className={TRIGGER_CLASS}>
+        <Autocomplete.Value />
+        <Autocomplete.Indicator />
+      </Autocomplete.Trigger>
+      <Autocomplete.Popover>
+        <Autocomplete.Filter filter={contains}>
+          <SearchField autoFocus name="search" variant="secondary">
+            <SearchField.Group>
+              <SearchField.SearchIcon />
+              <SearchField.Input placeholder="Search tracks…" />
+              <SearchField.ClearButton />
+            </SearchField.Group>
+          </SearchField>
+          <ListBox
+            renderEmptyState={() => <EmptyState>No tracks match</EmptyState>}
+          >
+            {tracks.map((t) => (
+              <ListBox.Item
+                key={t.code}
+                id={t.code}
+                textValue={t.name}
+                isDisabled={t.is_full}
+              >
+                <span>
+                  {t.name}
+                  <span className="ml-2 text-xs text-navy/55">
+                    {t.is_full
+                      ? "Full (waitlist)"
+                      : t.remaining <= 5
+                        ? `${t.remaining} left`
+                        : `${t.remaining} spots`}
+                  </span>
+                </span>
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+            ))}
+          </ListBox>
+        </Autocomplete.Filter>
+      </Autocomplete.Popover>
+    </Autocomplete>
   );
 }
