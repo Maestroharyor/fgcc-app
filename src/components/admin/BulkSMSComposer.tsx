@@ -2,10 +2,10 @@
 
 import { Send } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
-import type { DBTrack } from "@/lib/db/types";
+import type { Track } from "@/content/tracks";
 
 interface Props {
-  tracks: DBTrack[];
+  tracks: readonly Track[];
 }
 
 interface PreviewResult {
@@ -21,7 +21,7 @@ interface SendResult {
 
 export function BulkSMSComposer({ tracks }: Props) {
   const [audience, setAudience] = useState<"all" | "track" | "attended">("all");
-  const [trackId, setTrackId] = useState<string>("");
+  const [trackCode, setTrackCode] = useState<string>("");
   const [message, setMessage] = useState("");
   const [preview, setPreview] = useState<PreviewResult | null>(null);
   const [result, setResult] = useState<SendResult | null>(null);
@@ -29,12 +29,12 @@ export function BulkSMSComposer({ tracks }: Props) {
 
   useEffect(() => {
     const params = new URLSearchParams({ audience });
-    if (audience === "track" && trackId) params.set("track_id", trackId);
+    if (audience === "track" && trackCode) params.set("track_code", trackCode);
     fetch(`/api/admin/sms/broadcast?${params.toString()}`)
       .then((r) => r.json())
       .then((d: PreviewResult) => setPreview(d))
       .catch(() => setPreview(null));
-  }, [audience, trackId]);
+  }, [audience, trackCode]);
 
   const onSend = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -48,7 +48,7 @@ export function BulkSMSComposer({ tracks }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           audience,
-          track_id: audience === "track" ? trackId : undefined,
+          track_code: audience === "track" ? trackCode : undefined,
           message,
         }),
       });
@@ -86,12 +86,12 @@ export function BulkSMSComposer({ tracks }: Props) {
             </span>
             <select
               className="form-input"
-              value={trackId}
-              onChange={(e) => setTrackId(e.target.value)}
+              value={trackCode}
+              onChange={(e) => setTrackCode(e.target.value)}
             >
               <option value="">Pick a track…</option>
               {tracks.map((t) => (
-                <option key={t.id} value={t.id}>
+                <option key={t.code} value={t.code}>
                   {t.name}
                 </option>
               ))}
@@ -131,7 +131,7 @@ export function BulkSMSComposer({ tracks }: Props) {
           disabled={
             pending ||
             message.trim().length === 0 ||
-            (audience === "track" && !trackId)
+            (audience === "track" && !trackCode)
           }
           className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 font-display text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
         >

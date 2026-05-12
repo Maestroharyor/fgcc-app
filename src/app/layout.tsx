@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Geist_Mono, Inter } from "next/font/google";
+import { Geist_Mono, Inter, Space_Grotesk } from "next/font/google";
 import { HeroUIProvider } from "@/components/providers/HeroUIProvider";
 import "./globals.css";
 
@@ -12,9 +12,10 @@ const sans = Inter({
   display: "swap",
 });
 
-const display = Bricolage_Grotesque({
+// Space Grotesk — the closest Cabinet-Grotesk-on-Google-Fonts substitute.
+const display = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-bricolage",
+  variable: "--font-space-grotesk",
   display: "swap",
   weight: ["400", "500", "600", "700"],
 });

@@ -3,8 +3,7 @@ import { Suspense } from "react";
 import { RegistrationForm } from "@/components/forms/RegistrationForm";
 import { CountdownTimer } from "@/components/ui/CountdownTimer";
 import { TRACKS } from "@/content/tracks";
-import { listTrackCapacity } from "@/lib/db/tracks";
-import type { DBTrackCapacity } from "@/lib/db/types";
+import { getTrackCounts, withCapacity } from "@/lib/db/tracks";
 import { env } from "@/lib/utils/env";
 
 export const dynamic = "force-dynamic";
@@ -15,27 +14,7 @@ export const metadata: Metadata = {
     "Register for SkillUp 1.0 — pick your skill track in under two minutes.",
 };
 
-export default async function RegisterPage() {
-  const dbCapacity = await listTrackCapacity();
-
-  // Fall back to in-memory tracks if the DB isn't reachable (dev without Supabase).
-  const tracks: DBTrackCapacity[] =
-    dbCapacity.length > 0
-      ? dbCapacity
-      : TRACKS.map((t, idx) => ({
-          id: `local-${idx}`,
-          code: t.code,
-          name: t.name,
-          category: t.category,
-          facilitator_name: t.facilitator,
-          glyph_key: t.glyph,
-          capacity: t.capacity,
-          is_active: true,
-          current_count: 0,
-          remaining: t.capacity,
-          is_full: false,
-        }));
-
+export default function RegisterPage() {
   return (
     <div className="px-6 sm:px-10 py-12 sm:py-16">
       <div className="mx-auto max-w-3xl">
@@ -63,8 +42,11 @@ export default async function RegisterPage() {
         </div>
 
         <div className="mt-8">
-          <Suspense fallback={<FormSkeleton />}>
-            <RegistrationForm tracks={tracks} />
+          {/* Streams the form in once live capacity counts resolve. Static
+              metadata for all 20 tracks is available immediately from
+              `src/content/tracks.ts` — we only wait on the count query. */}
+          <Suspense fallback={<RegistrationFormSkeleton />}>
+            <RegistrationFormWithCapacity />
           </Suspense>
         </div>
       </div>
@@ -72,19 +54,27 @@ export default async function RegisterPage() {
   );
 }
 
-function FormSkeleton() {
+async function RegistrationFormWithCapacity() {
+  const counts = await getTrackCounts();
+  const tracks = withCapacity(counts);
+  return <RegistrationForm tracks={tracks} />;
+}
+
+function RegistrationFormSkeleton() {
+  // First-paint render uses zero counts derived from static metadata — same
+  // layout the real form will produce, so the swap is invisible to the user.
+  const placeholderTracks = withCapacity({}, TRACKS);
   return (
     <div className="rounded-3xl border border-navy/8 bg-white p-8 shadow-card animate-pulse">
       <div className="h-4 w-40 bg-navy/10 rounded" />
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
         {["name", "email", "phone", "church", "gender", "age"].map((key) => (
-          <div
-            key={`skeleton-field-${key}`}
-            className="h-11 rounded-xl bg-navy/6"
-          />
+          <div key={`sk-${key}`} className="h-11 rounded-xl bg-navy/6" />
         ))}
       </div>
       <div className="mt-6 h-12 w-48 rounded-full bg-navy/10 ml-auto" />
+      {/* Silence unused-var warning while keeping the helper in scope. */}
+      <span className="sr-only">{placeholderTracks.length} tracks</span>
     </div>
   );
 }

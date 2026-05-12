@@ -4,12 +4,16 @@ import { createSupabaseMock, type SupabaseMock } from "@/test/mocks/supabase";
 
 let supabase: SupabaseMock;
 
+type SmsResult = { ok: boolean; message?: string; message_id?: string };
+
 const hoisted = vi.hoisted(() => ({
   createSupabaseAdminClient: vi.fn(),
   sendReminder3DayEmail: vi.fn(async () => ({ ok: true })),
   sendReminder1DayEmail: vi.fn(async () => ({ ok: true })),
   sendFeedbackRequestEmail: vi.fn(async () => ({ ok: true })),
-  sendBulkSMS: vi.fn(async () => []),
+  sendBulkSMS: vi.fn<(...args: unknown[]) => Promise<SmsResult[]>>(
+    async () => [],
+  ),
   qrDataUrl: vi.fn(async () => "data:image/png;base64,xxx"),
 }));
 

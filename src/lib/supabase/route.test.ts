@@ -18,7 +18,8 @@ describe("createSupabaseRouteClient", () => {
   it("returns a client wired to read + write cookies", async () => {
     const client = await createSupabaseRouteClient();
     expect(client).toEqual({ mock: "route-client" });
-    const [url, key, opts] = createServerClientMock.mock.calls[0] as [
+    const [url, key, opts] = createServerClientMock.mock
+      .calls[0] as unknown as [
       string,
       string,
       { cookies: { getAll: () => unknown; setAll: (c: unknown[]) => void } },

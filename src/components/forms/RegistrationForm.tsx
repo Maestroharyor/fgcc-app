@@ -11,7 +11,7 @@ import {
   registerOthersAction,
   registerSelfAction,
 } from "@/app/(marketing)/skillup/register/actions";
-import type { DBTrackCapacity } from "@/lib/db/types";
+import type { TrackWithCapacity } from "@/lib/db/types";
 import { cn } from "@/lib/utils/cn";
 import {
   type OthersRegistrantInput,
@@ -25,7 +25,7 @@ type RegistrationFormValues = z.input<typeof RegistrationSchema>;
 type RegisterOthersFormValues = z.input<typeof RegisterOthersSchema>;
 
 interface Props {
-  tracks: DBTrackCapacity[];
+  tracks: TrackWithCapacity[];
 }
 
 type Mode = "self" | "others";
@@ -101,7 +101,7 @@ function SelfForm({
   tracks,
   initialTrack,
 }: {
-  tracks: DBTrackCapacity[];
+  tracks: TrackWithCapacity[];
   initialTrack?: string | null;
 }) {
   const router = useRouter();
@@ -293,7 +293,7 @@ function OthersForm({
   tracks,
   initialTrack,
 }: {
-  tracks: DBTrackCapacity[];
+  tracks: TrackWithCapacity[];
   initialTrack?: string | null;
 }) {
   const router = useRouter();
@@ -472,7 +472,7 @@ function RegistrantBlock({
   onRemove,
 }: {
   index: number;
-  tracks: DBTrackCapacity[];
+  tracks: TrackWithCapacity[];
   register: ReturnType<typeof useForm<RegisterOthersFormValues>>["register"];
   setValue: ReturnType<typeof useForm<RegisterOthersFormValues>>["setValue"];
   watch: ReturnType<typeof useForm<RegisterOthersFormValues>>["watch"];
@@ -598,7 +598,7 @@ function TrackSelect({
   value,
   onChange,
 }: {
-  tracks: DBTrackCapacity[];
+  tracks: TrackWithCapacity[];
   value: string | undefined;
   onChange: (code: string) => void;
 }) {

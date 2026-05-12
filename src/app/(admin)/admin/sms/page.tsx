@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { BulkSMSComposer } from "@/components/admin/BulkSMSComposer";
+import { TRACKS } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
-import { listTracks } from "@/lib/db/tracks";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "SMS broadcast · SkillUp Admin",
@@ -12,7 +10,7 @@ export const metadata: Metadata = {
 
 export default async function AdminSMSPage() {
   await requireRole("superadmin");
-  const tracks = await listTracks();
+  // No data to fetch — tracks are static, no Suspense needed.
   return (
     <div className="px-6 md:px-10 py-10">
       <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">
@@ -26,7 +24,7 @@ export default async function AdminSMSPage() {
         numbers are not delivered on this route.
       </p>
       <div className="mt-6 max-w-2xl">
-        <BulkSMSComposer tracks={tracks} />
+        <BulkSMSComposer tracks={TRACKS} />
       </div>
     </div>
   );

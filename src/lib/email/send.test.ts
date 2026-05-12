@@ -1,7 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+type SendResult = {
+  data: { id: string } | null;
+  error: { message: string } | null;
+};
+
 const { sendMock, isConfiguredMock, resendClientMock } = vi.hoisted(() => ({
-  sendMock: vi.fn(async () => ({ data: { id: "msg" }, error: null })),
+  sendMock: vi.fn<(...args: unknown[]) => Promise<SendResult>>(async () => ({
+    data: { id: "msg" },
+    error: null,
+  })),
   isConfiguredMock: vi.fn(() => true),
   resendClientMock: vi.fn(() => ({ emails: { send: sendMock } })),
 }));
@@ -54,7 +62,7 @@ describe("send helpers — happy paths", () => {
       siteUrl: "http://localhost:3000",
     });
     expect(result.ok).toBe(true);
-    const call = sendMock.mock.calls[0]?.[0] as {
+    const call = sendMock.mock.calls[0]?.[0] as unknown as {
       from: string;
       to: string;
       subject: string;
@@ -81,7 +89,9 @@ describe("send helpers — happy paths", () => {
       ],
       dashboardUrl: "http://x/admin/registrations",
     });
-    const call = sendMock.mock.calls[0]?.[0] as { to: string | string[] };
+    const call = sendMock.mock.calls[0]?.[0] as unknown as {
+      to: string | string[];
+    };
     expect(call.to).toEqual(["admin@x.com"]);
   });
 
@@ -92,7 +102,7 @@ describe("send helpers — happy paths", () => {
       { firstName: "X", trackName: "T" },
       buf,
     );
-    const call = sendMock.mock.calls[0]?.[0] as {
+    const call = sendMock.mock.calls[0]?.[0] as unknown as {
       attachments: Array<{ filename: string; content: Buffer }>;
     };
     expect(call.attachments?.[0].filename).toMatch(/Certificate\.pdf$/);

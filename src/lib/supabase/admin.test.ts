@@ -28,7 +28,7 @@ describe("createSupabaseAdminClient", () => {
     const b = mod.createSupabaseAdminClient();
     expect(a).toBe(b);
     expect(createClientMock).toHaveBeenCalledOnce();
-    const [, , opts] = createClientMock.mock.calls[0] as [
+    const [, , opts] = createClientMock.mock.calls[0] as unknown as [
       string,
       string,
       { auth: { autoRefreshToken: boolean; persistSession: boolean } },

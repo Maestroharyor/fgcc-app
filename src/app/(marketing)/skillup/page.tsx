@@ -10,8 +10,8 @@ import { TrackCard } from "@/components/ui/TrackCard";
 import { FAQS } from "@/content/faqs";
 import { SCHEDULE } from "@/content/schedule";
 import { TRACKS, type Track, type TrackCategory } from "@/content/tracks";
-import { listTrackCapacity } from "@/lib/db/tracks";
-import type { DBTrackCapacity } from "@/lib/db/types";
+import { getTrackCounts, withCapacity } from "@/lib/db/tracks";
+import type { TrackWithCapacity } from "@/lib/db/types";
 
 export const revalidate = 60;
 
@@ -34,7 +34,7 @@ const CATEGORY_BLURB: Record<TrackCategory, string> = {
 };
 
 export default async function SkillupLandingPage() {
-  const capacityRows = await listTrackCapacity();
+  const capacityRows = withCapacity(await getTrackCounts());
   const capacityByCode = new Map(capacityRows.map((r) => [r.code, r]));
 
   return (
@@ -99,7 +99,7 @@ function Stat({
 function TracksSection({
   capacityByCode,
 }: {
-  capacityByCode: Map<string, DBTrackCapacity>;
+  capacityByCode: Map<string, TrackWithCapacity>;
 }) {
   const groups: Array<{ category: TrackCategory; tracks: Track[] }> = [
     {
@@ -160,7 +160,7 @@ function TracksSection({
   );
 }
 
-function StatsSection({ capacityRows }: { capacityRows: DBTrackCapacity[] }) {
+function StatsSection({ capacityRows }: { capacityRows: TrackWithCapacity[] }) {
   if (capacityRows.length === 0) return null;
   const totalRegistered = capacityRows.reduce(
     (acc, r) => acc + r.current_count,

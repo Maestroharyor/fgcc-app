@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { TRACKS_BY_CODE } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
 import { buildCsv } from "@/lib/csv/export";
 import { listRegistrations } from "@/lib/db/registrations";
-import { listTracks } from "@/lib/db/tracks";
 import { buildXlsx } from "@/lib/excel/export";
 import { buildPrintableList } from "@/lib/pdf/printable-list";
 
@@ -12,27 +12,25 @@ export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams;
   const format = (sp.get("format") ?? "csv").toLowerCase();
   const query = sp.get("q") ?? undefined;
-  const trackId = sp.get("track") ?? undefined;
+  const trackCode = sp.get("track") ?? undefined;
   const type = (sp.get("type") as "self" | "others" | null) ?? undefined;
   const attendedParam = sp.get("attended");
   const attended =
     attendedParam === "yes" ? true : attendedParam === "no" ? false : undefined;
 
-  const [{ rows }, tracks] = await Promise.all([
-    listRegistrations({
-      query,
-      trackId: trackId ?? undefined,
-      type: type ?? undefined,
-      attended,
-      page: 1,
-      pageSize: 5000,
-    }),
-    listTracks(),
-  ]);
-  const tracksById = new Map(tracks.map((t) => [t.id, t]));
+  const { rows } = await listRegistrations({
+    query,
+    trackCode: trackCode ?? undefined,
+    type: type ?? undefined,
+    attended,
+    page: 1,
+    pageSize: 5000,
+  });
+
+  // Track names come from the static catalogue — no DB round-trip needed.
   const decorated = rows.map((r) => ({
     ...r,
-    track_name: tracksById.get(r.track_id)?.name ?? "",
+    track_name: TRACKS_BY_CODE[r.track_code]?.name ?? r.track_code,
   }));
 
   if (format === "xlsx") {

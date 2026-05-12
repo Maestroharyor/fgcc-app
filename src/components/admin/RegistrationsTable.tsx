@@ -1,9 +1,11 @@
 import Link from "next/link";
-import type { DBRegistration, DBTrack } from "@/lib/db/types";
+import type { Track } from "@/content/tracks";
+import type { DBRegistration } from "@/lib/db/types";
 
 interface Props {
   rows: DBRegistration[];
-  tracksById: Map<string, DBTrack>;
+  /** Static lookup map keyed by 3-letter track code. */
+  tracksByCode: Map<string, Track>;
   page: number;
   pageSize: number;
   total: number;
@@ -12,7 +14,7 @@ interface Props {
 
 export function RegistrationsTable({
   rows,
-  tracksById,
+  tracksByCode,
   page,
   pageSize,
   total,
@@ -47,7 +49,7 @@ export function RegistrationsTable({
               </tr>
             )}
             {rows.map((r) => {
-              const track = tracksById.get(r.track_id);
+              const track = tracksByCode.get(r.track_code);
               return (
                 <tr
                   key={r.id}

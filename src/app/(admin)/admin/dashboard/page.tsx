@@ -2,7 +2,8 @@ import { ArrowUpRight, BarChart3, ScanLine, Star, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireRole } from "@/lib/auth/require-role";
-import type { DBRegistration, DBTrackCapacity } from "@/lib/db/types";
+import { getTrackCounts, withCapacity } from "@/lib/db/tracks";
+import type { DBRegistration } from "@/lib/db/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ export default async function AdminDashboardPage() {
     attendedRes,
     waitlistRes,
     recentRes,
-    capRes,
+    counts,
   ] = await Promise.all([
     supabase
       .from("registrations")
@@ -34,14 +35,11 @@ export default async function AdminDashboardPage() {
     supabase
       .from("registrations")
       .select(
-        "id, reference_number, full_name, email, created_at, registered_via, track_id",
+        "id, reference_number, full_name, email, created_at, registered_via, track_code",
       )
       .order("created_at", { ascending: false })
       .limit(10),
-    supabase
-      .from("v_track_capacity")
-      .select("*")
-      .order("current_count", { ascending: false }),
+    getTrackCounts(),
   ]);
 
   const total = totalRegistered ?? 0;
@@ -54,7 +52,9 @@ export default async function AdminDashboardPage() {
     (r) => (r as { registered_via: string }).registered_via === "others",
   ).length;
   const recent = (recentRes.data ?? []) as Array<Partial<DBRegistration>>;
-  const capacity = (capRes.data ?? []) as DBTrackCapacity[];
+  const capacity = withCapacity(counts).sort(
+    (a, b) => b.current_count - a.current_count,
+  );
 
   return (
     <div className="px-6 md:px-10 py-10">
@@ -103,7 +103,7 @@ export default async function AdminDashboardPage() {
                 (c.current_count / Math.max(c.capacity, 1)) * 100,
               );
               return (
-                <div key={c.id} className="flex flex-col gap-1.5">
+                <div key={c.code} className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-display font-medium text-navy">
                       {c.name}

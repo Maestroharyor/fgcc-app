@@ -1,37 +1,19 @@
-import type { DBRegistration, DBTrack, DBTrackCapacity } from "@/lib/db/types";
+import type { DBRegistration, TrackWithCapacity } from "@/lib/db/types";
 
-export const fixtureTrack: DBTrack = {
-  id: "track-uxd",
-  code: "UXD",
-  name: "UI/UX Design",
-  category: "digital",
-  description: "Design intuitive digital products.",
-  facilitator_name: "Ayomide Odewale",
-  facilitator_bio: null,
-  facilitator_image: null,
-  glyph_key: "design",
-  capacity: 20,
-  is_active: true,
-  created_at: "2026-05-01T00:00:00Z",
-};
-
-export const fixtureCapacityRow: DBTrackCapacity = {
-  id: "track-uxd",
+export const fixtureCapacityRow: TrackWithCapacity = {
   code: "UXD",
   name: "UI/UX Design",
   category: "digital",
   facilitator_name: "Ayomide Odewale",
   glyph_key: "design",
   capacity: 20,
-  is_active: true,
   current_count: 3,
   remaining: 17,
   is_full: false,
 };
 
-export const fixtureFullCapacityRow: DBTrackCapacity = {
+export const fixtureFullCapacityRow: TrackWithCapacity = {
   ...fixtureCapacityRow,
-  id: "track-cwd",
   code: "CWD",
   name: "Coding & Web Development",
   current_count: 20,
@@ -48,7 +30,7 @@ export const fixtureRegistration: DBRegistration = {
   gender: "male",
   age_group: "18_25",
   church: "Cement HQ",
-  track_id: "track-uxd",
+  track_code: "UXD",
   registered_via: "self",
   batch_id: null,
   how_heard: "whatsapp",

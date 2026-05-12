@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { CategoryBadge } from "@/components/ui/CategoryBadge";
 import { requireRole } from "@/lib/auth/require-role";
+import { getTrackCounts, withCapacity } from "@/lib/db/tracks";
 import type {
-  DBTrackCapacity,
   DBWaitlistEntry,
   TrackCategory,
+  TrackWithCapacity,
 } from "@/lib/db/types";
 import { listWaitlistForTrack } from "@/lib/db/waitlist";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -18,15 +18,12 @@ export const metadata: Metadata = {
 
 export default async function AdminTracksPage() {
   await requireRole("admin");
-  const supabase = await createSupabaseServerClient();
-  const { data: tracksData } = await supabase
-    .from("v_track_capacity")
-    .select("*")
-    .order("name", { ascending: true });
-  const tracks = (tracksData ?? []) as DBTrackCapacity[];
+  const tracks = withCapacity(await getTrackCounts()).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
 
   const waitlists = await Promise.all(
-    tracks.map((t) => listWaitlistForTrack(t.id)),
+    tracks.map((t) => listWaitlistForTrack(t.code)),
   );
 
   return (
@@ -45,7 +42,7 @@ export default async function AdminTracksPage() {
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-5">
         {tracks.map((t, i) => (
-          <TrackPanel key={t.id} track={t} waitlist={waitlists[i]} />
+          <TrackPanel key={t.code} track={t} waitlist={waitlists[i] ?? []} />
         ))}
       </div>
     </div>
@@ -56,7 +53,7 @@ function TrackPanel({
   track,
   waitlist,
 }: {
-  track: DBTrackCapacity;
+  track: TrackWithCapacity;
   waitlist: DBWaitlistEntry[];
 }) {
   const pct = Math.min(

@@ -1,7 +1,11 @@
 /**
- * Hand-typed mirrors of the Supabase row shapes. Generate via
- * `bunx supabase gen types typescript --project-id <id>` once Supabase is
- * connected, and replace this file. Until then these keep TS happy.
+ * Hand-typed mirrors of the Supabase row shapes for the DB-backed tables.
+ *
+ * Track metadata, FAQs, schedule, zone-churches all live in `src/content/*.ts`
+ * — they're source-controlled and never round-trip through the DB.
+ *
+ * Generate via `bunx supabase gen types typescript --project-id <id>` once
+ * Supabase is connected, and replace this file.
  */
 
 export type TrackCategory = "digital" | "creative" | "vocational";
@@ -16,35 +20,6 @@ export type Relationship =
 export type RegistrationVia = "self" | "others";
 export type Role = "admin" | "superadmin";
 export type AttendNext = "yes" | "no" | "maybe";
-
-export interface DBTrack {
-  id: string;
-  code: string;
-  name: string;
-  category: TrackCategory;
-  description: string | null;
-  facilitator_name: string | null;
-  facilitator_bio: string | null;
-  facilitator_image: string | null;
-  glyph_key: string | null;
-  capacity: number;
-  is_active: boolean;
-  created_at: string;
-}
-
-export interface DBTrackCapacity {
-  id: string;
-  code: string;
-  name: string;
-  category: TrackCategory;
-  facilitator_name: string | null;
-  glyph_key: string | null;
-  capacity: number;
-  is_active: boolean;
-  current_count: number;
-  remaining: number;
-  is_full: boolean;
-}
 
 export interface DBBatch {
   id: string;
@@ -66,7 +41,8 @@ export interface DBRegistration {
   gender: Gender;
   age_group: AgeGroup;
   church: string | null;
-  track_id: string;
+  /** 3-letter code from `src/content/tracks.ts` — e.g. "UXD", "CWD". */
+  track_code: string;
   registered_via: RegistrationVia;
   batch_id: string | null;
   how_heard: string | null;
@@ -81,7 +57,8 @@ export interface DBRegistration {
 
 export interface DBWaitlistEntry {
   id: string;
-  track_id: string;
+  /** 3-letter code from `src/content/tracks.ts`. */
+  track_code: string;
   full_name: string;
   email: string;
   phone: string;
@@ -113,8 +90,18 @@ export interface DBUserRole {
   assigned_at: string;
 }
 
-export interface DBZoneChurch {
-  id: number;
+/**
+ * Derived shape (static track metadata + live count). Built in code by
+ * `withCapacity(counts)` in `src/lib/db/tracks.ts` — never fetched directly.
+ */
+export interface TrackWithCapacity {
+  code: string;
   name: string;
-  area: string | null;
+  category: TrackCategory;
+  facilitator_name: string | null;
+  glyph_key: string;
+  capacity: number;
+  current_count: number;
+  remaining: number;
+  is_full: boolean;
 }

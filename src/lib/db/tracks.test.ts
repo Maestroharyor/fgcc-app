@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  fixtureCapacityRow,
-  fixtureFullCapacityRow,
-  fixtureTrack,
-} from "@/test/fixtures/tracks";
+import { TRACKS } from "@/content/tracks";
 import { createSupabaseMock, type SupabaseMock } from "@/test/mocks/supabase";
 
 let supabase: SupabaseMock;
@@ -20,96 +16,87 @@ beforeEach(() => {
   createSupabaseServerClient.mockImplementation(async () => supabase);
 });
 
-describe("listTracks", () => {
-  it("returns active tracks from supabase", async () => {
-    supabase = createSupabaseMock({
-      from: { tracks: { data: [fixtureTrack], error: null } },
-    });
-    createSupabaseServerClient.mockImplementation(async () => supabase);
-    const { listTracks } = await import("./tracks");
-    const result = await listTracks();
-    expect(result).toEqual([fixtureTrack]);
-  });
-
-  it("returns [] on error", async () => {
-    supabase = createSupabaseMock({
-      from: { tracks: { data: null, error: { message: "boom" } } },
-    });
-    createSupabaseServerClient.mockImplementation(async () => supabase);
-    const { listTracks } = await import("./tracks");
-    expect(await listTracks()).toEqual([]);
-  });
-});
-
-describe("listTrackCapacity", () => {
-  it("returns capacity rows", async () => {
+describe("getTrackCounts", () => {
+  it("returns a Record keyed by track_code from v_track_counts", async () => {
     supabase = createSupabaseMock({
       from: {
-        v_track_capacity: {
-          data: [fixtureCapacityRow, fixtureFullCapacityRow],
+        v_track_counts: {
+          data: [
+            { track_code: "UXD", current_count: 3 },
+            { track_code: "CWD", current_count: 17 },
+          ],
           error: null,
         },
       },
     });
     createSupabaseServerClient.mockImplementation(async () => supabase);
-    const { listTrackCapacity } = await import("./tracks");
-    const result = await listTrackCapacity();
-    expect(result).toHaveLength(2);
-    expect(result.find((r) => r.code === "CWD")?.is_full).toBe(true);
+    const { getTrackCounts } = await import("./tracks");
+    const result = await getTrackCounts();
+    expect(result).toEqual({ UXD: 3, CWD: 17 });
   });
 
-  it("returns [] on error", async () => {
+  it("returns {} on error", async () => {
     supabase = createSupabaseMock({
-      from: { v_track_capacity: { data: null, error: { message: "boom" } } },
+      from: { v_track_counts: { data: null, error: { message: "boom" } } },
     });
     createSupabaseServerClient.mockImplementation(async () => supabase);
-    const { listTrackCapacity } = await import("./tracks");
-    expect(await listTrackCapacity()).toEqual([]);
-  });
-});
-
-describe("getTrackByCode", () => {
-  it("returns a track when found (uppercases code)", async () => {
-    supabase = createSupabaseMock({
-      from: { tracks: { data: fixtureTrack, error: null } },
-    });
-    createSupabaseServerClient.mockImplementation(async () => supabase);
-    const { getTrackByCode } = await import("./tracks");
-    const result = await getTrackByCode("uxd");
-    expect(result?.code).toBe("UXD");
-    // Verify the query used the uppercased code
-    const call = supabase._calls.at(-1);
-    const eqFilter = call?.filters.find((f) => f.method === "eq");
-    expect(eqFilter?.args).toEqual(["code", "UXD"]);
-  });
-
-  it("returns null when not found", async () => {
-    supabase = createSupabaseMock({
-      from: { tracks: { data: null, error: null } },
-    });
-    createSupabaseServerClient.mockImplementation(async () => supabase);
-    const { getTrackByCode } = await import("./tracks");
-    expect(await getTrackByCode("xxx")).toBeNull();
+    const { getTrackCounts } = await import("./tracks");
+    expect(await getTrackCounts()).toEqual({});
   });
 });
 
-describe("getTrackCapacityByCode", () => {
-  it("returns capacity row when found", async () => {
-    supabase = createSupabaseMock({
-      from: { v_track_capacity: { data: fixtureCapacityRow, error: null } },
-    });
-    createSupabaseServerClient.mockImplementation(async () => supabase);
-    const { getTrackCapacityByCode } = await import("./tracks");
-    const result = await getTrackCapacityByCode("UXD");
-    expect(result?.code).toBe("UXD");
+describe("withCapacity", () => {
+  it("merges static track metadata with counts and computes remaining/is_full", async () => {
+    const { withCapacity } = await import("./tracks");
+    const result = withCapacity({ UXD: 5 });
+    const uxd = result.find((r) => r.code === "UXD");
+    if (!uxd) throw new Error("UXD missing from result");
+    expect(uxd.current_count).toBe(5);
+    expect(uxd.remaining).toBe(uxd.capacity - 5);
+    expect(uxd.is_full).toBe(false);
+    // Tracks with no count default to 0
+    const other = result.find((r) => r.code !== "UXD");
+    expect(other?.current_count).toBe(0);
+    expect(result).toHaveLength(TRACKS.length);
   });
 
-  it("returns null when missing", async () => {
+  it("flags is_full when current >= capacity", async () => {
+    const { withCapacity } = await import("./tracks");
+    const uxd = TRACKS.find((t) => t.code === "UXD");
+    if (!uxd) throw new Error("UXD missing from fixture catalogue");
+    const result = withCapacity({ UXD: uxd.capacity });
+    const row = result.find((r) => r.code === "UXD");
+    expect(row?.is_full).toBe(true);
+    expect(row?.remaining).toBe(0);
+  });
+
+  it("accepts a custom source list", async () => {
+    const { withCapacity } = await import("./tracks");
+    const subset = TRACKS.slice(0, 1);
+    const result = withCapacity({}, subset);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.current_count).toBe(0);
+  });
+});
+
+describe("getTrackCount", () => {
+  it("returns the count for an uppercased code", async () => {
     supabase = createSupabaseMock({
-      from: { v_track_capacity: { data: null, error: null } },
+      from: { registrations: { data: null, error: null, count: 7 } },
     });
     createSupabaseServerClient.mockImplementation(async () => supabase);
-    const { getTrackCapacityByCode } = await import("./tracks");
-    expect(await getTrackCapacityByCode("ZZZ")).toBeNull();
+    const { getTrackCount } = await import("./tracks");
+    expect(await getTrackCount("uxd")).toBe(7);
+    const eq = supabase._calls.at(-1)?.filters.find((f) => f.method === "eq");
+    expect(eq?.args).toEqual(["track_code", "UXD"]);
+  });
+
+  it("returns 0 when count is null", async () => {
+    supabase = createSupabaseMock({
+      from: { registrations: { data: null, error: null, count: null } },
+    });
+    createSupabaseServerClient.mockImplementation(async () => supabase);
+    const { getTrackCount } = await import("./tracks");
+    expect(await getTrackCount("UXD")).toBe(0);
   });
 });

@@ -19,7 +19,8 @@ describe("createSupabaseServerClient", () => {
     const client = await createSupabaseServerClient();
     expect(client).toEqual({ mock: "client" });
     expect(createServerClientMock).toHaveBeenCalledOnce();
-    const [url, key, opts] = createServerClientMock.mock.calls[0] as [
+    const [url, key, opts] = createServerClientMock.mock
+      .calls[0] as unknown as [
       string,
       string,
       { cookies: { getAll: () => unknown; setAll: (c: unknown[]) => void } },
@@ -34,7 +35,9 @@ describe("createSupabaseServerClient", () => {
 
   it("swallows cookie-write errors silently (RSC context)", async () => {
     await createSupabaseServerClient();
-    const opts = createServerClientMock.mock.calls.at(-1)?.[2] as {
+    const opts = (
+      createServerClientMock.mock.calls.at(-1) as unknown as unknown[]
+    )?.[2] as {
       cookies: {
         setAll: (
           c: { name: string; value: string; options?: unknown }[],

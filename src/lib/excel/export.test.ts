@@ -40,7 +40,7 @@ describe("buildXlsx", () => {
     const buf = await buildXlsx(rows, columns);
 
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(buf);
+    await wb.xlsx.load(buf as unknown as Parameters<typeof wb.xlsx.load>[0]);
     const sheet = wb.worksheets[0];
     expect(sheet.name).toBe("Registrations");
     // 1 header row + 2 data rows
@@ -59,7 +59,7 @@ describe("buildXlsx", () => {
   it("accepts a custom sheet name", async () => {
     const buf = await buildXlsx([], columns, "Attendees");
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(buf);
+    await wb.xlsx.load(buf as unknown as Parameters<typeof wb.xlsx.load>[0]);
     expect(wb.worksheets[0].name).toBe("Attendees");
   });
 });

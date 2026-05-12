@@ -4,10 +4,14 @@ import { createSupabaseMock, type SupabaseMock } from "@/test/mocks/supabase";
 
 let supabase: SupabaseMock;
 
+type SmsResult = { ok: boolean; message?: string; message_id?: string };
+
 const hoisted = vi.hoisted(() => ({
   requireRole: vi.fn(),
   createSupabaseServerClient: vi.fn(),
-  sendBulkSMS: vi.fn(async () => []),
+  sendBulkSMS: vi.fn<(...args: unknown[]) => Promise<SmsResult[]>>(
+    async () => [],
+  ),
 }));
 
 vi.mock("@/lib/auth/require-role", () => ({
@@ -91,7 +95,7 @@ describe("POST /api/admin/sms/broadcast", () => {
     expect(body.sent).toBe(2);
     expect(body.failed).toBe(0);
     expect(hoisted.sendBulkSMS).toHaveBeenCalledOnce();
-    const arg = hoisted.sendBulkSMS.mock.calls[0]?.[0] as Array<{
+    const arg = hoisted.sendBulkSMS.mock.calls[0]?.[0] as unknown as Array<{
       to: string;
       message: string;
     }>;

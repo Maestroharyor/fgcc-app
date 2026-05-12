@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  fixtureCapacityRow,
-  fixtureFullCapacityRow,
-} from "@/test/fixtures/tracks";
-import { createSupabaseMock, type SupabaseMock } from "@/test/mocks/supabase";
+  type ChainCall,
+  createSupabaseMock,
+  type MockResult,
+  type SupabaseMock,
+} from "@/test/mocks/supabase";
 
 let supabase: SupabaseMock;
 
@@ -57,6 +58,34 @@ function fd(values: Record<string, string | undefined>) {
   return f;
 }
 
+/**
+ * Build a registrations-table handler that distinguishes the three call
+ * shapes the action makes:
+ *   1. dedupe   — `.select("reference_number").eq("email", …).maybeSingle()`
+ *   2. capacity — `.select("*", { count: "exact", head: true }).eq("track_code", …)`
+ *   3. insert   — `.insert(…).select("reference_number").single()`
+ */
+function registrationsHandler(opts: {
+  dedupe?: MockResult;
+  count?: number;
+  insert?: MockResult;
+}): (chain: ChainCall) => MockResult {
+  return (chain) => {
+    if (chain.filters.some((f) => f.method === "insert")) {
+      return opts.insert ?? { data: null, error: null };
+    }
+    const isCountQuery = chain.filters.some(
+      (f) =>
+        f.method === "select" &&
+        (f.args[1] as { head?: boolean } | undefined)?.head === true,
+    );
+    if (isCountQuery) {
+      return { data: null, error: null, count: opts.count ?? 0 };
+    }
+    return opts.dedupe ?? { data: null, error: null };
+  };
+}
+
 const validSelf = {
   full_name: "Ada Lovelace",
   email: "ada@example.com",
@@ -91,29 +120,24 @@ describe("registerSelfAction", () => {
     expect(result.referenceNumber).toBe("SKU-UXD-099");
   });
 
-  it("returns track-not-found when the chosen code isn't in v_track_capacity", async () => {
-    let call = 0;
+  it("returns track-not-found when the chosen code isn't in the static catalogue", async () => {
     supabase = createSupabaseMock({
       from: {
-        registrations: { data: null, error: null },
-        v_track_capacity: () => {
-          call++;
-          return { data: null, error: null };
-        },
+        registrations: registrationsHandler({}),
       },
     });
     hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
-    const result = await registerSelfAction(fd(validSelf));
+    const result = await registerSelfAction(
+      fd({ ...validSelf, track_code: "ZZZ" }),
+    );
     expect(result.ok).toBe(false);
     expect(result.error).toBe("track-not-found");
-    expect(call).toBeGreaterThan(0);
   });
 
   it("routes a full track into the waitlist and sends waitlist email", async () => {
     supabase = createSupabaseMock({
       from: {
-        registrations: { data: null, error: null },
-        v_track_capacity: { data: fixtureFullCapacityRow, error: null },
+        registrations: registrationsHandler({ count: 999 }),
         waitlist: { data: null, error: null },
       },
     });
@@ -125,29 +149,23 @@ describe("registerSelfAction", () => {
     expect(result.error).toBe("waitlisted");
     expect(hoisted.sendWaitlistConfirmEmail).toHaveBeenCalledOnce();
     expect(hoisted.sendConfirmationEmail).not.toHaveBeenCalled();
-    // verify the waitlist insert went through with our fixture
     const waitlistCall = supabase._calls.find((c) => c.table === "waitlist");
     expect(waitlistCall?.operation).toBe("insert");
-    expect((waitlistCall?.payload as { track_id: string })?.track_id).toBe(
-      fixtureFullCapacityRow.id,
+    expect((waitlistCall?.payload as { track_code: string })?.track_code).toBe(
+      "UXD",
     );
   });
 
   it("registers + emails + revalidates on the happy path", async () => {
     supabase = createSupabaseMock({
       from: {
-        registrations: (chain) => {
-          // First call (dedupe select) returns no row; subsequent insert returns ref.
-          const isInsert = chain.filters.some((f) => f.method === "insert");
-          if (isInsert) {
-            return {
-              data: { reference_number: "SKU-UXD-001" },
-              error: null,
-            };
-          }
-          return { data: null, error: null };
-        },
-        v_track_capacity: { data: fixtureCapacityRow, error: null },
+        registrations: registrationsHandler({
+          count: 0,
+          insert: {
+            data: { reference_number: "SKU-UXD-001" },
+            error: null,
+          },
+        }),
       },
     });
     hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
@@ -165,11 +183,10 @@ describe("registerSelfAction", () => {
   it("propagates Supabase insert errors as unknown", async () => {
     supabase = createSupabaseMock({
       from: {
-        registrations: (chain) =>
-          chain.filters.some((f) => f.method === "insert")
-            ? { data: null, error: { message: "rls denied" } }
-            : { data: null, error: null },
-        v_track_capacity: { data: fixtureCapacityRow, error: null },
+        registrations: registrationsHandler({
+          count: 0,
+          insert: { data: null, error: { message: "rls denied" } },
+        }),
       },
     });
     hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
@@ -216,11 +233,13 @@ describe("registerOthersAction", () => {
     supabase = createSupabaseMock({
       from: {
         batches: { data: { id: "batch-1" }, error: null },
-        registrations: (chain) =>
-          chain.filters.some((f) => f.method === "insert")
-            ? { data: { reference_number: "SKU-UXD-007" }, error: null }
-            : { data: null, error: null },
-        v_track_capacity: { data: fixtureCapacityRow, error: null },
+        registrations: registrationsHandler({
+          count: 0,
+          insert: {
+            data: { reference_number: "SKU-UXD-007" },
+            error: null,
+          },
+        }),
       },
     });
     hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
@@ -228,7 +247,7 @@ describe("registerOthersAction", () => {
     const result = await registerOthersAction(validOthersPayload);
     expect(result.ok).toBe(true);
     expect(result.batchId).toBe("batch-1");
-    expect(hoisted.sendConfirmationEmail).toHaveBeenCalled(); // per-registrant
+    expect(hoisted.sendConfirmationEmail).toHaveBeenCalled();
     expect(hoisted.sendSubmitterSummaryEmail).toHaveBeenCalledOnce();
     expect(hoisted.sendAdminNotificationEmail).toHaveBeenCalledOnce();
   });
@@ -237,8 +256,7 @@ describe("registerOthersAction", () => {
     supabase = createSupabaseMock({
       from: {
         batches: { data: { id: "batch-2" }, error: null },
-        registrations: { data: null, error: null },
-        v_track_capacity: { data: fixtureFullCapacityRow, error: null },
+        registrations: registrationsHandler({ count: 999 }),
         waitlist: { data: null, error: null },
       },
     });
@@ -250,7 +268,6 @@ describe("registerOthersAction", () => {
       (c) => c.table === "waitlist" && c.operation === "insert",
     );
     expect(waitlistInserts.length).toBe(1);
-    // No registration inserted for this person
     const regInserts = supabase._calls.filter(
       (c) => c.table === "registrations" && c.operation === "insert",
     );

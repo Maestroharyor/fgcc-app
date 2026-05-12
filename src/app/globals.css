@@ -28,10 +28,11 @@
   --color-navy-muted: #475569;
 
   /* ── Typography ──────────────────────────────────────────────────────────
-     next/font/google in src/app/layout.tsx sets --font-bricolage, --font-inter,
-     and --font-geist-mono on <html>. Tailwind utilities `font-display`,
-     `font-sans`, `font-mono` resolve through the mappings below. */
-  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+     next/font/google in src/app/layout.tsx sets --font-space-grotesk,
+     --font-inter, and --font-geist-mono on <html>. Tailwind utilities
+     `font-display`, `font-sans`, `font-mono` resolve through these mappings. */
+  --font-display:
+    var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
 

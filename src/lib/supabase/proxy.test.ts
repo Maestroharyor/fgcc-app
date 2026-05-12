@@ -29,7 +29,9 @@ describe("createSupabaseProxyClient", () => {
       headers: { cookie: "sb-access-token=abc; theme=dark" },
     });
     createSupabaseProxyClient(request);
-    const opts = createServerClientMock.mock.calls[0]?.[2] as {
+    const opts = (
+      createServerClientMock.mock.calls[0] as unknown as unknown[]
+    )?.[2] as {
       cookies: { getAll: () => Array<{ name: string; value: string }> };
     };
     const all = opts.cookies.getAll();

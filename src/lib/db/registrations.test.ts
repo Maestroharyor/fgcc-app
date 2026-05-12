@@ -99,7 +99,7 @@ describe("listRegistrations", () => {
     expect(result.pageSize).toBe(50);
   });
 
-  it("applies q/trackId/type/attended filters", async () => {
+  it("applies q/trackCode/type/attended filters", async () => {
     supabase = createSupabaseMock({
       from: {
         registrations: { data: [], error: null, count: 0 },
@@ -109,7 +109,7 @@ describe("listRegistrations", () => {
     const { listRegistrations } = await import("./registrations");
     await listRegistrations({
       query: "John",
-      trackId: "track-uxd",
+      trackCode: "uxd",
       type: "self",
       attended: true,
       page: 2,
@@ -119,7 +119,7 @@ describe("listRegistrations", () => {
     expect(filters.some((f) => f.method === "or")).toBe(true);
     const eqs = filters.filter((f) => f.method === "eq");
     expect(
-      eqs.some((f) => f.args[0] === "track_id" && f.args[1] === "track-uxd"),
+      eqs.some((f) => f.args[0] === "track_code" && f.args[1] === "UXD"),
     ).toBe(true);
     expect(
       eqs.some((f) => f.args[0] === "registered_via" && f.args[1] === "self"),

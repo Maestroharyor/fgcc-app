@@ -1,37 +1,8 @@
 -- SkillUp 1.0 — Row Level Security policies
--- Apply after 000_init.sql.
+-- Apply after 000_init.sql. Only the DB-backed tables here — static content
+-- (tracks, zone churches, FAQs, etc.) lives in `src/content/*.ts`.
 
 set search_path = public;
-
--- ────────────────────────────────────────────────────────────────────────────
--- TRACKS — public read, superadmin write
--- ────────────────────────────────────────────────────────────────────────────
-alter table public.tracks enable row level security;
-
-drop policy if exists "tracks_public_select"    on public.tracks;
-drop policy if exists "tracks_superadmin_write" on public.tracks;
-drop policy if exists "tracks_admin_update"     on public.tracks;
-
-create policy "tracks_public_select"
-on public.tracks for select
-to anon, authenticated
-using (true);
-
-create policy "tracks_admin_update"
-on public.tracks for update
-to authenticated
-using (public.has_role('admin'))
-with check (public.has_role('admin'));
-
-create policy "tracks_superadmin_write"
-on public.tracks for insert
-to authenticated
-with check (public.has_role('superadmin'));
-
-create policy "tracks_superadmin_delete"
-on public.tracks for delete
-to authenticated
-using (public.has_role('superadmin'));
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- REGISTRATIONS — anon insert, admin read/update, superadmin delete
@@ -63,6 +34,19 @@ create policy "registrations_superadmin_del"
 on public.registrations for delete
 to authenticated
 using (public.has_role('superadmin'));
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- Count-only public read of registrations for the live capacity widget.
+-- Allows anon to SELECT just enough to derive `count(*) group by track_code`.
+-- We can't restrict column-level SELECT in PG RLS easily, so we publish a
+-- minimal view instead and grant SELECT on the view.
+-- ────────────────────────────────────────────────────────────────────────────
+create or replace view public.v_track_counts as
+select track_code, count(*)::int as current_count
+from public.registrations
+group by track_code;
+
+grant select on public.v_track_counts to anon, authenticated;
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- BATCHES — anon insert, admin read
@@ -146,25 +130,6 @@ using (user_id = auth.uid() or public.has_role('superadmin'));
 
 create policy "user_roles_superadmin_all"
 on public.user_roles for all
-to authenticated
-using (public.has_role('superadmin'))
-with check (public.has_role('superadmin'));
-
--- ────────────────────────────────────────────────────────────────────────────
--- ZONE_CHURCHES — public read, superadmin write
--- ────────────────────────────────────────────────────────────────────────────
-alter table public.zone_churches enable row level security;
-
-drop policy if exists "zone_churches_public_select"    on public.zone_churches;
-drop policy if exists "zone_churches_superadmin_write" on public.zone_churches;
-
-create policy "zone_churches_public_select"
-on public.zone_churches for select
-to anon, authenticated
-using (true);
-
-create policy "zone_churches_superadmin_write"
-on public.zone_churches for all
 to authenticated
 using (public.has_role('superadmin'))
 with check (public.has_role('superadmin'));

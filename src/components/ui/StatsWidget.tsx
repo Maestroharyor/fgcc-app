@@ -1,8 +1,8 @@
-import type { DBTrackCapacity } from "@/lib/db/types";
+import type { TrackWithCapacity } from "@/lib/db/types";
 import { CategoryBadge } from "./CategoryBadge";
 
 interface Props {
-  rows: DBTrackCapacity[];
+  rows: TrackWithCapacity[];
   totalRegistered: number;
   totalCapacity: number;
 }
@@ -35,7 +35,7 @@ export function StatsWidget({ rows, totalRegistered, totalCapacity }: Props) {
           );
           return (
             <div
-              key={row.id}
+              key={row.code}
               className="flex flex-col gap-1.5 rounded-xl border border-navy/6 bg-cream p-3"
             >
               <div className="flex items-center justify-between gap-2">

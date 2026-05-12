@@ -64,7 +64,7 @@ describe("sendSMS", () => {
     expect(result.ok).toBe(true);
     expect(result.message_id).toBe("abc");
     const call = fetchMock.mock.calls[0];
-    const [url, init] = call as [string, RequestInit];
+    const [url, init] = call as unknown as [string, RequestInit];
     expect(url).toBe("https://api.termii.com/api/sms/send");
     expect(init.method).toBe("POST");
     const body = JSON.parse(init.body as string);

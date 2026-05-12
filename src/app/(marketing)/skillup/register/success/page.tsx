@@ -1,9 +1,9 @@
 import { ArrowRight, CheckCircle2, MessageCircle } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { TRACKS_BY_CODE } from "@/content/tracks";
+import { Suspense } from "react";
+import { trackByCode } from "@/content/tracks";
 import { getRegistrationByReference } from "@/lib/db/registrations";
-import { getTrackByCode } from "@/lib/db/tracks";
 import { qrDataUrl } from "@/lib/qr/generate";
 import { parseReference } from "@/lib/ref-code/generate";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -21,22 +21,28 @@ interface PageProps {
 export default async function SuccessPage({ searchParams }: PageProps) {
   const { ref, batch } = await searchParams;
   if (batch) {
-    return <BatchSuccess batchId={batch} />;
+    return (
+      <Suspense fallback={<SuccessSkeleton />}>
+        <BatchSuccess batchId={batch} />
+      </Suspense>
+    );
   }
   if (!ref || !parseReference(ref)) {
     return <Fallback />;
   }
-  const registration = await getRegistrationByReference(ref);
+  return (
+    <Suspense fallback={<SuccessSkeleton />}>
+      <IndividualSuccess refNumber={ref} />
+    </Suspense>
+  );
+}
+
+async function IndividualSuccess({ refNumber }: { refNumber: string }) {
+  const registration = await getRegistrationByReference(refNumber);
   if (!registration) {
     return <Fallback />;
   }
-  const track = await getTrackByCode(
-    parseReference(registration.reference_number)?.trackCode ?? "",
-  );
-  const staticTrack =
-    TRACKS_BY_CODE[
-      parseReference(registration.reference_number)?.trackCode ?? ""
-    ];
+  const track = trackByCode(registration.track_code);
   const qr = await qrDataUrl(registration.reference_number);
 
   return (
@@ -67,10 +73,7 @@ export default async function SuccessPage({ searchParams }: PageProps) {
 
             <dl className="mt-5 grid grid-cols-1 gap-3 text-sm">
               <Row label="Track" value={track?.name ?? "—"} />
-              <Row
-                label="Facilitator"
-                value={track?.facilitator_name ?? "TBA"}
-              />
+              <Row label="Facilitator" value={track?.facilitator ?? "TBA"} />
               <Row label="Dates" value="June 12 – 14, 2026" />
               <Row label="Venue" value="Cement Missionary HQ, Lagos" />
             </dl>
@@ -87,9 +90,9 @@ export default async function SuccessPage({ searchParams }: PageProps) {
         </div>
 
         <div className="mt-8 flex flex-col sm:flex-row gap-3">
-          {staticTrack?.whatsappUrl && (
+          {track?.whatsappUrl && (
             <a
-              href={staticTrack.whatsappUrl}
+              href={track.whatsappUrl}
               target="_blank"
               rel="noreferrer noopener"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 font-display font-semibold text-white shadow-card hover:bg-primary-700"
@@ -146,6 +149,26 @@ async function BatchSuccess({ batchId }: { batchId: string }) {
           Back to programme
           <ArrowRight className="h-4 w-4" aria-hidden />
         </a>
+      </div>
+    </div>
+  );
+}
+
+function SuccessSkeleton() {
+  return (
+    <div className="px-6 sm:px-10 py-12 sm:py-20">
+      <div className="mx-auto max-w-2xl rounded-3xl bg-white p-8 sm:p-12 shadow-lift border border-navy/8 animate-pulse">
+        <div className="h-3 w-24 rounded bg-navy/10" />
+        <div className="mt-4 h-9 w-2/3 rounded bg-navy/10" />
+        <div className="mt-3 h-4 w-full rounded bg-navy/8" />
+        <div className="mt-1 h-4 w-3/4 rounded bg-navy/8" />
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-6 items-center">
+          <div className="space-y-3">
+            <div className="h-20 rounded-2xl bg-cream-100" />
+            <div className="h-32 rounded-2xl bg-navy/4" />
+          </div>
+          <div className="h-44 w-44 rounded-2xl bg-navy/8" />
+        </div>
       </div>
     </div>
   );

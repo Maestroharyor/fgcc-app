@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { ZodError, type z } from "zod";
-import { TRACKS_BY_CODE } from "@/content/tracks";
+import { TRACKS_BY_CODE, trackByCode } from "@/content/tracks";
+import { getTrackCount } from "@/lib/db/tracks";
 import { nextWaitlistPosition } from "@/lib/db/waitlist";
 import {
   sendAdminNotificationEmail,
@@ -44,23 +45,24 @@ function firstName(full: string) {
   return full.trim().split(/\s+/)[0] ?? full;
 }
 
-async function lookupTrack(code: string) {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("v_track_capacity")
-    .select("*")
-    .eq("code", code.toUpperCase())
-    .maybeSingle();
-  return data as {
-    id: string;
-    code: string;
-    name: string;
-    capacity: number;
-    current_count: number;
-    remaining: number;
-    is_full: boolean;
-    facilitator_name: string | null;
-  } | null;
+/**
+ * Resolve a track via static content + a single-track count query. Returns
+ * `null` if the code isn't in `src/content/tracks.ts` (validation should catch
+ * this earlier, but defence in depth).
+ */
+async function resolveTrack(code: string) {
+  const track = trackByCode(code);
+  if (!track) return null;
+  const currentCount = await getTrackCount(track.code);
+  return {
+    code: track.code,
+    name: track.name,
+    facilitator: track.facilitator,
+    capacity: track.capacity,
+    whatsappUrl: track.whatsappUrl,
+    currentCount,
+    isFull: currentCount >= track.capacity,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -94,16 +96,16 @@ export async function registerSelfAction(
     };
   }
 
-  const track = await lookupTrack(parsed.track_code);
+  const track = await resolveTrack(parsed.track_code);
   if (!track) {
     return { ok: false, error: "track-not-found", message: "Track not found." };
   }
 
   // Full → waitlist branch.
-  if (track.is_full) {
-    const position = await nextWaitlistPosition(track.id);
+  if (track.isFull) {
+    const position = await nextWaitlistPosition(track.code);
     const { error } = await supabase.from("waitlist").insert({
-      track_id: track.id,
+      track_code: track.code,
       full_name: parsed.full_name,
       email: parsed.email,
       phone: parsed.phone,
@@ -138,7 +140,7 @@ export async function registerSelfAction(
       gender: parsed.gender,
       age_group: parsed.age_group,
       church: parsed.church ?? null,
-      track_id: track.id,
+      track_code: track.code,
       registered_via: "self",
       how_heard: parsed.how_heard ?? null,
     })
@@ -154,7 +156,6 @@ export async function registerSelfAction(
   }
 
   const ref = inserted.reference_number;
-  const staticTrack = TRACKS_BY_CODE[track.code];
 
   // Fire-and-forget emails — we don't block the redirect.
   const qr = await qrDataUrl(ref).catch(() => "");
@@ -163,8 +164,8 @@ export async function registerSelfAction(
       firstName: firstName(parsed.full_name),
       referenceNumber: ref,
       trackName: track.name,
-      facilitatorName: track.facilitator_name,
-      whatsappUrl: staticTrack?.whatsappUrl ?? env.NEXT_PUBLIC_SITE_URL,
+      facilitatorName: track.facilitator,
+      whatsappUrl: track.whatsappUrl ?? env.NEXT_PUBLIC_SITE_URL,
       qrDataUrl: qr,
       siteUrl: env.NEXT_PUBLIC_SITE_URL,
     }),
@@ -208,7 +209,6 @@ export async function registerOthersAction(
 
   const supabase = await createSupabaseServerClient();
 
-  // Create the batch first so registrations can FK into it.
   const { data: batch, error: batchError } = await supabase
     .from("batches")
     .insert({
@@ -243,13 +243,13 @@ export async function registerOthersAction(
   }> = [];
 
   for (const r of parsed.registrants) {
-    const track = await lookupTrack(r.track_code);
+    const track = await resolveTrack(r.track_code);
     if (!track) continue;
 
-    if (track.is_full) {
-      const position = await nextWaitlistPosition(track.id);
+    if (track.isFull) {
+      const position = await nextWaitlistPosition(track.code);
       await supabase.from("waitlist").insert({
-        track_id: track.id,
+        track_code: track.code,
         full_name: r.full_name,
         email:
           r.email ??
@@ -267,16 +267,14 @@ export async function registerOthersAction(
         email: r.email ?? "",
         phone: r.phone,
         church: r.church ?? null,
-        whatsappUrl:
-          TRACKS_BY_CODE[track.code]?.whatsappUrl ?? env.NEXT_PUBLIC_SITE_URL,
+        whatsappUrl: track.whatsappUrl ?? env.NEXT_PUBLIC_SITE_URL,
         waitlisted: true,
       });
       continue;
     }
 
-    // Generate a synthetic email for registrants who didn't provide one — the
-    // DB has a unique constraint on email. Track code + timestamp keeps it
-    // unique without colliding with real addresses.
+    // Synthesise a unique placeholder email when none provided — the DB
+    // requires a unique email per row.
     const emailToUse =
       r.email ??
       `noemail+${track.code.toLowerCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@placeholder.skillup`;
@@ -290,7 +288,7 @@ export async function registerOthersAction(
         gender: r.gender,
         age_group: r.age_group,
         church: r.church ?? null,
-        track_id: track.id,
+        track_code: track.code,
         registered_via: "others",
         batch_id: batch.id,
       })
@@ -310,28 +308,24 @@ export async function registerOthersAction(
       email: r.email ?? "",
       phone: r.phone,
       church: r.church ?? null,
-      whatsappUrl:
-        TRACKS_BY_CODE[track.code]?.whatsappUrl ?? env.NEXT_PUBLIC_SITE_URL,
+      whatsappUrl: track.whatsappUrl ?? env.NEXT_PUBLIC_SITE_URL,
       waitlisted: false,
     });
 
-    // Email the registrant directly if they provided one.
     if (r.email) {
       const qr = await qrDataUrl(ref).catch(() => "");
       await sendConfirmationEmail(r.email, {
         firstName: firstName(r.full_name),
         referenceNumber: ref,
         trackName: track.name,
-        facilitatorName: track.facilitator_name,
-        whatsappUrl:
-          TRACKS_BY_CODE[track.code]?.whatsappUrl ?? env.NEXT_PUBLIC_SITE_URL,
+        facilitatorName: track.facilitator,
+        whatsappUrl: track.whatsappUrl ?? env.NEXT_PUBLIC_SITE_URL,
         qrDataUrl: qr,
         siteUrl: env.NEXT_PUBLIC_SITE_URL,
       });
     }
   }
 
-  // Submitter summary + admin notification.
   await Promise.allSettled([
     sendSubmitterSummaryEmail(parsed.submitter.submitter_email, {
       submitterName: firstName(parsed.submitter.submitter_name),
@@ -362,6 +356,9 @@ export async function registerOthersAction(
       dashboardUrl: `${env.NEXT_PUBLIC_SITE_URL}/admin/registrations`,
     }),
   ]);
+
+  // Silence unused-import warning when TRACKS_BY_CODE isn't otherwise hit.
+  void TRACKS_BY_CODE;
 
   revalidatePath("/skillup");
   return { ok: true, batchId: batch.id };

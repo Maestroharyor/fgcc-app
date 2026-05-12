@@ -42,7 +42,8 @@ export async function getRegistrationById(
 
 export interface RegistrationsFilter {
   query?: string;
-  trackId?: string;
+  /** 3-letter track code from `src/content/tracks.ts`. */
+  trackCode?: string;
   type?: "self" | "others";
   attended?: boolean;
   page?: number;
@@ -63,7 +64,7 @@ export async function listRegistrations(
 ): Promise<RegistrationsPage> {
   const {
     query,
-    trackId,
+    trackCode,
     type,
     attended,
     page = 1,
@@ -83,7 +84,7 @@ export async function listRegistrations(
       `full_name.ilike.%${query}%,email.ilike.%${query}%,reference_number.ilike.%${query}%`,
     );
   }
-  if (trackId) q = q.eq("track_id", trackId);
+  if (trackCode) q = q.eq("track_code", trackCode.toUpperCase());
   if (type) q = q.eq("registered_via", type);
   if (attended !== undefined) q = q.eq("attended", attended);
 

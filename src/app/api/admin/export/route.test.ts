@@ -1,11 +1,10 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fixtureRegistration, fixtureTrack } from "@/test/fixtures/tracks";
+import { fixtureRegistration } from "@/test/fixtures/tracks";
 
 const hoisted = vi.hoisted(() => ({
   requireRole: vi.fn(),
   listRegistrations: vi.fn(),
-  listTracks: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/require-role", () => ({
@@ -16,16 +15,11 @@ vi.mock("@/lib/db/registrations", () => ({
   listRegistrations: hoisted.listRegistrations,
 }));
 
-vi.mock("@/lib/db/tracks", () => ({
-  listTracks: hoisted.listTracks,
-}));
-
 import { GET } from "./route";
 
 beforeEach(() => {
   vi.clearAllMocks();
   hoisted.requireRole.mockResolvedValue({ role: "admin", userId: "u1" });
-  hoisted.listTracks.mockResolvedValue([fixtureTrack]);
   hoisted.listRegistrations.mockResolvedValue({
     rows: [fixtureRegistration],
     total: 1,
@@ -73,17 +67,17 @@ describe("GET /api/admin/export", () => {
   it("forwards filter params to listRegistrations", async () => {
     await GET(
       new NextRequest(
-        "http://localhost:3000/api/admin/export?q=ada&track=track-uxd&type=self&attended=yes",
+        "http://localhost:3000/api/admin/export?q=ada&track=UXD&type=self&attended=yes",
       ),
     );
     const args = hoisted.listRegistrations.mock.calls[0]?.[0] as {
       query: string;
-      trackId: string;
+      trackCode: string;
       type: string;
       attended: boolean;
     };
     expect(args.query).toBe("ada");
-    expect(args.trackId).toBe("track-uxd");
+    expect(args.trackCode).toBe("UXD");
     expect(args.type).toBe("self");
     expect(args.attended).toBe(true);
   });

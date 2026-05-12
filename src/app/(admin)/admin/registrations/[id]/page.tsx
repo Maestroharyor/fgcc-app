@@ -2,10 +2,10 @@ import { ArrowLeft, Mail, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { trackByCode } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
 import { getRegistrationById } from "@/lib/db/registrations";
 import { qrDataUrl } from "@/lib/qr/generate";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -24,12 +24,7 @@ export default async function RegistrantProfile({ params }: Props) {
   const registration = await getRegistrationById(id);
   if (!registration) notFound();
 
-  const supabase = await createSupabaseServerClient();
-  const { data: track } = await supabase
-    .from("tracks")
-    .select("*")
-    .eq("id", registration.track_id)
-    .maybeSingle();
+  const track = trackByCode(registration.track_code);
 
   const qr = await qrDataUrl(registration.reference_number);
 
@@ -58,7 +53,7 @@ export default async function RegistrantProfile({ params }: Props) {
               </span>
             </Row>
             <Row label="Track">{track?.name ?? "—"}</Row>
-            <Row label="Facilitator">{track?.facilitator_name ?? "TBA"}</Row>
+            <Row label="Facilitator">{track?.facilitator ?? "TBA"}</Row>
             <Row label="Registered via">
               {registration.registered_via === "self" ? "Self" : "Someone else"}
             </Row>

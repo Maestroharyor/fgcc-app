@@ -1,29 +1,14 @@
 -- SkillUp 1.0 — initial schema
--- Run order: 000 → 001 (rls) → 002 (seed)
--- Safe to re-run on a fresh project. Tables guarded with IF NOT EXISTS where possible.
+--   • Only state-changing surfaces live in the DB. Tracks, FAQs, schedule,
+--     zone-churches, facilitator metadata all live in `src/content/*.ts` —
+--     PR-reviewable, no migration churn for copy edits.
+--   • Apply order: 000_init.sql → 001_rls.sql.
+-- Safe to re-run on a fresh project (guards with IF NOT EXISTS where possible).
 
 set search_path = public;
 
 create extension if not exists pgcrypto;
 create extension if not exists citext;
-
--- ────────────────────────────────────────────────────────────────────────────
--- TRACKS
--- ────────────────────────────────────────────────────────────────────────────
-create table if not exists public.tracks (
-  id                uuid primary key default gen_random_uuid(),
-  code              text not null unique,
-  name              text not null,
-  category          text not null check (category in ('digital','creative','vocational')),
-  description       text,
-  facilitator_name  text,
-  facilitator_bio   text,
-  facilitator_image text,
-  glyph_key         text,
-  capacity          integer not null default 20 check (capacity > 0),
-  is_active         boolean not null default true,
-  created_at        timestamptz not null default now()
-);
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- BATCHES — one row per Register-for-Others submission
@@ -43,6 +28,10 @@ create index if not exists batches_submitter_email_idx on public.batches (submit
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- REGISTRATIONS
+--   • `track_code` is the 3-letter code from `src/content/tracks.ts`
+--     (e.g. UXD, CWD). No FK — tracks are source-controlled in app code.
+--   • Per-track sequences for SKU-{CODE}-{NNN} ref numbers are created
+--     lazily inside the trigger function.
 -- ────────────────────────────────────────────────────────────────────────────
 create table if not exists public.registrations (
   id                       uuid primary key default gen_random_uuid(),
@@ -53,7 +42,7 @@ create table if not exists public.registrations (
   gender                   text not null check (gender in ('male','female','other')),
   age_group                text not null check (age_group in ('under_18','18_25','26_35','36_plus')),
   church                   text,
-  track_id                 uuid not null references public.tracks(id) on delete restrict,
+  track_code               text not null,
   registered_via           text not null default 'self' check (registered_via in ('self','others')),
   batch_id                 uuid references public.batches(id) on delete set null,
   how_heard                text,
@@ -67,7 +56,7 @@ create table if not exists public.registrations (
   unique (email)
 );
 
-create index if not exists registrations_track_idx     on public.registrations (track_id);
+create index if not exists registrations_track_idx     on public.registrations (track_code);
 create index if not exists registrations_created_idx   on public.registrations (created_at desc);
 create index if not exists registrations_attended_idx  on public.registrations (attended) where attended = true;
 create index if not exists registrations_batch_idx     on public.registrations (batch_id);
@@ -77,7 +66,7 @@ create index if not exists registrations_batch_idx     on public.registrations (
 -- ────────────────────────────────────────────────────────────────────────────
 create table if not exists public.waitlist (
   id          uuid primary key default gen_random_uuid(),
-  track_id    uuid not null references public.tracks(id) on delete cascade,
+  track_code  text not null,
   full_name   text not null,
   email       citext not null,
   phone       text not null,
@@ -87,10 +76,10 @@ create table if not exists public.waitlist (
   position    integer not null,
   notified_at timestamptz,
   created_at  timestamptz not null default now(),
-  unique (track_id, email)
+  unique (track_code, email)
 );
 
-create index if not exists waitlist_track_position_idx on public.waitlist (track_id, position);
+create index if not exists waitlist_track_position_idx on public.waitlist (track_code, position);
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- FEEDBACK
@@ -121,19 +110,10 @@ create table if not exists public.user_roles (
 );
 
 -- ────────────────────────────────────────────────────────────────────────────
--- ZONE_CHURCHES — seedable list for the Register-for-Others dropdown
--- ────────────────────────────────────────────────────────────────────────────
-create table if not exists public.zone_churches (
-  id   serial primary key,
-  name text not null unique,
-  area text
-);
-
--- ────────────────────────────────────────────────────────────────────────────
 -- REFERENCE NUMBER TRIGGER
--- Generates SKU-{TRACK_CODE}-{NNN} from per-track sequences.
--- Sequences are created lazily inside the function — works even if a track is
--- added later via admin UI.
+--   Generates SKU-{TRACK_CODE}-{NNN} from per-track sequences.
+--   Sequences are created lazily so adding a new track in code (no DB change)
+--   "just works" the first time someone registers for it.
 -- ────────────────────────────────────────────────────────────────────────────
 create or replace function public.generate_reference_number()
 returns trigger
@@ -150,9 +130,9 @@ begin
     return new;
   end if;
 
-  select code into v_code from public.tracks where id = new.track_id;
-  if v_code is null then
-    raise exception 'Track not found for id %', new.track_id;
+  v_code := upper(new.track_code);
+  if v_code is null or length(v_code) = 0 then
+    raise exception 'track_code is required';
   end if;
 
   v_seq_name := 'track_seq_' || lower(v_code);
@@ -168,7 +148,7 @@ begin
 
   execute format('select nextval(%L)', 'public.' || v_seq_name) into v_seq_val;
 
-  new.reference_number := 'SKU-' || upper(v_code) || '-' || lpad(v_seq_val::text, 3, '0');
+  new.reference_number := 'SKU-' || v_code || '-' || lpad(v_seq_val::text, 3, '0');
   return new;
 end;
 $$;
@@ -177,32 +157,6 @@ drop trigger if exists trg_registrations_refnum on public.registrations;
 create trigger trg_registrations_refnum
 before insert on public.registrations
 for each row execute function public.generate_reference_number();
-
--- ────────────────────────────────────────────────────────────────────────────
--- CAPACITY VIEW — public-readable, used for live stats and capacity badges.
--- ────────────────────────────────────────────────────────────────────────────
-create or replace view public.v_track_capacity as
-select
-  t.id,
-  t.code,
-  t.name,
-  t.category,
-  t.facilitator_name,
-  t.glyph_key,
-  t.capacity,
-  t.is_active,
-  coalesce(r.cnt, 0)::int                                       as current_count,
-  greatest(t.capacity - coalesce(r.cnt, 0), 0)::int             as remaining,
-  case when coalesce(r.cnt, 0) >= t.capacity then true else false end as is_full
-from public.tracks t
-left join (
-  select track_id, count(*)::int as cnt
-  from public.registrations
-  group by track_id
-) r on r.track_id = t.id;
-
--- Allow public + authenticated to read the view.
-grant select on public.v_track_capacity to anon, authenticated;
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- HELPER FUNCTION — role check used by RLS policies (defined in 001).
