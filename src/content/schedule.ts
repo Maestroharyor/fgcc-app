@@ -2,96 +2,105 @@ export interface ScheduleDay {
   label: string;
   date: string;
   theme: string;
-  blocks: Array<{ time: string; title: string; description: string }>;
+  blocks: Array<{ title: string; description: string }>;
 }
 
 export const SCHEDULE: ScheduleDay[] = [
   {
     label: "Day 1",
     date: "Friday, June 12, 2026",
-    theme: "Foundation - Vision & Skill Discovery",
+    theme: "Skill Training - Foundations",
     blocks: [
       {
-        time: "9:00 - 10:00 AM",
-        title: "Arrival, Check-in & Worship",
+        title: "Arrival & Registration Check-in",
         description:
-          "Welcome, fellowship, and corporate worship to set the tone for the three days.",
+          "Participants arrive, check in at the registration desk, and find their assigned skill track.",
       },
       {
-        time: "10:00 - 11:00 AM",
-        title: "Opening Plenary",
+        title: "Opening Devotion & Welcome",
         description:
-          "Pastoral charge - From Skills to Income. Why this generation must master craft.",
+          "Short devotion and welcome address to set the tone for the three days.",
       },
       {
-        time: "11:00 AM - 1:30 PM",
-        title: "Track Session 1",
+        title: "Skill Training Session 1",
         description:
-          "First hands-on session inside your chosen track. Facilitators set the trajectory.",
+          "Breakout rooms by skill track. Foundational knowledge, tool setup, and beginner-level practice with your facilitator.",
       },
       {
-        time: "1:30 - 2:30 PM",
-        title: "Lunch & Networking",
-        description: "Meal and intentional cross-track connections.",
+        title: "Break & Refreshments",
+        description:
+          "Refreshments and intentional cross-track networking with fellow participants.",
       },
       {
-        time: "2:30 - 5:00 PM",
-        title: "Track Session 2",
-        description: "Deep work - practical drills and project kick-off.",
+        title: "Skill Training Session 2",
+        description:
+          "Hands-on practice and project kick-off inside your chosen track.",
+      },
+      {
+        title: "Recap, Q&A, and Preview of Next Day",
+        description:
+          "Wrap-up reflection, questions for the facilitator, and a look ahead to Day 2.",
       },
     ],
   },
   {
     label: "Day 2",
     date: "Saturday, June 13, 2026",
-    theme: "Mastery - Practice & Project Build",
+    theme: "Skill Training - Deep Dive & Practice",
     blocks: [
       {
-        time: "9:00 - 9:30 AM",
-        title: "Devotion & Track Stand-up",
-        description: "Short devotion, then a stand-up inside your track.",
+        title: "Arrival & Registration Check-in",
+        description: "Participants check in and head into their track rooms.",
       },
       {
-        time: "9:30 AM - 12:30 PM",
-        title: "Track Session 3",
+        title: "Opening Devotion & Welcome",
+        description: "Short devotion and a stand-up briefing for the day.",
+      },
+      {
+        title: "Skill Training Session 1",
         description:
-          "Heads-down build session. Facilitators coach individually as you produce your day-two output.",
+          "Deeper exploration of your chosen skill - live demonstrations and guided practice.",
       },
       {
-        time: "12:30 - 1:30 PM",
-        title: "Lunch & Marketplace Talk",
+        title: "Break & Refreshments",
+        description: "Refreshments and peer connections across tracks.",
+      },
+      {
+        title: "Skill Training Session 2",
         description:
-          "Guest practitioner shares how they turned this skill into income in Lagos.",
+          "Hands-on project work - participants build real outputs (a video, a design, a soap batch, a gypsum piece, etc.).",
       },
       {
-        time: "1:30 - 5:00 PM",
-        title: "Track Session 4",
-        description: "Polish, peer-review, and prep for showcase pieces.",
+        title: "Recap, Q&A, and Preview of Sunday",
+        description:
+          "Day 2 wrap-up, facilitator Q&A, and what to expect on Dedicated Program Sunday.",
       },
     ],
   },
   {
     label: "Day 3",
     date: "Sunday, June 14, 2026",
-    theme: "Income - Showcase & Sending Off",
+    theme: "Dedicated Program Sunday",
     blocks: [
       {
-        time: "9:00 - 10:30 AM",
-        title: "Sunday Service",
+        title: "Skill Showcase",
         description:
-          "Worship and word for the SkillUp community. Open to all attendees.",
+          "Each track presents the work they built across the programme - a celebration of every participant's craft, with the wider church watching.",
       },
       {
-        time: "11:00 AM - 1:00 PM",
-        title: "Showcase Session",
+        title: "Monetization Masterclass",
         description:
-          "Each track presents output. The wider church community comes to see, encourage, and patronise.",
+          "Pricing, finding your first clients, social media marketing, and building a personal brand around your craft.",
       },
       {
-        time: "1:00 - 2:00 PM",
-        title: "Closing Charge & Commissioning",
+        title: "Panel Discussion",
         description:
-          "Closing prayer, certificate handover (as available), and sending off into the marketplace.",
+          "An open dialogue on the road ahead - what to do with your new skill in the weeks and months after SkillUp.",
+      },
+      {
+        title: "Closing Ceremony, Certificates & Group Photo",
+        description:
+          "Certificate presentation, closing charge, and the official group photo.",
       },
     ],
   },

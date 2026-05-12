@@ -253,9 +253,6 @@ function ScheduleSection() {
                   key={`${day.label}-${block.title}`}
                   className="flex flex-col gap-1 border-l-2 border-gold/40 pl-3"
                 >
-                  <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
-                    {block.time}
-                  </span>
                   <span className="font-display text-sm font-semibold text-navy">
                     {block.title}
                   </span>
