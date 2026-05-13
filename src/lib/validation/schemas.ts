@@ -2,6 +2,22 @@ import { z } from "zod";
 
 const phoneRegex = /^[+0-9()\-\s]{7,20}$/;
 
+/**
+ * Inline Nigerian-phone normaliser. Mirrors `normaliseNigerianPhone` in
+ * `src/lib/sms/termii.ts` so we can use it inside the shared validation
+ * schema without dragging the SMS module (and its fetch surface) into the
+ * client RHF bundle.
+ */
+function normalisePhone(input: string): string {
+  const cleaned = input.replace(/[^\d+]/g, "");
+  if (cleaned.startsWith("+")) return cleaned;
+  if (cleaned.startsWith("234")) return `+${cleaned}`;
+  if (cleaned.startsWith("0") && cleaned.length === 11) {
+    return `+234${cleaned.slice(1)}`;
+  }
+  return cleaned;
+}
+
 const baseName = z
   .string({ message: "Full name is required" })
   .trim()
@@ -18,7 +34,8 @@ const baseEmail = z
 const basePhone = z
   .string({ message: "Phone number is required" })
   .trim()
-  .regex(phoneRegex, "Enter a valid phone number");
+  .regex(phoneRegex, "Enter a valid phone number")
+  .transform(normalisePhone);
 
 const optionalString = z
   .string()

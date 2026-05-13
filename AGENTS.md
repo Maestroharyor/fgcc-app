@@ -85,7 +85,7 @@ src/
     admin/                 # AdminSidebar, RegistrationsTable, …
     providers/HeroUIProvider.tsx
   content/
-    tracks.ts              # the 20 tracks (codes, glyphs, WhatsApp links)
+    tracks.ts              # the 15 tracks (codes, glyphs, WhatsApp links)
     {faqs,schedule,facilitators}.ts
   emails/                  # React Email templates
   lib/

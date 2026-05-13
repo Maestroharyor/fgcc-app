@@ -19,7 +19,7 @@ export const revalidate = 60;
 export const metadata: Metadata = {
   title: "SkillUp 1.0 - From Skills to Income",
   description:
-    "Three days of hands-on training across 20 skill tracks. Free youth empowerment programme by Foursquare Gospel Church, Cement Missionary HQ. June 12–14, 2026.",
+    "Three days of hands-on training across 15 skill tracks. Free youth empowerment programme by Foursquare Gospel Church, Cement Missionary HQ. June 12–14, 2026.",
 };
 
 const CATEGORY_LABELS: Record<TrackCategory, string> = {
@@ -74,7 +74,7 @@ function AboutSection() {
       description="SkillUp 1.0 brings together facilitators across digital, creative, and vocational disciplines to equip Nigerian youth - church members and the broader public - with practical skill that turns into income."
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-        <Stat label="Skill tracks" value="20" tone="blue" />
+        <Stat label="Skill tracks" value="15" tone="blue" />
         <Stat label="Days of training" value="3" tone="gold" />
         <Stat label="Cost to attend" value="Free" tone="coral" />
       </div>
@@ -124,7 +124,7 @@ function TracksSection({
   return (
     <Section
       id="tracks"
-      eyebrow="The 20 tracks"
+      eyebrow="The 15 tracks"
       title="Pick the skill you want to walk away with."
       description="Each track runs for the full three days, led by a facilitator already practising professionally. Choose one and go deep."
       className="bg-cream-100"
@@ -172,7 +172,7 @@ function TracksSectionSkeleton() {
   return (
     <Section
       id="tracks"
-      eyebrow="The 20 tracks"
+      eyebrow="The 15 tracks"
       title="Pick the skill you want to walk away with."
       description="Each track runs for the full three days, led by a facilitator already practising professionally. Choose one and go deep."
       className="bg-cream-100"

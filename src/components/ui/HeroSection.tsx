@@ -20,7 +20,7 @@ export function HeroSection() {
 
           <p className="max-w-xl text-lg sm:text-xl leading-relaxed text-navy/75">
             SkillUp 1.0 is a three-day youth empowerment programme by Foursquare
-            Gospel Church, Cement Missionary HQ - 20 hands-on skill tracks
+            Gospel Church, Cement Missionary HQ - 15 hands-on skill tracks
             across digital, creative, and vocational disciplines. Free to
             attend.
           </p>
@@ -46,7 +46,7 @@ export function HeroSection() {
               href="#tracks"
               className="inline-flex h-14 items-center justify-center gap-2 rounded-full border border-navy/15 bg-white/60 px-7 font-display font-medium text-navy backdrop-blur transition hover:bg-white"
             >
-              See the 20 tracks
+              See the 15 tracks
             </a>
           </div>
 
@@ -56,7 +56,7 @@ export function HeroSection() {
               Cement HQ · Dopemu, Lagos
             </span>
             <span className="h-1 w-1 rounded-full bg-current opacity-30" />
-            <span>20 skill tracks</span>
+            <span>15 skill tracks</span>
             <span className="h-1 w-1 rounded-full bg-current opacity-30" />
             <span>Free admission</span>
           </div>
@@ -91,7 +91,7 @@ function HeroVisual() {
         </div>
       </div>
       <div className="absolute -top-4 -right-4 grid h-20 w-20 place-items-center rounded-2xl bg-gold font-display font-bold text-white shadow-lift rotate-3">
-        <span className="text-2xl leading-none">20</span>
+        <span className="text-2xl leading-none">15</span>
         <span className="text-[10px] uppercase tracking-widest">tracks</span>
       </div>
     </div>

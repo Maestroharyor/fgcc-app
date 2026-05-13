@@ -1,5 +1,5 @@
 /**
- * Static catalogue of the 20 SkillUp 1.0 tracks.
+ * Static catalogue of the 15 SkillUp 1.0 tracks.
  *
  * Source of truth for marketing pages, registration dropdowns, and confirmation
  * emails. The Supabase `tracks` table mirrors `code`, `name`, `category`,
@@ -22,7 +22,7 @@ export interface Track {
 }
 
 /**
- * Placeholder shared across all 20 tracks until per-track groups are confirmed.
+ * Placeholder shared across all 15 tracks until per-track groups are confirmed.
  * Swap each track's `whatsappUrl` to its real invite link as they're created.
  */
 const PLACEHOLDER_WHATSAPP_URL =
@@ -190,18 +190,6 @@ export const TRACKS: Track[] = [
     telegramUrl: tg,
   },
   {
-    code: "VAS",
-    name: "Virtual Assistance",
-    category: "digital",
-    facilitator: null,
-    glyph: "briefcase",
-    description:
-      "Work remotely for global clients - calendar, inbox, CRM, and the soft skills that retain them.",
-    capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
-  },
-  {
     code: "PCM",
     name: "Perfume, Diffusers & Candle Making",
     category: "vocational",
@@ -209,54 +197,6 @@ export const TRACKS: Track[] = [
     glyph: "flame",
     description:
       "Blend fragrances, pour candles, and craft reed diffusers - beautifully packaged.",
-    capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
-  },
-  {
-    code: "WIG",
-    name: "Wig Making & Hair Revamping",
-    category: "vocational",
-    facilitator: null,
-    glyph: "scissors",
-    description:
-      "Build wigs, revamp old hair, style for clients. A skill the Lagos market hires every weekend.",
-    capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
-  },
-  {
-    code: "FSH",
-    name: "Fashion Design & Tailoring",
-    category: "vocational",
-    facilitator: null,
-    glyph: "needle",
-    description:
-      "Sketch, cut, sew. Foundational tailoring skills that grow into a full atelier.",
-    capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
-  },
-  {
-    code: "SKN",
-    name: "Skincare & Cosmetics Formulation",
-    category: "vocational",
-    facilitator: null,
-    glyph: "leaf",
-    description:
-      "Formulate clean skincare and cosmetics - safe ingredients, batch testing, and brand basics.",
-    capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
-  },
-  {
-    code: "KNT",
-    name: "Knitting / Crocheting & Textile Crafts",
-    category: "vocational",
-    facilitator: null,
-    glyph: "yarn",
-    description:
-      "Crochet bags, knit tops, woven crafts - modern, sellable pieces from classic techniques.",
     capacity: 20,
     whatsappUrl: wa,
     telegramUrl: tg,

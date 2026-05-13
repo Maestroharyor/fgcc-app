@@ -61,7 +61,7 @@ export default function ComingSoonPage() {
               </span>
             </h2>
             <p className="mt-3 text-navy/70 leading-relaxed">
-              A three-day youth empowerment programme - 20 hands-on skill tracks
+              A three-day youth empowerment programme - 15 hands-on skill tracks
               across digital, creative, and vocational disciplines. Free to
               attend. Open to church members and the wider public.
             </p>

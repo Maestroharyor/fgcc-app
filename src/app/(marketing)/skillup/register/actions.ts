@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { ZodError, type z } from "zod";
-import { TRACKS_BY_CODE, trackByCode } from "@/content/tracks";
+import { trackByCode } from "@/content/tracks";
 import { getTrackCount } from "@/lib/db/tracks";
 import { nextWaitlistPosition } from "@/lib/db/waitlist";
 import {
@@ -484,9 +484,6 @@ export async function registerOthersAction(
     submitterSummary: batchEmailResults[0],
     adminNotification: batchEmailResults[1],
   });
-
-  // Silence unused-import warning when TRACKS_BY_CODE isn't otherwise hit.
-  void TRACKS_BY_CODE;
 
   revalidatePath("/skillup");
   console.log("[register:others] ⤵ success response", {

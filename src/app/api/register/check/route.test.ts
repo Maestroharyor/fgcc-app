@@ -4,19 +4,19 @@ import { createSupabaseMock, type SupabaseMock } from "@/test/mocks/supabase";
 
 let supabase: SupabaseMock;
 
-const { createSupabaseRouteClient } = vi.hoisted(() => ({
-  createSupabaseRouteClient: vi.fn(),
+const { createSupabaseAdminClient } = vi.hoisted(() => ({
+  createSupabaseAdminClient: vi.fn(),
 }));
 
-vi.mock("@/lib/supabase/route", () => ({
-  createSupabaseRouteClient,
+vi.mock("@/lib/supabase/admin", () => ({
+  createSupabaseAdminClient,
 }));
 
 import { GET } from "./route";
 
 beforeEach(() => {
   supabase = createSupabaseMock();
-  createSupabaseRouteClient.mockImplementation(async () => supabase);
+  createSupabaseAdminClient.mockReturnValue(supabase);
 });
 
 describe("GET /api/register/check", () => {
@@ -41,7 +41,7 @@ describe("GET /api/register/check", () => {
         },
       },
     });
-    createSupabaseRouteClient.mockImplementation(async () => supabase);
+    createSupabaseAdminClient.mockReturnValue(supabase);
     const res = await GET(
       new NextRequest(
         "http://localhost:3000/api/register/check?email=ADA@example.com",
@@ -66,7 +66,7 @@ describe("GET /api/register/check", () => {
         },
       },
     });
-    createSupabaseRouteClient.mockImplementation(async () => supabase);
+    createSupabaseAdminClient.mockReturnValue(supabase);
     const res = await GET(
       new NextRequest("http://localhost:3000/api/register/check?email=f@x.com"),
     );
@@ -79,7 +79,7 @@ describe("GET /api/register/check", () => {
     supabase = createSupabaseMock({
       from: { registrations: { data: null, error: { message: "boom" } } },
     });
-    createSupabaseRouteClient.mockImplementation(async () => supabase);
+    createSupabaseAdminClient.mockReturnValue(supabase);
     const res = await GET(
       new NextRequest("http://localhost:3000/api/register/check?email=x@x.com"),
     );

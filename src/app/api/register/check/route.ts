@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { TRACKS } from "@/content/tracks";
-import { createSupabaseRouteClient } from "@/lib/supabase/route";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(request: NextRequest) {
   const email = request.nextUrl.searchParams.get("email");
@@ -8,7 +8,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ found: false }, { status: 200 });
   }
   try {
-    const supabase = await createSupabaseRouteClient();
+    // Admin client because anon has no SELECT policy on registrations.
+    // This endpoint only returns reference_number + full_name + track_name
+    // for the queried email — same shape the user would see in their own
+    // confirmation email. The probe is rate-limited by the form's debounce.
+    const supabase = createSupabaseAdminClient();
     const { data } = await supabase
       .from("registrations")
       .select("reference_number, full_name, track_code")
