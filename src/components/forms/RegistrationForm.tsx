@@ -693,6 +693,12 @@ function Field({
 const TRIGGER_CLASS =
   "h-11 w-full rounded-xl border border-navy/12 bg-white px-3.5 font-sans text-sm text-navy flex items-center justify-between gap-2 data-[focused]:border-primary/40 data-[focused]:ring-2 data-[focused]:ring-primary/15";
 
+// Item styling: tinted background when selected, soft cream on hover/focus.
+// React-Aria emits `data-selected`, `data-hovered`, `data-focused` — Tailwind
+// v4 reads them via the `data-[…]:` variant.
+const LISTBOX_ITEM_CLASS =
+  "rounded-md data-[selected]:bg-primary/8 data-[selected]:text-primary data-[hovered]:bg-cream-100 data-[focused]:bg-cream-100 data-[disabled]:opacity-50";
+
 function OptionSelect({
   value,
   onChange,
@@ -723,7 +729,12 @@ function OptionSelect({
       <Select.Popover>
         <ListBox>
           {options.map((opt) => (
-            <ListBox.Item key={opt.value} id={opt.value} textValue={opt.label}>
+            <ListBox.Item
+              key={opt.value}
+              id={opt.value}
+              textValue={opt.label}
+              className={LISTBOX_ITEM_CLASS}
+            >
               {opt.label}
               <ListBox.ItemIndicator />
             </ListBox.Item>
@@ -806,6 +817,7 @@ function TrackSelect({
                 id={t.code}
                 textValue={t.name}
                 isDisabled={t.is_full}
+                className={LISTBOX_ITEM_CLASS}
               >
                 <span>
                   {t.name}
