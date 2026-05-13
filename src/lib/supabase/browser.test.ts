@@ -9,7 +9,7 @@ vi.mock("@supabase/ssr", () => ({
 vi.mock("@/lib/utils/env", () => ({
   env: {
     NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co",
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "anon-key",
   },
 }));
 
@@ -32,13 +32,13 @@ describe("createSupabaseBrowserClient", () => {
     vi.doMock("@/lib/utils/env", () => ({
       env: {
         NEXT_PUBLIC_SUPABASE_URL: undefined,
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: undefined,
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: undefined,
       },
     }));
     vi.resetModules();
     const mod = await import("./browser");
     expect(() => mod.createSupabaseBrowserClient()).toThrow(
-      /Supabase URL\/Anon key missing/,
+      /Supabase URL\/Publishable key missing/,
     );
   });
 });

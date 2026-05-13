@@ -1,18 +1,16 @@
-import { Heading, Img, Section, Text } from "@react-email/components";
+import { Heading, Section, Text } from "@react-email/components";
 import { EmailLayout, palette } from "./_Layout";
 
 export interface Reminder3DayEmailProps {
   firstName: string;
   trackName: string;
   facilitatorName: string | null;
-  qrDataUrl: string;
 }
 
 export default function Reminder3DayEmail({
   firstName = "friend",
   trackName = "your track",
   facilitatorName = "your facilitator",
-  qrDataUrl = "",
 }: Reminder3DayEmailProps) {
   return (
     <EmailLayout preview={`3 days to SkillUp 1.0 - ${trackName}`}>
@@ -58,21 +56,6 @@ export default function Reminder3DayEmail({
         digital track - your laptop. Your facilitator will share anything
         specific in the WhatsApp group before Friday.
       </Text>
-
-      {qrDataUrl && (
-        <Section style={{ marginTop: 18, textAlign: "center" }}>
-          <Text style={{ fontSize: 11, color: palette.muted, margin: 0 }}>
-            Save this QR - show it at the door on day one.
-          </Text>
-          <Img
-            src={qrDataUrl}
-            alt="Check-in QR code"
-            width={140}
-            height={140}
-            style={{ margin: "10px auto 0", borderRadius: 12 }}
-          />
-        </Section>
-      )}
     </EmailLayout>
   );
 }

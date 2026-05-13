@@ -6,11 +6,11 @@ import { BroadcastSmsSchema } from "@/lib/validation/schemas";
 
 async function audienceQuery(
   audience: "all" | "track" | "attended",
-  trackId?: string,
+  trackCode?: string,
 ) {
   const supabase = await createSupabaseServerClient();
   let q = supabase.from("registrations").select("phone");
-  if (audience === "track" && trackId) q = q.eq("track_id", trackId);
+  if (audience === "track" && trackCode) q = q.eq("track_code", trackCode);
   if (audience === "attended") q = q.eq("attended", true);
   const { data } = await q;
   return (data ?? [])
@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
     | "all"
     | "track"
     | "attended";
-  const trackId = sp.get("track_id") ?? undefined;
-  const phones = await audienceQuery(audience, trackId);
+  const trackCode = sp.get("track_code") ?? undefined;
+  const phones = await audienceQuery(audience, trackCode);
   return NextResponse.json({ recipients: phones.length });
 }
 
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   const payload = await request.json().catch(() => ({}));
   let parsed: {
     audience: "all" | "track" | "attended";
-    track_id?: string;
+    track_code?: string;
     message: string;
   };
   try {
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const phones = await audienceQuery(parsed.audience, parsed.track_id);
+  const phones = await audienceQuery(parsed.audience, parsed.track_code);
   if (phones.length === 0) {
     return NextResponse.json(
       { ok: false, error: "No recipients" },

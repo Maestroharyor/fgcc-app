@@ -123,8 +123,8 @@ Read + validated in `src/lib/utils/env.ts` (Zod). Keys:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL          # required for real DB
-NEXT_PUBLIC_SUPABASE_ANON_KEY     # required for real DB
-SUPABASE_SERVICE_ROLE_KEY         # server-only; used by cron + admin invitations
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY  # required for real DB (modern sb_publishable_… key)
+SUPABASE_SECRET_KEY                   # server-only; used by cron + admin invitations (modern sb_secret_… key)
 RESEND_API_KEY                    # if missing, send.ts no-ops cleanly
 RESEND_FROM                       # default provided
 ADMIN_NOTIFICATION_EMAILS         # comma-separated; empty = no admin alerts

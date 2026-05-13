@@ -11,7 +11,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
-  if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  if (
+    !env.NEXT_PUBLIC_SUPABASE_URL ||
+    !env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  ) {
     if (isLogin) return NextResponse.next({ request });
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";

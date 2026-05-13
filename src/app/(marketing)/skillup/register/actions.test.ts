@@ -9,15 +9,21 @@ import {
 let supabase: SupabaseMock;
 
 const hoisted = vi.hoisted(() => ({
+  createSupabaseAdminClient: vi.fn(),
   createSupabaseServerClient: vi.fn(),
   sendConfirmationEmail: vi.fn(async () => ({ ok: true })),
   sendAdminNotificationEmail: vi.fn(async () => ({ ok: true })),
   sendWaitlistConfirmEmail: vi.fn(async () => ({ ok: true })),
   sendSubmitterSummaryEmail: vi.fn(async () => ({ ok: true })),
-  qrDataUrl: vi.fn(async () => "data:image/png;base64,xxx"),
   nextWaitlistPosition: vi.fn(async () => 1),
 }));
 
+vi.mock("@/lib/supabase/admin", () => ({
+  createSupabaseAdminClient: hoisted.createSupabaseAdminClient,
+}));
+
+// getTrackCount (via resolveTrack → @/lib/db/tracks) still uses the server
+// client, so route it to the same mock so capacity queries respond.
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: hoisted.createSupabaseServerClient,
 }));
@@ -29,10 +35,6 @@ vi.mock("@/lib/email/send", () => ({
   sendSubmitterSummaryEmail: hoisted.sendSubmitterSummaryEmail,
 }));
 
-vi.mock("@/lib/qr/generate", () => ({
-  qrDataUrl: hoisted.qrDataUrl,
-}));
-
 vi.mock("@/lib/db/waitlist", () => ({
   nextWaitlistPosition: hoisted.nextWaitlistPosition,
 }));
@@ -42,7 +44,6 @@ import { registerOthersAction, registerSelfAction } from "./actions";
 
 beforeEach(() => {
   vi.clearAllMocks();
-  hoisted.qrDataUrl.mockResolvedValue("data:image/png;base64,xxx");
   hoisted.nextWaitlistPosition.mockResolvedValue(1);
   hoisted.sendConfirmationEmail.mockResolvedValue({ ok: true });
   hoisted.sendAdminNotificationEmail.mockResolvedValue({ ok: true });
@@ -113,6 +114,7 @@ describe("registerSelfAction", () => {
         },
       },
     });
+    hoisted.createSupabaseAdminClient.mockReturnValue(supabase);
     hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
     const result = await registerSelfAction(fd(validSelf));
     expect(result.ok).toBe(false);
@@ -126,6 +128,7 @@ describe("registerSelfAction", () => {
         registrations: registrationsHandler({}),
       },
     });
+    hoisted.createSupabaseAdminClient.mockReturnValue(supabase);
     hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
     const result = await registerSelfAction(
       fd({ ...validSelf, track_code: "ZZZ" }),
@@ -141,6 +144,7 @@ describe("registerSelfAction", () => {
         waitlist: { data: null, error: null },
       },
     });
+    hoisted.createSupabaseAdminClient.mockReturnValue(supabase);
     hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
 
     const result = await registerSelfAction(fd(validSelf));
@@ -168,13 +172,13 @@ describe("registerSelfAction", () => {
         }),
       },
     });
+    hoisted.createSupabaseAdminClient.mockReturnValue(supabase);
     hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
 
     const result = await registerSelfAction(fd(validSelf));
 
     expect(result.ok).toBe(true);
     expect(result.referenceNumber).toBe("SKU-UXD-001");
-    expect(hoisted.qrDataUrl).toHaveBeenCalledWith("SKU-UXD-001");
     expect(hoisted.sendConfirmationEmail).toHaveBeenCalledOnce();
     expect(hoisted.sendAdminNotificationEmail).toHaveBeenCalledOnce();
     expect(revalidatePath).toHaveBeenCalledWith("/skillup");
@@ -189,6 +193,7 @@ describe("registerSelfAction", () => {
         }),
       },
     });
+    hoisted.createSupabaseAdminClient.mockReturnValue(supabase);
     hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
 
     const result = await registerSelfAction(fd(validSelf));
@@ -242,6 +247,7 @@ describe("registerOthersAction", () => {
         }),
       },
     });
+    hoisted.createSupabaseAdminClient.mockReturnValue(supabase);
     hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
 
     const result = await registerOthersAction(validOthersPayload);
@@ -260,6 +266,7 @@ describe("registerOthersAction", () => {
         waitlist: { data: null, error: null },
       },
     });
+    hoisted.createSupabaseAdminClient.mockReturnValue(supabase);
     hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
 
     const result = await registerOthersAction(validOthersPayload);
@@ -280,6 +287,7 @@ describe("registerOthersAction", () => {
         batches: { data: null, error: { message: "boom" } },
       },
     });
+    hoisted.createSupabaseAdminClient.mockReturnValue(supabase);
     hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
     const result = await registerOthersAction(validOthersPayload);
     expect(result.ok).toBe(false);

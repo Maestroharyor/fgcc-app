@@ -10,7 +10,8 @@ import { env } from "@/lib/utils/env";
 export async function createSupabaseRouteClient() {
   const cookieStore = await cookies();
   const url = env.NEXT_PUBLIC_SUPABASE_URL ?? "https://placeholder.invalid";
-  const key = env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "placeholder-anon-key";
+  const key =
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "placeholder-publishable-key";
   return createServerClient(url, key, {
     cookies: {
       getAll() {

@@ -15,7 +15,7 @@ describe("env", () => {
     // string or undefined - never an empty string.
     for (const v of [
       env.NEXT_PUBLIC_SUPABASE_URL,
-      env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
       env.RESEND_API_KEY,
       env.TERMII_API_KEY,
       env.CRON_SECRET,

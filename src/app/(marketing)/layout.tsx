@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BrandMark } from "@/components/ui/BrandMark";
+import { VENUE } from "@/content/venue";
 
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
@@ -74,9 +75,19 @@ function SiteFooter() {
                 Foursquare Gospel Church
               </span>
             </div>
-            <p className="mt-3 text-sm text-navy/65">
-              Cement Missionary HQ · Lagos, Nigeria
+            <p className="mt-3 text-sm text-navy/65 leading-relaxed">
+              {VENUE.street}
+              <br />
+              {VENUE.landmark} · {VENUE.area}
             </p>
+            <a
+              href={VENUE.mapsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-flex items-center gap-1 font-display text-xs font-medium text-primary hover:text-primary-700"
+            >
+              Get directions →
+            </a>
           </div>
           <div>
             <div className="font-sans text-[10px] uppercase tracking-[0.2em] text-navy/55">

@@ -3,19 +3,19 @@ import { createSupabaseMock, type SupabaseMock } from "@/test/mocks/supabase";
 
 let supabase: SupabaseMock;
 
-const { createSupabaseServerClient } = vi.hoisted(() => ({
-  createSupabaseServerClient: vi.fn(),
+const { createSupabaseAdminClient } = vi.hoisted(() => ({
+  createSupabaseAdminClient: vi.fn(),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createSupabaseServerClient,
+vi.mock("@/lib/supabase/admin", () => ({
+  createSupabaseAdminClient,
 }));
 
 import { submitFeedbackAction } from "./actions";
 
 beforeEach(() => {
   supabase = createSupabaseMock();
-  createSupabaseServerClient.mockImplementation(async () => supabase);
+  createSupabaseAdminClient.mockReturnValue(supabase);
 });
 
 const validPayload = {
@@ -41,7 +41,7 @@ describe("submitFeedbackAction", () => {
     supabase = createSupabaseMock({
       from: { registrations: { data: null, error: null } },
     });
-    createSupabaseServerClient.mockImplementation(async () => supabase);
+    createSupabaseAdminClient.mockReturnValue(supabase);
     const result = await submitFeedbackAction(validPayload);
     expect(result.ok).toBe(false);
     expect(result.message).toContain("Reference not found");
@@ -54,7 +54,7 @@ describe("submitFeedbackAction", () => {
         feedback: { data: null, error: null },
       },
     });
-    createSupabaseServerClient.mockImplementation(async () => supabase);
+    createSupabaseAdminClient.mockReturnValue(supabase);
 
     const result = await submitFeedbackAction(validPayload);
     expect(result.ok).toBe(true);
@@ -75,7 +75,7 @@ describe("submitFeedbackAction", () => {
         feedback: { data: null, error: { message: "rls denied" } },
       },
     });
-    createSupabaseServerClient.mockImplementation(async () => supabase);
+    createSupabaseAdminClient.mockReturnValue(supabase);
     const result = await submitFeedbackAction(validPayload);
     expect(result.ok).toBe(false);
     expect(result.message).toContain("rls denied");

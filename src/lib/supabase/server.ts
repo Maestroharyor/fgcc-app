@@ -17,7 +17,8 @@ import { env } from "@/lib/utils/env";
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
   const url = env.NEXT_PUBLIC_SUPABASE_URL ?? "https://placeholder.invalid";
-  const key = env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "placeholder-anon-key";
+  const key =
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "placeholder-publishable-key";
   return createServerClient(url, key, {
     cookies: {
       getAll() {
@@ -38,6 +39,6 @@ export async function createSupabaseServerClient() {
 
 export function isSupabaseConfigured(): boolean {
   return Boolean(
-    env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   );
 }

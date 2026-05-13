@@ -361,7 +361,7 @@ function SelfForm({
             Boolean(duplicate) ||
             (!capacitiesLoaded && !capacityFetchFailed)
           }
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-7 font-display font-semibold text-white shadow-lift transition hover:bg-primary-700 disabled:opacity-60"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-7 font-display font-semibold text-white shadow-lift transition hover:bg-primary-700 disabled:opacity-60 cursor-pointer"
         >
           {pending ? "Registering…" : "Confirm registration"}
         </button>

@@ -7,7 +7,6 @@ import { trackByCode } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
 import { getRegistrationById } from "@/lib/db/registrations";
 import type { Role } from "@/lib/db/types";
-import { qrDataUrl } from "@/lib/qr/generate";
 
 export const dynamic = "force-dynamic";
 
@@ -33,12 +32,9 @@ export default async function RegistrantProfile({ params }: Props) {
         <ArrowLeft className="h-4 w-4" aria-hidden /> Back to all registrations
       </Link>
 
-      <div className="mt-4 grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6">
+      <div className="mt-4">
         <Suspense fallback={<RegistrantProfileSkeleton />}>
           <RegistrantProfileSection id={id} role={session.role} />
-        </Suspense>
-        <Suspense fallback={<QrCardSkeleton />}>
-          <RegistrantQrCard id={id} />
         </Suspense>
       </div>
     </div>
@@ -143,32 +139,6 @@ async function RegistrantProfileSection({
   );
 }
 
-async function RegistrantQrCard({ id }: { id: string }) {
-  const registration = await getRegistrationById(id);
-  // Sibling triggers `notFound()` for missing IDs; render nothing here so we
-  // don't double-throw.
-  if (!registration) return null;
-  const qr = await qrDataUrl(registration.reference_number);
-  return (
-    <aside className="rounded-2xl border border-navy/8 bg-white p-6 shadow-card flex flex-col items-center text-center">
-      <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
-        Check-in QR
-      </span>
-      {/* biome-ignore lint/performance/noImgElement: data URL */}
-      <img
-        src={qr}
-        alt={`QR code for ${registration.reference_number}`}
-        width={220}
-        height={220}
-        className="mt-3 rounded-2xl border border-navy/8"
-      />
-      <p className="mt-3 text-xs text-navy/55">
-        Encodes the reference. Scannable from any QR reader.
-      </p>
-    </aside>
-  );
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 //  Skeletons + helpers.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -196,18 +166,6 @@ function RegistrantProfileSkeleton() {
       </dl>
       <div className="mt-8 h-10 w-40 rounded-full bg-navy/8 animate-pulse" />
     </section>
-  );
-}
-
-function QrCardSkeleton() {
-  return (
-    <aside className="rounded-2xl border border-navy/8 bg-white p-6 shadow-card flex flex-col items-center text-center">
-      <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
-        Check-in QR
-      </span>
-      <div className="mt-3 h-[220px] w-[220px] rounded-2xl bg-navy/8 animate-pulse" />
-      <div className="mt-3 h-3 w-48 rounded bg-navy/8 animate-pulse" />
-    </aside>
   );
 }
 

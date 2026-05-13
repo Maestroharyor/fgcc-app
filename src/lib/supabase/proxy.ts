@@ -12,7 +12,8 @@ export function createSupabaseProxyClient(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const url = env.NEXT_PUBLIC_SUPABASE_URL ?? "https://placeholder.invalid";
-  const key = env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "placeholder-anon-key";
+  const key =
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "placeholder-publishable-key";
   const supabase = createServerClient(url, key, {
     cookies: {
       getAll() {

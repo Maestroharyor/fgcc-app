@@ -1,4 +1,4 @@
-import { Button, Heading, Img, Section, Text } from "@react-email/components";
+import { Button, Heading, Section, Text } from "@react-email/components";
 import { EmailLayout, palette } from "./_Layout";
 
 export interface ConfirmationEmailProps {
@@ -7,7 +7,6 @@ export interface ConfirmationEmailProps {
   trackName: string;
   facilitatorName: string | null;
   whatsappUrl: string;
-  qrDataUrl: string;
   siteUrl: string;
 }
 
@@ -17,8 +16,7 @@ export default function ConfirmationEmail({
   trackName = "UI/UX Design",
   facilitatorName = "Facilitator TBA",
   whatsappUrl = "#",
-  qrDataUrl = "",
-  siteUrl = "https://register.fgccement.org",
+  siteUrl = "https://fgccement.org.ng/skillup",
 }: ConfirmationEmailProps) {
   return (
     <EmailLayout preview={`You're confirmed for SkillUp 1.0 - ${trackName}`}>
@@ -84,21 +82,6 @@ export default function ConfirmationEmail({
         <RowLabel label="Dates" value="June 12 – 14, 2026" />
         <RowLabel label="Venue" value="Cement Missionary HQ, Lagos" />
       </Section>
-
-      {qrDataUrl && (
-        <Section style={{ marginTop: 20, textAlign: "center" }}>
-          <Text style={{ fontSize: 11, color: palette.muted, margin: 0 }}>
-            Show this QR at the door on day one.
-          </Text>
-          <Img
-            src={qrDataUrl}
-            alt={`QR code for ${referenceNumber}`}
-            width={160}
-            height={160}
-            style={{ margin: "10px auto 0", borderRadius: 12 }}
-          />
-        </Section>
-      )}
 
       <Section style={{ marginTop: 24, textAlign: "center" }}>
         <Button

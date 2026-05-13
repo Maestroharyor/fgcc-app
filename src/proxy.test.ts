@@ -8,10 +8,10 @@ const hoisted = vi.hoisted(() => ({
   createSupabaseProxyClient: vi.fn(),
   envState: {
     NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co",
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "anon",
   } as {
     NEXT_PUBLIC_SUPABASE_URL?: string;
-    NEXT_PUBLIC_SUPABASE_ANON_KEY?: string;
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string;
   },
 }));
 
@@ -28,7 +28,7 @@ import { proxy } from "./proxy";
 beforeEach(() => {
   vi.clearAllMocks();
   hoisted.envState.NEXT_PUBLIC_SUPABASE_URL = "https://x.supabase.co";
-  hoisted.envState.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon";
+  hoisted.envState.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "anon";
   supabase = createSupabaseMock({ user: null });
   hoisted.createSupabaseProxyClient.mockReturnValue({
     supabase,
@@ -45,7 +45,7 @@ describe("proxy()", () => {
 
   it("redirects /admin/* to login when Supabase env is missing", async () => {
     hoisted.envState.NEXT_PUBLIC_SUPABASE_URL = undefined;
-    hoisted.envState.NEXT_PUBLIC_SUPABASE_ANON_KEY = undefined;
+    hoisted.envState.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = undefined;
     const res = await proxy(
       new NextRequest("http://localhost:3000/admin/dashboard"),
     );
@@ -58,7 +58,7 @@ describe("proxy()", () => {
 
   it("passes through /admin/login when env is missing", async () => {
     hoisted.envState.NEXT_PUBLIC_SUPABASE_URL = undefined;
-    hoisted.envState.NEXT_PUBLIC_SUPABASE_ANON_KEY = undefined;
+    hoisted.envState.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = undefined;
     const res = await proxy(
       new NextRequest("http://localhost:3000/admin/login"),
     );

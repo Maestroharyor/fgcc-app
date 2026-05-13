@@ -68,6 +68,13 @@ body {
   scroll-margin-top: 80px;
 }
 
+/* Tailwind v4 dropped the default pointer cursor on <button>. Restore it
+   globally so every interactive control (form submits, modals, nav buttons)
+   feels clickable; disabled buttons keep the default cursor. */
+button:not(:disabled) {
+  cursor: pointer;
+}
+
 @layer components {
   .form-input {
     @apply h-11 w-full rounded-xl border border-navy/12 bg-white px-3.5 font-sans text-sm text-navy outline-none transition placeholder:text-navy/40 focus:border-primary/40 focus:ring-2 focus:ring-primary/15;

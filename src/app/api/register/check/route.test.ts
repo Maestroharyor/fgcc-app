@@ -28,15 +28,14 @@ describe("GET /api/register/check", () => {
     expect(body).toEqual({ found: false });
   });
 
-  it("returns the match when one exists, with track name flattened", async () => {
+  it("returns the match with track name resolved from static TRACKS", async () => {
     supabase = createSupabaseMock({
       from: {
         registrations: {
           data: {
             reference_number: "SKU-UXD-001",
             full_name: "Ada Lovelace",
-            track_id: "track-uxd",
-            tracks: { name: "UI/UX Design" },
+            track_code: "UXD",
           },
           error: null,
         },
@@ -54,15 +53,14 @@ describe("GET /api/register/check", () => {
     expect(body.track_name).toBe("UI/UX Design");
   });
 
-  it("handles tracks returned as an array", async () => {
+  it("returns empty track_name when track_code is unknown", async () => {
     supabase = createSupabaseMock({
       from: {
         registrations: {
           data: {
-            reference_number: "SKU-CWD-002",
+            reference_number: "SKU-XXX-002",
             full_name: "Femi",
-            track_id: "track-cwd",
-            tracks: [{ name: "Coding & Web Development" }],
+            track_code: "XXX",
           },
           error: null,
         },
@@ -73,7 +71,8 @@ describe("GET /api/register/check", () => {
       new NextRequest("http://localhost:3000/api/register/check?email=f@x.com"),
     );
     const body = await res.json();
-    expect(body.track_name).toBe("Coding & Web Development");
+    expect(body.found).toBe(true);
+    expect(body.track_name).toBe("");
   });
 
   it("returns {found:false} (gracefully) when Supabase errors", async () => {

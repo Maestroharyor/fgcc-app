@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -10,6 +10,7 @@ import { TrackCard } from "@/components/ui/TrackCard";
 import { FAQS } from "@/content/faqs";
 import { SCHEDULE } from "@/content/schedule";
 import { TRACKS, type Track, type TrackCategory } from "@/content/tracks";
+import { VENUE } from "@/content/venue";
 import { getTrackCounts, withCapacity } from "@/lib/db/tracks";
 import type { TrackWithCapacity } from "@/lib/db/types";
 
@@ -265,7 +266,40 @@ function ScheduleSection() {
           </div>
         ))}
       </div>
+      <VenueCard />
     </Section>
+  );
+}
+
+function VenueCard() {
+  return (
+    <div className="mt-8 rounded-2xl border border-navy/8 bg-white p-6 sm:p-8 shadow-card flex flex-col md:flex-row md:items-center gap-6 md:gap-10">
+      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+        <MapPin className="h-5 w-5" aria-hidden />
+      </div>
+      <div className="flex-1">
+        <div className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
+          Where to find us
+        </div>
+        <div className="mt-1 font-display text-lg font-semibold text-navy">
+          {VENUE.name}
+        </div>
+        <p className="mt-1 text-sm text-navy/70 leading-relaxed">
+          {VENUE.street}
+          <br />
+          {VENUE.landmark} · {VENUE.area}
+        </p>
+      </div>
+      <a
+        href={VENUE.mapsUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex h-11 w-full md:w-auto items-center justify-center gap-2 rounded-full bg-navy px-6 font-display text-sm font-semibold text-white shadow-sm transition hover:bg-navy/90"
+      >
+        Open in Google Maps
+        <ArrowRight className="h-4 w-4" aria-hidden />
+      </a>
+    </div>
   );
 }
 

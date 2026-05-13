@@ -58,7 +58,6 @@ describe("send helpers - happy paths", () => {
       trackName: "UI/UX Design",
       facilitatorName: "Ayomide",
       whatsappUrl: "https://wa.me/x",
-      qrDataUrl: "data:image/png;base64,xxx",
       siteUrl: "http://localhost:3000",
     });
     expect(result.ok).toBe(true);
@@ -145,7 +144,6 @@ describe("send helpers - happy paths", () => {
           firstName: "R",
           trackName: "T",
           facilitatorName: "F",
-          qrDataUrl: "data:image/png;base64,xx",
         }),
     ],
     [
@@ -154,7 +152,6 @@ describe("send helpers - happy paths", () => {
         sendReminder1DayEmail("r@x.com", {
           firstName: "R",
           trackName: "T",
-          qrDataUrl: "data:image/png;base64,xx",
         }),
     ],
     [
@@ -182,7 +179,6 @@ describe("send helpers - failure paths", () => {
       trackName: "x",
       facilitatorName: null,
       whatsappUrl: "x",
-      qrDataUrl: "",
       siteUrl: "x",
     });
     expect(result.ok).toBe(false);
@@ -201,7 +197,6 @@ describe("send helpers - failure paths", () => {
       trackName: "x",
       facilitatorName: null,
       whatsappUrl: "x",
-      qrDataUrl: "",
       siteUrl: "x",
     });
     expect(result.ok).toBe(false);
@@ -216,7 +211,6 @@ describe("send helpers - failure paths", () => {
       trackName: "x",
       facilitatorName: null,
       whatsappUrl: "x",
-      qrDataUrl: "",
       siteUrl: "x",
     });
     expect(result.ok).toBe(false);

@@ -16,7 +16,7 @@ describe("createSupabaseAdminClient", () => {
     vi.doMock("@/lib/utils/env", () => ({
       env: {
         NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co",
-        SUPABASE_SERVICE_ROLE_KEY: "service-key",
+        SUPABASE_SECRET_KEY: "service-key",
       },
       requireEnv: (k: string) =>
         k === "NEXT_PUBLIC_SUPABASE_URL"
@@ -37,14 +37,14 @@ describe("createSupabaseAdminClient", () => {
     expect(opts.auth.persistSession).toBe(false);
   });
 
-  it("throws when SUPABASE_SERVICE_ROLE_KEY is missing", async () => {
+  it("throws when SUPABASE_SECRET_KEY is missing", async () => {
     vi.doMock("@/lib/utils/env", () => ({
       env: {
         NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co",
-        SUPABASE_SERVICE_ROLE_KEY: undefined,
+        SUPABASE_SECRET_KEY: undefined,
       },
       requireEnv: (k: string) => {
-        if (k === "SUPABASE_SERVICE_ROLE_KEY") {
+        if (k === "SUPABASE_SECRET_KEY") {
           throw new Error(`Missing required environment variable: ${k}`);
         }
         return "https://x.supabase.co";

@@ -1,16 +1,14 @@
-import { Heading, Img, Section, Text } from "@react-email/components";
+import { Heading, Section, Text } from "@react-email/components";
 import { EmailLayout, palette } from "./_Layout";
 
 export interface Reminder1DayEmailProps {
   firstName: string;
   trackName: string;
-  qrDataUrl: string;
 }
 
 export default function Reminder1DayEmail({
   firstName = "friend",
   trackName = "your track",
-  qrDataUrl = "",
 }: Reminder1DayEmailProps) {
   return (
     <EmailLayout preview="SkillUp 1.0 starts tomorrow at 9:00 AM">
@@ -68,21 +66,6 @@ export default function Reminder1DayEmail({
           {trackName}
         </Text>
       </Section>
-
-      {qrDataUrl && (
-        <Section style={{ marginTop: 18, textAlign: "center" }}>
-          <Text style={{ fontSize: 11, color: palette.muted, margin: 0 }}>
-            Show this QR at check-in.
-          </Text>
-          <Img
-            src={qrDataUrl}
-            alt="Check-in QR code"
-            width={160}
-            height={160}
-            style={{ margin: "10px auto 0", borderRadius: 12 }}
-          />
-        </Section>
-      )}
     </EmailLayout>
   );
 }

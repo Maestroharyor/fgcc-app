@@ -53,7 +53,7 @@ export function HeroSection() {
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 font-sans text-xs uppercase tracking-[0.18em] text-navy/55">
             <span className="inline-flex items-center gap-1.5">
               <MapPin className="h-3 w-3" aria-hidden />
-              Cement Missionary HQ
+              Cement HQ · Dopemu, Lagos
             </span>
             <span className="h-1 w-1 rounded-full bg-current opacity-30" />
             <span>20 skill tracks</span>

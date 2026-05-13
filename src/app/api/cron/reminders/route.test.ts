@@ -14,7 +14,6 @@ const hoisted = vi.hoisted(() => ({
   sendBulkSMS: vi.fn<(...args: unknown[]) => Promise<SmsResult[]>>(
     async () => [],
   ),
-  qrDataUrl: vi.fn(async () => "data:image/png;base64,xxx"),
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
@@ -29,10 +28,6 @@ vi.mock("@/lib/email/send", () => ({
 
 vi.mock("@/lib/sms/termii", () => ({
   sendBulkSMS: hoisted.sendBulkSMS,
-}));
-
-vi.mock("@/lib/qr/generate", () => ({
-  qrDataUrl: hoisted.qrDataUrl,
 }));
 
 vi.mock("@/lib/utils/env", () => ({

@@ -3,10 +3,28 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { trackByCode } from "@/content/tracks";
-import { getRegistrationByReference } from "@/lib/db/registrations";
-import { qrDataUrl } from "@/lib/qr/generate";
+import type { DBRegistration } from "@/lib/db/types";
 import { parseReference } from "@/lib/ref-code/generate";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+
+/**
+ * Public success-page lookup. Uses the admin client because anon has no
+ * SELECT policy on registrations — the URL's reference number is the
+ * "auth" for this page (the user was just redirected here with their own
+ * fresh ref). Never exposes the raw query to the browser.
+ */
+async function getRegistrationByReferencePublic(
+  ref: string,
+): Promise<DBRegistration | null> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("registrations")
+    .select("*")
+    .eq("reference_number", ref.toUpperCase())
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as DBRegistration;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -38,12 +56,11 @@ export default async function SuccessPage({ searchParams }: PageProps) {
 }
 
 async function IndividualSuccess({ refNumber }: { refNumber: string }) {
-  const registration = await getRegistrationByReference(refNumber);
+  const registration = await getRegistrationByReferencePublic(refNumber);
   if (!registration) {
     return <Fallback />;
   }
   const track = trackByCode(registration.track_code);
-  const qr = await qrDataUrl(registration.reference_number);
 
   return (
     <div className="px-6 sm:px-10 py-12 sm:py-20">
@@ -56,37 +73,26 @@ async function IndividualSuccess({ refNumber }: { refNumber: string }) {
         </h1>
         <p className="mt-2 text-navy/70">
           Your spot is locked for SkillUp 1.0 · June 12 – 14, 2026 at Cement
-          Missionary HQ, Lagos. Screenshot this page - your QR code is your
-          fast-pass at the door.
+          Missionary HQ, Lagos. Save your reference number — it's your fast-pass
+          at the door.
         </p>
 
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-6 items-center">
-          <div>
-            <div className="rounded-2xl bg-cream-100 p-5">
-              <div className="font-sans text-[10px] uppercase tracking-[0.2em] text-navy/55">
-                Reference number
-              </div>
-              <div className="mt-1 font-sans text-2xl font-bold tracking-[0.04em] text-navy">
-                {registration.reference_number}
-              </div>
+        <div className="mt-8">
+          <div className="rounded-2xl bg-cream-100 p-5">
+            <div className="font-sans text-[10px] uppercase tracking-[0.2em] text-navy/55">
+              Reference number
             </div>
-
-            <dl className="mt-5 grid grid-cols-1 gap-3 text-sm">
-              <Row label="Track" value={track?.name ?? "-"} />
-              <Row label="Facilitator" value={track?.facilitator ?? "TBA"} />
-              <Row label="Dates" value="June 12 – 14, 2026" />
-              <Row label="Venue" value="Cement Missionary HQ, Lagos" />
-            </dl>
+            <div className="mt-1 font-sans text-2xl font-bold tracking-[0.04em] text-navy">
+              {registration.reference_number}
+            </div>
           </div>
 
-          {/* biome-ignore lint/performance/noImgElement: data URL, no remote optimisation */}
-          <img
-            src={qr}
-            alt={`QR code for ${registration.reference_number}`}
-            width={180}
-            height={180}
-            className="rounded-2xl border border-navy/8 self-start"
-          />
+          <dl className="mt-5 grid grid-cols-1 gap-3 text-sm">
+            <Row label="Track" value={track?.name ?? "-"} />
+            <Row label="Facilitator" value={track?.facilitator ?? "TBA"} />
+            <Row label="Dates" value="June 12 – 14, 2026" />
+            <Row label="Venue" value="Cement Missionary HQ, Lagos" />
+          </dl>
         </div>
 
         <div className="mt-8 flex flex-col sm:flex-row gap-3">
@@ -111,7 +117,7 @@ async function IndividualSuccess({ refNumber }: { refNumber: string }) {
         </div>
 
         <p className="mt-6 text-xs text-navy/55">
-          A confirmation email with your QR is on the way to{" "}
+          A confirmation email is on the way to{" "}
           <strong>{registration.email}</strong>.
         </p>
       </div>
@@ -120,7 +126,7 @@ async function IndividualSuccess({ refNumber }: { refNumber: string }) {
 }
 
 async function BatchSuccess({ batchId }: { batchId: string }) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data } = await supabase
     .from("batches")
     .select("submitter_name, total_registrants")
@@ -162,12 +168,9 @@ function SuccessSkeleton() {
         <div className="mt-4 h-9 w-2/3 rounded bg-navy/10" />
         <div className="mt-3 h-4 w-full rounded bg-navy/8" />
         <div className="mt-1 h-4 w-3/4 rounded bg-navy/8" />
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-6 items-center">
-          <div className="space-y-3">
-            <div className="h-20 rounded-2xl bg-cream-100" />
-            <div className="h-32 rounded-2xl bg-navy/4" />
-          </div>
-          <div className="h-44 w-44 rounded-2xl bg-navy/8" />
+        <div className="mt-8 space-y-3">
+          <div className="h-20 rounded-2xl bg-cream-100" />
+          <div className="h-32 rounded-2xl bg-navy/4" />
         </div>
       </div>
     </div>

@@ -1,13 +1,21 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { TRACKS } from "@/content/tracks";
 import {
   sendFeedbackRequestEmail,
   sendReminder1DayEmail,
   sendReminder3DayEmail,
 } from "@/lib/email/send";
-import { qrDataUrl } from "@/lib/qr/generate";
 import { sendBulkSMS } from "@/lib/sms/termii";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { env } from "@/lib/utils/env";
+
+function trackMeta(code: string | null | undefined) {
+  const t = TRACKS.find((x) => x.code === code);
+  return {
+    name: t?.name ?? "your track",
+    facilitator: t?.facilitator ?? null,
+  };
+}
 
 type Kind = "3day" | "1day" | "feedback";
 
@@ -38,7 +46,7 @@ export async function GET(request: NextRequest) {
   const query = supabase
     .from("registrations")
     .select(
-      "id, reference_number, full_name, email, phone, attended, track_id, tracks(name, facilitator_name)",
+      "id, reference_number, full_name, email, phone, attended, track_code",
     )
     .is(sentColumn, null);
 
@@ -61,7 +69,7 @@ export async function GET(request: NextRequest) {
     email: string;
     phone: string;
     attended: boolean;
-    tracks: { name: string; facilitator_name: string | null } | null;
+    track_code: string;
   }>;
 
   const skipPlaceholder = (email: string) =>
@@ -73,22 +81,18 @@ export async function GET(request: NextRequest) {
 
   for (const r of rows) {
     if (skipPlaceholder(r.email)) continue;
-    const trackName = r.tracks?.name ?? "your track";
+    const track = trackMeta(r.track_code);
     if (kind === "3day") {
-      const qr = await qrDataUrl(r.reference_number).catch(() => "");
       await sendReminder3DayEmail(r.email, {
         firstName: firstName(r.full_name),
-        trackName,
-        facilitatorName: r.tracks?.facilitator_name ?? null,
-        qrDataUrl: qr,
+        trackName: track.name,
+        facilitatorName: track.facilitator,
       });
       emailSent++;
     } else if (kind === "1day") {
-      const qr = await qrDataUrl(r.reference_number).catch(() => "");
       await sendReminder1DayEmail(r.email, {
         firstName: firstName(r.full_name),
-        trackName,
-        qrDataUrl: qr,
+        trackName: track.name,
       });
       emailSent++;
       smsRecipients.push({
@@ -98,7 +102,7 @@ export async function GET(request: NextRequest) {
     } else if (kind === "feedback") {
       await sendFeedbackRequestEmail(r.email, {
         firstName: firstName(r.full_name),
-        trackName,
+        trackName: track.name,
         feedbackUrl: `${env.NEXT_PUBLIC_SITE_URL}/skillup/feedback?ref=${r.reference_number}`,
       });
       emailSent++;

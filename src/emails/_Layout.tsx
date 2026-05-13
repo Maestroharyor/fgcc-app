@@ -123,7 +123,7 @@ export function EmailLayout({ preview, children }: Props) {
                 textAlign: "center",
               }}
             >
-              skillup@fgccement.org
+              fgccement.org.ng/skillup
             </Text>
           </Container>
         </Body>

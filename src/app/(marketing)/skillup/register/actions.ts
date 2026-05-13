@@ -11,8 +11,7 @@ import {
   sendSubmitterSummaryEmail,
   sendWaitlistConfirmEmail,
 } from "@/lib/email/send";
-import { qrDataUrl } from "@/lib/qr/generate";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { env } from "@/lib/utils/env";
 import {
   type RegisterOthersInput,
@@ -71,23 +70,49 @@ async function resolveTrack(code: string) {
 export async function registerSelfAction(
   formData: FormData,
 ): Promise<ActionResult> {
+  const t0 = Date.now();
+  console.log("[register:self] ▶ start");
+
   let parsed: RegistrationInput;
   try {
     parsed = RegistrationSchema.parse(Object.fromEntries(formData));
+    console.log("[register:self] ✓ validated", {
+      email: parsed.email,
+      track_code: parsed.track_code,
+      gender: parsed.gender,
+      age_group: parsed.age_group,
+    });
   } catch (e) {
+    console.error("[register:self] ✗ validation failed:", e);
     return { ok: false, error: "unknown", message: friendlyZodMessage(e) };
   }
 
-  const supabase = await createSupabaseServerClient();
+  // Use admin client (service-role) inside trusted 'use server' actions.
+  // Anon RLS would block INSERT...RETURNING because the SELECT policy
+  // doesn't admit anon. Zod has already validated the input above.
+  const supabase = createSupabaseAdminClient();
 
   // Dedupe by email - return existing reference if any.
-  const { data: existing } = await supabase
+  console.log("[register:self] → dedupe query", { email: parsed.email });
+  const { data: existing, error: dedupeError } = await supabase
     .from("registrations")
     .select("reference_number")
     .eq("email", parsed.email)
     .maybeSingle();
 
+  if (dedupeError) {
+    console.error("[register:self] ✗ dedupe query error:", dedupeError);
+  } else {
+    console.log("[register:self] ← dedupe result", {
+      found: Boolean(existing),
+      reference_number: existing?.reference_number ?? null,
+    });
+  }
+
   if (existing?.reference_number) {
+    console.log("[register:self] ⤵ returning duplicate response", {
+      duration_ms: Date.now() - t0,
+    });
     return {
       ok: false,
       error: "duplicate",
@@ -96,14 +121,26 @@ export async function registerSelfAction(
     };
   }
 
+  console.log("[register:self] → resolve track", { code: parsed.track_code });
   const track = await resolveTrack(parsed.track_code);
   if (!track) {
+    console.warn("[register:self] ✗ track not found", {
+      code: parsed.track_code,
+    });
     return { ok: false, error: "track-not-found", message: "Track not found." };
   }
+  console.log("[register:self] ← track resolved", {
+    code: track.code,
+    name: track.name,
+    currentCount: track.currentCount,
+    capacity: track.capacity,
+    isFull: track.isFull,
+  });
 
   // Full → waitlist branch.
   if (track.isFull) {
     const position = await nextWaitlistPosition(track.code);
+    console.log("[register:self] → waitlist insert", { position });
     const { error } = await supabase.from("waitlist").insert({
       track_code: track.code,
       full_name: parsed.full_name,
@@ -115,15 +152,21 @@ export async function registerSelfAction(
       position,
     });
     if (error) {
+      console.error("[register:self] ✗ waitlist insert failed:", error);
       return { ok: false, error: "unknown", message: error.message };
     }
-    await sendWaitlistConfirmEmail(parsed.email, {
+    console.log("[register:self] ✓ waitlisted, sending confirmation email");
+    const emailResult = await sendWaitlistConfirmEmail(parsed.email, {
       firstName: firstName(parsed.full_name),
       trackName: track.name,
       position,
       siteUrl: env.NEXT_PUBLIC_SITE_URL,
     });
+    console.log("[register:self] ← waitlist email result", emailResult);
     revalidatePath("/skillup");
+    console.log("[register:self] ⤵ waitlisted response", {
+      duration_ms: Date.now() - t0,
+    });
     return {
       ok: false,
       error: "waitlisted",
@@ -131,6 +174,10 @@ export async function registerSelfAction(
     };
   }
 
+  console.log("[register:self] → registrations insert", {
+    email: parsed.email,
+    track_code: track.code,
+  });
   const { data: inserted, error } = await supabase
     .from("registrations")
     .insert({
@@ -148,6 +195,12 @@ export async function registerSelfAction(
     .single();
 
   if (error || !inserted) {
+    console.error("[register:self] ✗ registrations insert failed:", {
+      code: error?.code,
+      message: error?.message,
+      details: error?.details,
+      hint: error?.hint,
+    });
     return {
       ok: false,
       error: "unknown",
@@ -156,17 +209,17 @@ export async function registerSelfAction(
   }
 
   const ref = inserted.reference_number;
+  console.log("[register:self] ✓ inserted", { reference_number: ref });
 
   // Fire-and-forget emails - we don't block the redirect.
-  const qr = await qrDataUrl(ref).catch(() => "");
-  await Promise.allSettled([
+  console.log("[register:self] → sending emails");
+  const emailResults = await Promise.allSettled([
     sendConfirmationEmail(parsed.email, {
       firstName: firstName(parsed.full_name),
       referenceNumber: ref,
       trackName: track.name,
       facilitatorName: track.facilitator,
       whatsappUrl: track.whatsappUrl ?? env.NEXT_PUBLIC_SITE_URL,
-      qrDataUrl: qr,
       siteUrl: env.NEXT_PUBLIC_SITE_URL,
     }),
     sendAdminNotificationEmail({
@@ -184,8 +237,16 @@ export async function registerSelfAction(
       dashboardUrl: `${env.NEXT_PUBLIC_SITE_URL}/admin/registrations`,
     }),
   ]);
+  console.log("[register:self] ← email results", {
+    confirmation: emailResults[0],
+    adminNotification: emailResults[1],
+  });
 
   revalidatePath("/skillup");
+  console.log("[register:self] ⤵ success response", {
+    reference_number: ref,
+    duration_ms: Date.now() - t0,
+  });
   return { ok: true, referenceNumber: ref };
 }
 
@@ -196,10 +257,23 @@ export async function registerOthersAction(
   // Accept the schema's INPUT shape - RHF passes pre-transform values.
   payload: z.input<typeof RegisterOthersSchema>,
 ): Promise<ActionResult> {
+  const t0 = Date.now();
+  console.log("[register:others] ▶ start", {
+    registrant_count: Array.isArray(payload?.registrants)
+      ? payload.registrants.length
+      : null,
+  });
+
   let parsed: RegisterOthersInput;
   try {
     parsed = RegisterOthersSchema.parse(payload);
+    console.log("[register:others] ✓ validated", {
+      submitter_email: parsed.submitter.submitter_email,
+      relationship: parsed.submitter.relationship,
+      registrants: parsed.registrants.length,
+    });
   } catch (e) {
+    console.error("[register:others] ✗ validation failed:", e);
     return {
       ok: false,
       error: "unknown",
@@ -207,8 +281,12 @@ export async function registerOthersAction(
     };
   }
 
-  const supabase = await createSupabaseServerClient();
+  // Use admin client (service-role) inside trusted 'use server' actions.
+  // Anon RLS would block INSERT...RETURNING because the SELECT policy
+  // doesn't admit anon. Zod has already validated the input above.
+  const supabase = createSupabaseAdminClient();
 
+  console.log("[register:others] → batch insert");
   const { data: batch, error: batchError } = await supabase
     .from("batches")
     .insert({
@@ -223,12 +301,19 @@ export async function registerOthersAction(
     .single();
 
   if (batchError || !batch) {
+    console.error("[register:others] ✗ batch insert failed:", {
+      code: batchError?.code,
+      message: batchError?.message,
+      details: batchError?.details,
+      hint: batchError?.hint,
+    });
     return {
       ok: false,
       error: "unknown",
       message: batchError?.message ?? "Could not create batch.",
     };
   }
+  console.log("[register:others] ✓ batch created", { batch_id: batch.id });
 
   // Process each registrant one at a time so capacity / waitlist logic is honoured per row.
   const summary: Array<{
@@ -242,13 +327,30 @@ export async function registerOthersAction(
     waitlisted: boolean;
   }> = [];
 
-  for (const r of parsed.registrants) {
+  for (const [idx, r] of parsed.registrants.entries()) {
+    const tag = `[register:others#${idx + 1}/${parsed.registrants.length}]`;
+    console.log(`${tag} → resolve track`, {
+      full_name: r.full_name,
+      track_code: r.track_code,
+    });
     const track = await resolveTrack(r.track_code);
-    if (!track) continue;
+    if (!track) {
+      console.warn(`${tag} ✗ track not found, skipping`, {
+        code: r.track_code,
+      });
+      continue;
+    }
+    console.log(`${tag} ← track resolved`, {
+      code: track.code,
+      currentCount: track.currentCount,
+      capacity: track.capacity,
+      isFull: track.isFull,
+    });
 
     if (track.isFull) {
       const position = await nextWaitlistPosition(track.code);
-      await supabase.from("waitlist").insert({
+      console.log(`${tag} → waitlist insert`, { position });
+      const { error: wlError } = await supabase.from("waitlist").insert({
         track_code: track.code,
         full_name: r.full_name,
         email:
@@ -260,6 +362,11 @@ export async function registerOthersAction(
         church: r.church ?? null,
         position,
       });
+      if (wlError) {
+        console.error(`${tag} ✗ waitlist insert failed:`, wlError);
+      } else {
+        console.log(`${tag} ✓ waitlisted`, { position });
+      }
       summary.push({
         fullName: r.full_name,
         referenceNumber: `WAITLIST #${position}`,
@@ -279,6 +386,11 @@ export async function registerOthersAction(
       r.email ??
       `noemail+${track.code.toLowerCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@placeholder.skillup`;
 
+    console.log(`${tag} → registrations insert`, {
+      email: emailToUse,
+      track_code: track.code,
+      synthesised_email: !r.email,
+    });
     const { data: inserted, error } = await supabase
       .from("registrations")
       .insert({
@@ -296,11 +408,17 @@ export async function registerOthersAction(
       .single();
 
     if (error || !inserted) {
-      console.warn("[registerOthersAction] insert failed:", error?.message);
+      console.error(`${tag} ✗ insert failed:`, {
+        code: error?.code,
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+      });
       continue;
     }
 
     const ref = inserted.reference_number;
+    console.log(`${tag} ✓ inserted`, { reference_number: ref });
     summary.push({
       fullName: r.full_name,
       referenceNumber: ref,
@@ -313,20 +431,26 @@ export async function registerOthersAction(
     });
 
     if (r.email) {
-      const qr = await qrDataUrl(ref).catch(() => "");
-      await sendConfirmationEmail(r.email, {
+      const emailResult = await sendConfirmationEmail(r.email, {
         firstName: firstName(r.full_name),
         referenceNumber: ref,
         trackName: track.name,
         facilitatorName: track.facilitator,
         whatsappUrl: track.whatsappUrl ?? env.NEXT_PUBLIC_SITE_URL,
-        qrDataUrl: qr,
         siteUrl: env.NEXT_PUBLIC_SITE_URL,
       });
+      console.log(`${tag} ← confirmation email`, emailResult);
+    } else {
+      console.log(`${tag} ↷ no email on record, skipping confirmation send`);
     }
   }
+  console.log("[register:others] ← loop done", {
+    summary_count: summary.length,
+    waitlisted: summary.filter((s) => s.waitlisted).length,
+  });
 
-  await Promise.allSettled([
+  console.log("[register:others] → submitter summary + admin notification");
+  const batchEmailResults = await Promise.allSettled([
     sendSubmitterSummaryEmail(parsed.submitter.submitter_email, {
       submitterName: firstName(parsed.submitter.submitter_name),
       registrants: summary.map((s) => ({
@@ -356,10 +480,18 @@ export async function registerOthersAction(
       dashboardUrl: `${env.NEXT_PUBLIC_SITE_URL}/admin/registrations`,
     }),
   ]);
+  console.log("[register:others] ← email results", {
+    submitterSummary: batchEmailResults[0],
+    adminNotification: batchEmailResults[1],
+  });
 
   // Silence unused-import warning when TRACKS_BY_CODE isn't otherwise hit.
   void TRACKS_BY_CODE;
 
   revalidatePath("/skillup");
+  console.log("[register:others] ⤵ success response", {
+    batch_id: batch.id,
+    duration_ms: Date.now() - t0,
+  });
   return { ok: true, batchId: batch.id };
 }

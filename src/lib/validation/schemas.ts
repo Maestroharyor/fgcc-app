@@ -171,7 +171,13 @@ export const BroadcastSmsSchema = z.object({
   audience: z.enum(["all", "track", "attended"], {
     message: "Pick an audience",
   }),
-  track_id: z.string().uuid().optional(),
+  track_code: z
+    .string()
+    .trim()
+    .min(2)
+    .max(8)
+    .transform((s) => s.toUpperCase())
+    .optional(),
   message: z
     .string({ message: "Type a message to send" })
     .min(1, "Type a message to send")

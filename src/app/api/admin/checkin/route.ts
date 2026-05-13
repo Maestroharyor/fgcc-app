@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { TRACKS } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { CheckinSchema } from "@/lib/validation/schemas";
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
   const supabase = await createSupabaseServerClient();
   const { data: row, error } = await supabase
     .from("registrations")
-    .select("id, reference_number, full_name, attended, track_id, tracks(name)")
+    .select("id, reference_number, full_name, attended, track_code")
     .eq("reference_number", parsed.reference_number)
     .maybeSingle();
 
@@ -43,9 +44,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const trackName = Array.isArray((row as { tracks?: unknown }).tracks)
-    ? ((row as { tracks: Array<{ name: string }> }).tracks[0]?.name ?? "")
-    : ((row as { tracks?: { name?: string } }).tracks?.name ?? "");
+  const trackName = TRACKS.find((t) => t.code === row.track_code)?.name ?? "";
   const registrant = {
     referenceNumber: row.reference_number,
     fullName: row.full_name,
