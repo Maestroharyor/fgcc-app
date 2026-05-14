@@ -9,11 +9,44 @@ export const metadata: Metadata = {
   title: "Foursquare Gospel Church · Cement Missionary HQ",
   description:
     "Our website is on the way. In the meantime - SkillUp 1.0 is our first big public programme. June 12–14, 2026. Free to attend.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Foursquare Gospel Church · Cement Missionary HQ",
+    description:
+      "Our church website is on the way. SkillUp 1.0 - our first public programme - is open for registration.",
+    url: "/",
+    type: "website",
+  },
+};
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Foursquare Gospel Church, Cement Missionary HQ",
+  alternateName: "FGC Cement HQ",
+  url: env.NEXT_PUBLIC_SITE_URL,
+  logo: `${env.NEXT_PUBLIC_SITE_URL}/icon.png`,
+  description:
+    "Foursquare Gospel Church, Cement Missionary HQ - the headquarters of the Cement District, Lagos.",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "38, Lagos-Abeokuta Expressway",
+    addressLocality: "Dopemu",
+    addressRegion: "Lagos",
+    addressCountry: "NG",
+  },
+  email: "skillup@fgccement.org",
+  sameAs: [] as string[],
 };
 
 export default function ComingSoonPage() {
   return (
-    <main className="hero-mesh relative min-h-dvh flex flex-col">
+    <main id="main" className="hero-mesh relative min-h-dvh flex flex-col">
+      <script
+        type="application/ld+json"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: stringified JSON-LD for SEO.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
       <header className="px-6 sm:px-10 pt-8">
         <div className="flex items-center gap-3">
           <BrandMark size={40} />
@@ -110,7 +143,20 @@ export default function ComingSoonPage() {
       <footer className="px-6 sm:px-10 pb-8 pt-4">
         <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-2 font-sans text-[11px] uppercase tracking-[0.18em] text-navy/40">
           <span>© 2026 Foursquare Gospel Church · Cement Missionary HQ</span>
-          <span>For SkillUp 1.0 enquiries: skillup@fgccement.org</span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <Link
+              href="/feedback"
+              className="text-primary hover:text-primary-700"
+            >
+              Support & enquiries
+            </Link>
+            <a
+              href="mailto:skillup@fgccement.org"
+              className="hover:text-navy/70"
+            >
+              skillup@fgccement.org
+            </a>
+          </div>
         </div>
       </footer>
     </main>

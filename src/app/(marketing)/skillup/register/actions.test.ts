@@ -219,6 +219,7 @@ const validOthersPayload = {
       age_group: "18_25" as const,
       track_code: "UXD",
       email: "member@example.com",
+      church: "Cement",
     },
   ],
 };

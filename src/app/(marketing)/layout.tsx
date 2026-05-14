@@ -7,7 +7,9 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <SiteHeader />
-      <main className="flex-1">{children}</main>
+      <main id="main" className="flex-1">
+        {children}
+      </main>
       <SiteFooter />
     </>
   );
@@ -99,7 +101,7 @@ function SiteFooter() {
                   href="/skillup#tracks"
                   className="text-navy/75 hover:text-navy"
                 >
-                  The 20 tracks
+                  The 15 tracks
                 </a>
               </li>
               <li>
@@ -129,6 +131,11 @@ function SiteFooter() {
                 <a href="/skillup#faq" className="text-navy/75 hover:text-navy">
                   FAQ
                 </a>
+              </li>
+              <li>
+                <Link href="/feedback" className="text-navy/75 hover:text-navy">
+                  Support & enquiries
+                </Link>
               </li>
               <li>
                 <a

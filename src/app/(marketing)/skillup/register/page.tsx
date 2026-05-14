@@ -14,6 +14,14 @@ export const metadata: Metadata = {
   title: "Register · SkillUp 1.0",
   description:
     "Register for SkillUp 1.0 - pick your skill track in under two minutes.",
+  alternates: { canonical: "/skillup/register" },
+  openGraph: {
+    title: "Register · SkillUp 1.0",
+    description:
+      "Reserve your spot at SkillUp 1.0 — three days, 15 tracks, free to attend.",
+    url: "/skillup/register",
+    type: "website",
+  },
 };
 
 export default function RegisterPage() {

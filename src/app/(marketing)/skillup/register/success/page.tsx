@@ -30,6 +30,8 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "You're confirmed · SkillUp 1.0",
+  // Transactional landing — don't index per-user confirmation pages.
+  robots: { index: false, follow: false },
 };
 
 interface PageProps {

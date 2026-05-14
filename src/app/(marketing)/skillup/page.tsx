@@ -13,13 +13,103 @@ import { TRACKS, type Track, type TrackCategory } from "@/content/tracks";
 import { VENUE } from "@/content/venue";
 import { getTrackCounts, withCapacity } from "@/lib/db/tracks";
 import type { TrackWithCapacity } from "@/lib/db/types";
+import { env } from "@/lib/utils/env";
 
 export const revalidate = 60;
 
+const PAGE_TITLE = "SkillUp 1.0 - From Skills to Income";
+const PAGE_DESCRIPTION =
+  "Three days of hands-on training across 15 skill tracks. Free youth empowerment programme by Foursquare Gospel Church, Cement Missionary HQ. June 12–14, 2026.";
+
 export const metadata: Metadata = {
-  title: "SkillUp 1.0 - From Skills to Income",
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
+  alternates: { canonical: "/skillup" },
+  openGraph: {
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+    url: "/skillup",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+  },
+};
+
+// `eventJsonLd` powers Google's Event rich results. Each Event must live at a
+// single, canonical URL — `/skillup` is that URL. `performer[]` is built from
+// TRACKS so adding/removing a facilitator just works.
+const eventJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Event",
+  name: "SkillUp 1.0 - From Skills to Income",
   description:
-    "Three days of hands-on training across 15 skill tracks. Free youth empowerment programme by Foursquare Gospel Church, Cement Missionary HQ. June 12–14, 2026.",
+    "Three-day youth empowerment programme. 15 hands-on skill tracks across digital, creative, and vocational disciplines. Free to attend.",
+  startDate: env.NEXT_PUBLIC_EVENT_START_ISO,
+  endDate: "2026-06-14T17:00:00+01:00",
+  eventStatus: "https://schema.org/EventScheduled",
+  eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+  location: {
+    "@type": "Place",
+    name: VENUE.name,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: VENUE.street,
+      addressLocality: "Dopemu",
+      addressRegion: "Lagos",
+      addressCountry: "NG",
+    },
+  },
+  organizer: {
+    "@type": "Organization",
+    name: "Foursquare Gospel Church, Cement Missionary HQ",
+    url: env.NEXT_PUBLIC_SITE_URL,
+  },
+  offers: {
+    "@type": "Offer",
+    name: "SkillUp 1.0 registration",
+    price: "0",
+    priceCurrency: "NGN",
+    url: `${env.NEXT_PUBLIC_SITE_URL}/skillup/register`,
+    availability: "https://schema.org/InStock",
+    validFrom: "2026-04-01T00:00:00+01:00",
+  },
+  performer: TRACKS.filter((t) => t.facilitator).map((t) => ({
+    "@type": "Person",
+    name: t.facilitator,
+  })),
+  image: [`${env.NEXT_PUBLIC_SITE_URL}/opengraph-image`],
+};
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: env.NEXT_PUBLIC_SITE_URL,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "SkillUp 1.0",
+      item: `${env.NEXT_PUBLIC_SITE_URL}/skillup`,
+    },
+  ],
+};
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQS.map((faq) => ({
+    "@type": "Question",
+    name: faq.q,
+    acceptedAnswer: { "@type": "Answer", text: faq.a },
+  })),
 };
 
 const CATEGORY_LABELS: Record<TrackCategory, string> = {
@@ -52,6 +142,21 @@ const TRACK_GROUPS: Array<{ category: TrackCategory; tracks: Track[] }> = [
 export default function SkillupLandingPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: stringified JSON-LD for SEO.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: stringified JSON-LD for SEO.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: stringified JSON-LD for SEO.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <HeroSection />
       <AboutSection />
       <Suspense fallback={<TracksSectionSkeleton />}>

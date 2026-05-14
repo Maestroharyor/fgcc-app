@@ -8,6 +8,12 @@ import CertificateEmail, {
 import ConfirmationEmail, {
   type ConfirmationEmailProps,
 } from "@/emails/ConfirmationEmail";
+import EnquiryAckEmail, {
+  type EnquiryAckEmailProps,
+} from "@/emails/EnquiryAckEmail";
+import EnquiryNotificationEmail, {
+  type EnquiryNotificationEmailProps,
+} from "@/emails/EnquiryNotificationEmail";
 import FeedbackRequestEmail, {
   type FeedbackRequestEmailProps,
 } from "@/emails/FeedbackRequestEmail";
@@ -35,6 +41,8 @@ interface SendArgs<P> {
   Component: (props: P) => ReactElement;
   props: P;
   attachments?: Array<{ filename: string; content: Buffer | string }>;
+  /** Optional Reply-To header. Used by admin notifications so the response goes to the enquirer. */
+  replyTo?: string | string[];
 }
 
 async function dispatch<P>({
@@ -43,6 +51,7 @@ async function dispatch<P>({
   Component,
   props,
   attachments,
+  replyTo,
 }: SendArgs<P>): Promise<{ ok: boolean; error?: string }> {
   if (!isEmailConfigured()) {
     console.warn(
@@ -57,6 +66,7 @@ async function dispatch<P>({
       subject,
       react: Component(props),
       attachments,
+      replyTo,
     });
     if (error) return { ok: false, error: error.message };
     return { ok: true };
@@ -164,6 +174,36 @@ export function sendFeedbackRequestEmail(
     subject: "How was SkillUp 1.0? We'd love your feedback",
     Component: FeedbackRequestEmail,
     props,
+  });
+}
+
+export function sendEnquiryAckEmail(to: string, props: EnquiryAckEmailProps) {
+  return dispatch({
+    to,
+    subject: `We got your message - SkillUp 1.0 · ${props.subject}`,
+    Component: EnquiryAckEmail,
+    props,
+  });
+}
+
+/**
+ * Notify the SkillUp inbox(es) of a new enquiry. Falls back to a hard-coded
+ * support address if ADMIN_NOTIFICATION_EMAILS is empty so we never lose an
+ * incoming message — and sets reply-to to the enquirer for one-click response.
+ */
+export function sendEnquiryNotificationEmail(
+  props: EnquiryNotificationEmailProps,
+) {
+  const recipients =
+    adminNotificationEmails.length > 0
+      ? adminNotificationEmails
+      : ["skillup@fgccement.org"];
+  return dispatch({
+    to: recipients,
+    subject: `New enquiry: ${props.fullName} · ${props.subject}`,
+    Component: EnquiryNotificationEmail,
+    props,
+    replyTo: props.email,
   });
 }
 

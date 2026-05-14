@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   BroadcastSmsSchema,
   CheckinSchema,
+  EnquirySchema,
   FeedbackSchema,
   LoginSchema,
   OthersRegistrantSchema,
@@ -29,12 +30,26 @@ describe("RegistrationSchema", () => {
     expect(parsed.church).toBe("Cement HQ");
   });
 
-  it("treats blank church as undefined (optional)", () => {
-    const parsed = RegistrationSchema.parse({
+  it("requires church (form picks from district list or 'Other' free text)", () => {
+    expect(() =>
+      RegistrationSchema.parse({ ...validRegistration, church: "" }),
+    ).toThrow();
+    expect(() =>
+      RegistrationSchema.parse({ ...validRegistration, church: undefined }),
+    ).toThrow();
+  });
+
+  it("accepts any non-trivial church string (catalogue or 'Other' free text)", () => {
+    const fromCatalogue = RegistrationSchema.parse({
       ...validRegistration,
-      church: "",
+      church: "Mangoro",
     });
-    expect(parsed.church).toBeUndefined();
+    expect(fromCatalogue.church).toBe("Mangoro");
+    const fromOther = RegistrationSchema.parse({
+      ...validRegistration,
+      church: "RCCG Lagos Province 12",
+    });
+    expect(fromOther.church).toBe("RCCG Lagos Province 12");
   });
 
   it("rejects a bad email address", () => {
@@ -94,12 +109,18 @@ describe("SubmitterSchema", () => {
 });
 
 describe("OthersRegistrantSchema", () => {
+  const baseRegistrant = {
+    full_name: "Femi Smith",
+    phone: "08012345678",
+    gender: "male" as const,
+    age_group: "18_25" as const,
+    track_code: "CWD",
+    church: "Cement",
+  };
+
   it("makes email optional and lowercases it when provided", () => {
     const parsed = OthersRegistrantSchema.parse({
-      full_name: "Femi Smith",
-      phone: "08012345678",
-      gender: "male",
-      age_group: "18_25",
+      ...baseRegistrant,
       track_code: "cwd",
       email: "Femi@EXAMPLE.COM",
     });
@@ -109,14 +130,16 @@ describe("OthersRegistrantSchema", () => {
 
   it("accepts an empty email and normalises it to undefined", () => {
     const parsed = OthersRegistrantSchema.parse({
-      full_name: "Femi Smith",
-      phone: "08012345678",
-      gender: "male",
-      age_group: "18_25",
-      track_code: "CWD",
+      ...baseRegistrant,
       email: "",
     });
     expect(parsed.email).toBeUndefined();
+  });
+
+  it("requires church for each registrant", () => {
+    expect(() =>
+      OthersRegistrantSchema.parse({ ...baseRegistrant, church: "" }),
+    ).toThrow();
   });
 });
 
@@ -138,6 +161,7 @@ describe("RegisterOthersSchema", () => {
         gender: "female" as const,
         age_group: "18_25" as const,
         track_code: "UXD",
+        church: "Cement",
       })),
     });
     expect(parsed.registrants).toHaveLength(3);
@@ -153,6 +177,7 @@ describe("RegisterOthersSchema", () => {
           gender: "female",
           age_group: "18_25",
           track_code: "UXD",
+          church: "Cement",
         })),
       }),
     ).toThrow();
@@ -161,6 +186,47 @@ describe("RegisterOthersSchema", () => {
   it("rejects zero registrants", () => {
     expect(() =>
       RegisterOthersSchema.parse({ submitter, registrants: [] }),
+    ).toThrow();
+  });
+});
+
+describe("EnquirySchema", () => {
+  const validEnquiry = {
+    full_name: "Ada Lovelace",
+    email: "ada@example.com",
+    phone: "08012345678",
+    topic: "registration" as const,
+    subject: "Can't find my reference number",
+    message: "I registered last week and the confirmation email never arrived.",
+    consent: true as const,
+  };
+
+  it("accepts a complete enquiry", () => {
+    const parsed = EnquirySchema.parse(validEnquiry);
+    expect(parsed.topic).toBe("registration");
+    expect(parsed.phone).toBe("+2348012345678");
+  });
+
+  it("treats empty phone as undefined", () => {
+    const parsed = EnquirySchema.parse({ ...validEnquiry, phone: "" });
+    expect(parsed.phone).toBeUndefined();
+  });
+
+  it("rejects a missing consent box", () => {
+    expect(() =>
+      EnquirySchema.parse({ ...validEnquiry, consent: false }),
+    ).toThrow();
+  });
+
+  it("rejects too-short messages", () => {
+    expect(() =>
+      EnquirySchema.parse({ ...validEnquiry, message: "too short" }),
+    ).toThrow();
+  });
+
+  it("rejects unknown topics", () => {
+    expect(() =>
+      EnquirySchema.parse({ ...validEnquiry, topic: "weather" }),
     ).toThrow();
   });
 });

@@ -1,10 +1,17 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Star } from "lucide-react";
+import { AlertCircle, Star } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import {
+  cloneElement,
+  isValidElement,
+  useId,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import { type FieldErrors, useForm } from "react-hook-form";
 import type { z } from "zod";
 import { submitFeedbackAction } from "@/app/(marketing)/skillup/feedback/actions";
 import { FeedbackSchema } from "@/lib/validation/schemas";
@@ -13,6 +20,29 @@ import { FeedbackSchema } from "@/lib/validation/schemas";
 // optional-vs-required tagging lines up between defaults and the resolver.
 type FeedbackFormValues = z.input<typeof FeedbackSchema>;
 
+const FIELD_LABELS: Record<string, string> = {
+  reference_number: "Reference number",
+  overall_rating: "Overall rating",
+  track_rating: "Track quality",
+  facilitator_rating: "Facilitator",
+  enjoyed_most: "What did you enjoy most?",
+  improvements: "What could be improved?",
+  attend_next: "Would you attend SkillUp 2.0?",
+  testimony: "Testimony / extra comment",
+  share_as_testimonial: "Testimonial consent",
+};
+
+function flattenErrors(
+  errors: FieldErrors,
+): Array<{ key: string; message: string }> {
+  return Object.entries(errors)
+    .filter(([, v]) => Boolean(v && (v as { message?: string }).message))
+    .map(([k, v]) => ({
+      key: k,
+      message: `${FIELD_LABELS[k] ?? k}: ${(v as { message?: string }).message}`,
+    }));
+}
+
 export function FeedbackForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -20,6 +50,7 @@ export function FeedbackForm() {
   const [pending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const summaryRef = useRef<HTMLDivElement | null>(null);
 
   const {
     register,
@@ -38,18 +69,23 @@ export function FeedbackForm() {
     },
   });
 
-  const onSubmit = handleSubmit((values) => {
-    setServerError(null);
-    startTransition(async () => {
-      const result = await submitFeedbackAction(values);
-      if (result.ok) {
-        setSubmitted(true);
-        setTimeout(() => router.push("/skillup"), 1500);
-      } else {
-        setServerError(result.message ?? "Couldn’t submit your feedback.");
-      }
-    });
-  });
+  const onSubmit = handleSubmit(
+    (values) => {
+      setServerError(null);
+      startTransition(async () => {
+        const result = await submitFeedbackAction(values);
+        if (result.ok) {
+          setSubmitted(true);
+          setTimeout(() => router.push("/skillup"), 1500);
+        } else {
+          setServerError(result.message ?? "Couldn’t submit your feedback.");
+        }
+      });
+    },
+    () => {
+      requestAnimationFrame(() => summaryRef.current?.focus());
+    },
+  );
 
   if (submitted) {
     return (
@@ -67,57 +103,84 @@ export function FeedbackForm() {
   return (
     <form
       onSubmit={onSubmit}
+      noValidate
       className="flex flex-col gap-6 rounded-3xl border border-navy/8 bg-white p-6 sm:p-8 shadow-card"
     >
+      <p className="text-xs text-navy/55">
+        Fields marked with{" "}
+        <span aria-hidden className="text-coral">
+          *
+        </span>{" "}
+        are required.
+      </p>
+      <ErrorSummary errors={errors} summaryRef={summaryRef} />
+
       <Field
         label="Your reference number"
+        required
         error={errors.reference_number?.message}
+        hint="Looks like SKU-UXD-001 — check your confirmation email."
       >
-        <input className="form-input" {...register("reference_number")} />
+        <input
+          className="form-input"
+          autoComplete="off"
+          aria-required="true"
+          placeholder="SKU-XXX-000"
+          {...register("reference_number")}
+        />
       </Field>
 
       <RatingField
         label="Overall rating"
+        required
         value={watch("overall_rating")}
         onChange={(n) => setValue("overall_rating", n)}
       />
       <RatingField
         label="Track quality"
+        required
         value={watch("track_rating")}
         onChange={(n) => setValue("track_rating", n)}
       />
       <RatingField
         label="Facilitator"
+        required
         value={watch("facilitator_rating")}
         onChange={(n) => setValue("facilitator_rating", n)}
       />
 
       <Field
-        label="What did you enjoy most?"
+        label="What did you enjoy most? (optional)"
         error={errors.enjoyed_most?.message}
       >
         <textarea
           className="form-input"
           rows={3}
+          autoComplete="off"
           {...register("enjoyed_most")}
         />
       </Field>
       <Field
-        label="What could be improved?"
+        label="What could be improved? (optional)"
         error={errors.improvements?.message}
       >
         <textarea
           className="form-input"
           rows={3}
+          autoComplete="off"
           {...register("improvements")}
         />
       </Field>
 
       <Field
-        label="Would you attend SkillUp 2.0?"
+        label="Would you attend SkillUp 2.0? (optional)"
         error={errors.attend_next?.message}
       >
-        <select className="form-input" {...register("attend_next")}>
+        <select
+          className="form-input"
+          autoComplete="off"
+          {...register("attend_next")}
+        >
           <option value="">Pick one</option>
           <option value="yes">Yes</option>
           <option value="maybe">Maybe</option>
@@ -126,10 +189,15 @@ export function FeedbackForm() {
       </Field>
 
       <Field
-        label="Anything else? Share a testimony or quote."
+        label="Anything else? Share a testimony or quote. (optional)"
         error={errors.testimony?.message}
       >
-        <textarea className="form-input" rows={3} {...register("testimony")} />
+        <textarea
+          className="form-input"
+          rows={3}
+          autoComplete="off"
+          {...register("testimony")}
+        />
       </Field>
 
       <label className="flex items-center gap-2 text-sm text-navy/75">
@@ -141,7 +209,11 @@ export function FeedbackForm() {
         It’s OK to share my testimony publicly with attribution.
       </label>
 
-      {serverError && <p className="text-sm text-coral">{serverError}</p>}
+      {serverError && (
+        <p role="alert" className="text-sm text-coral">
+          {serverError}
+        </p>
+      )}
 
       <button
         type="submit"
@@ -157,38 +229,108 @@ export function FeedbackForm() {
 function Field({
   label,
   error,
+  required,
+  hint,
   children,
 }: {
   label: string;
   error?: string;
+  required?: boolean;
+  hint?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const labelId = useId();
+  const labelled = isValidElement(children)
+    ? cloneElement(
+        children as React.ReactElement<{
+          "aria-labelledby"?: string;
+          "aria-label"?: string;
+        }>,
+        {
+          "aria-labelledby":
+            (children.props as { "aria-labelledby"?: string })?.[
+              "aria-labelledby"
+            ] ?? labelId,
+          "aria-label":
+            (children.props as { "aria-label"?: string })?.["aria-label"] ??
+            label,
+        },
+      )
+    : children;
   return (
-    // biome-ignore lint/a11y/noLabelWithoutControl: the input is the children prop - nested-input pattern is valid.
-    <label className="flex flex-col gap-1.5">
-      <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
+    <div className="flex flex-col gap-1.5">
+      <span
+        id={labelId}
+        className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60"
+      >
         {label}
+        {required && (
+          <span aria-hidden className="ml-0.5 text-coral">
+            *
+          </span>
+        )}
       </span>
-      {children}
-      {error && <span className="text-xs text-coral">{error}</span>}
-    </label>
+      {labelled}
+      {hint && <span className="text-[11px] text-navy/55">{hint}</span>}
+      {error && (
+        <span role="alert" className="text-xs text-coral">
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function ErrorSummary({
+  errors,
+  summaryRef,
+}: {
+  errors: FieldErrors;
+  summaryRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const items = flattenErrors(errors);
+  if (items.length === 0) return null;
+  return (
+    <div
+      ref={summaryRef}
+      tabIndex={-1}
+      role="alert"
+      className="rounded-2xl border border-coral/30 bg-coral/8 p-4 outline-none focus:ring-2 focus:ring-coral/40"
+    >
+      <div className="flex items-center gap-2 font-sans text-[10px] uppercase tracking-[0.18em] text-coral">
+        <AlertCircle className="h-3.5 w-3.5" aria-hidden />
+        <span>Please fix the following</span>
+      </div>
+      <ul className="mt-2 list-disc pl-5 text-sm text-navy/80 space-y-0.5">
+        {items.map((item) => (
+          <li key={item.key}>{item.message}</li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
 function RatingField({
   label,
+  required,
   value,
   onChange,
 }: {
   label: string;
+  required?: boolean;
   value: number;
   onChange: (value: number) => void;
 }) {
   return (
-    <div>
-      <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
+    <fieldset className="border-0 p-0 m-0">
+      <legend className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
         {label}
-      </div>
+        {required && (
+          <span aria-hidden className="ml-0.5 text-coral">
+            *
+          </span>
+        )}
+      </legend>
       <div className="mt-2 flex items-center gap-1.5">
         {[1, 2, 3, 4, 5].map((n) => {
           const filled = n <= value;
@@ -198,6 +340,7 @@ function RatingField({
               type="button"
               onClick={() => onChange(n)}
               aria-label={`${n} of 5`}
+              aria-pressed={filled}
               className={`grid h-10 w-10 place-items-center rounded-xl transition ${
                 filled
                   ? "bg-gold text-white"
@@ -213,6 +356,6 @@ function RatingField({
           );
         })}
       </div>
-    </div>
+    </fieldset>
   );
 }

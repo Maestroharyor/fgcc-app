@@ -32,6 +32,8 @@ import {
   sendAdminNotificationEmail,
   sendCertificateEmail,
   sendConfirmationEmail,
+  sendEnquiryAckEmail,
+  sendEnquiryNotificationEmail,
   sendFeedbackRequestEmail,
   sendReminder1DayEmail,
   sendReminder3DayEmail,
@@ -71,6 +73,26 @@ describe("send helpers - happy paths", () => {
     expect(call.to).toBe("john@example.com");
     expect(call.subject).toContain("UI/UX Design");
     expect(call.react).toBeDefined();
+  });
+
+  it("sendEnquiryNotificationEmail routes to admin recipients with reply-to set to the enquirer", async () => {
+    await sendEnquiryNotificationEmail({
+      fullName: "Ada Lovelace",
+      email: "ada@example.com",
+      phone: "+2348012345678",
+      topicLabel: "Registration help",
+      subject: "Help",
+      message: "I cannot find my reference number anywhere.",
+      submittedAtIso: "2026-05-14T10:00:00.000Z",
+    });
+    const call = sendMock.mock.calls[0]?.[0] as unknown as {
+      to: string | string[];
+      subject: string;
+      replyTo: string;
+    };
+    expect(call.to).toEqual(["admin@x.com"]);
+    expect(call.subject).toContain("Ada Lovelace");
+    expect(call.replyTo).toBe("ada@example.com");
   });
 
   it("sendAdminNotificationEmail uses configured admin recipients", async () => {
@@ -161,6 +183,17 @@ describe("send helpers - happy paths", () => {
           firstName: "R",
           trackName: "T",
           feedbackUrl: "http://x/feedback",
+        }),
+    ],
+    [
+      "enquiry acknowledgement",
+      () =>
+        sendEnquiryAckEmail("ack@x.com", {
+          firstName: "Ada",
+          topicLabel: "Registration help",
+          subject: "Can't find ref",
+          message: "Long message body here please respond.",
+          siteUrl: "http://x",
         }),
     ],
   ])("%s returns ok and calls Resend", async (_name, fn) => {

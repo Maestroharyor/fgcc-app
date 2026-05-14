@@ -11,16 +11,25 @@ import {
   useFilter,
 } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Trash2 } from "lucide-react";
+import { AlertCircle, Plus, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
+import {
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import { type FieldErrors, useFieldArray, useForm } from "react-hook-form";
 import type { z } from "zod";
 import {
   type ActionResult,
   registerOthersAction,
   registerSelfAction,
 } from "@/app/(marketing)/skillup/register/actions";
+import { ChurchSelect } from "@/components/forms/ChurchSelect";
 import type { TrackWithCapacity } from "@/lib/db/types";
 import { cn } from "@/lib/utils/cn";
 import {
@@ -28,6 +37,103 @@ import {
   RegisterOthersSchema,
   RegistrationSchema,
 } from "@/lib/validation/schemas";
+
+// Human-readable labels for every form field, used by ErrorSummary so the
+// summary reads like the form, not like a JSON tree.
+const SELF_FIELD_LABELS: Record<string, string> = {
+  full_name: "Full name",
+  email: "Email",
+  phone: "Phone",
+  gender: "Gender",
+  age_group: "Age group",
+  church: "Church or organisation",
+  track_code: "Skill track",
+  how_heard: "How did you hear",
+};
+
+const SUBMITTER_FIELD_LABELS: Record<string, string> = {
+  submitter_name: "Your full name",
+  submitter_email: "Your email",
+  submitter_phone: "Your phone",
+  relationship: "Relationship to registrants",
+  church: "Your church or organisation",
+};
+
+const REGISTRANT_FIELD_LABELS: Record<string, string> = {
+  full_name: "Full name",
+  email: "Email",
+  phone: "Phone",
+  gender: "Gender",
+  age_group: "Age group",
+  church: "Church or organisation",
+  track_code: "Skill track",
+};
+
+function flattenSelfErrors(
+  errors: FieldErrors,
+): Array<{ key: string; message: string }> {
+  return Object.entries(errors)
+    .filter(([, v]) => Boolean(v && (v as { message?: string }).message))
+    .map(([k, v]) => ({
+      key: k,
+      message: `${SELF_FIELD_LABELS[k] ?? k}: ${(v as { message?: string }).message}`,
+    }));
+}
+
+function flattenOthersErrors(
+  errors: FieldErrors,
+): Array<{ key: string; message: string }> {
+  const out: Array<{ key: string; message: string }> = [];
+  const submitter = (errors as { submitter?: FieldErrors }).submitter;
+  if (submitter) {
+    for (const [k, v] of Object.entries(submitter)) {
+      const msg = (v as { message?: string } | undefined)?.message;
+      if (msg) {
+        out.push({
+          key: `submitter.${k}`,
+          message: `${SUBMITTER_FIELD_LABELS[k] ?? k}: ${msg}`,
+        });
+      }
+    }
+  }
+  const regs = (errors as { registrants?: Array<FieldErrors | undefined> })
+    .registrants;
+  if (Array.isArray(regs)) {
+    regs.forEach((rErr, i) => {
+      if (!rErr) return;
+      for (const [k, v] of Object.entries(rErr)) {
+        const msg = (v as { message?: string } | undefined)?.message;
+        if (msg) {
+          out.push({
+            key: `registrants.${i}.${k}`,
+            message: `Registrant ${i + 1} · ${REGISTRANT_FIELD_LABELS[k] ?? k}: ${msg}`,
+          });
+        }
+      }
+    });
+  }
+  return out;
+}
+
+function WhyWeAskChurch() {
+  // Native <details>/<summary> for a no-JS tooltip. Closed by default;
+  // expanding it announces the reason to AT users via the disclosure pattern.
+  return (
+    <details className="group">
+      <summary className="cursor-pointer list-none text-[11px] text-navy/55 hover:text-navy">
+        Why do we ask?
+        <span className="ml-1 inline-block transition group-open:rotate-180">
+          ▾
+        </span>
+      </summary>
+      <span className="mt-1 block text-[11px] text-navy/70">
+        So we can route attendees to the right zone and follow up after the
+        programme. Pick "Other / Not listed" if you're not in the district or
+        attend a different church.
+      </span>
+    </details>
+  );
+}
 
 function CapacityErrorNotice() {
   return (
@@ -185,6 +291,8 @@ function SelfForm({
     trackName: string;
     fullName: string;
   } | null>(null);
+  const summaryRef = useRef<HTMLDivElement | null>(null);
+  const churchErrorId = useId();
 
   const {
     register,
@@ -237,26 +345,50 @@ function SelfForm({
     return () => clearTimeout(handle);
   }, [emailValue]);
 
-  const onSubmit = handleSubmit((values) => {
-    setServerError(null);
-    startTransition(async () => {
-      const fd = new FormData();
-      for (const [k, v] of Object.entries(values)) {
-        if (v !== undefined && v !== null) fd.set(k, String(v));
-      }
-      const result: ActionResult = await registerSelfAction(fd);
-      if (result.ok && result.referenceNumber) {
-        router.push(`/skillup/register/success?ref=${result.referenceNumber}`);
-      } else if (result.error === "duplicate" && result.referenceNumber) {
-        router.push(`/skillup/register/success?ref=${result.referenceNumber}`);
-      } else {
-        setServerError(result.message ?? "Something went wrong. Try again.");
-      }
-    });
-  });
+  const onSubmit = handleSubmit(
+    (values) => {
+      setServerError(null);
+      startTransition(async () => {
+        const fd = new FormData();
+        for (const [k, v] of Object.entries(values)) {
+          if (v !== undefined && v !== null) fd.set(k, String(v));
+        }
+        const result: ActionResult = await registerSelfAction(fd);
+        if (result.ok && result.referenceNumber) {
+          router.push(
+            `/skillup/register/success?ref=${result.referenceNumber}`,
+          );
+        } else if (result.error === "duplicate" && result.referenceNumber) {
+          router.push(
+            `/skillup/register/success?ref=${result.referenceNumber}`,
+          );
+        } else {
+          setServerError(result.message ?? "Something went wrong. Try again.");
+        }
+      });
+    },
+    () => {
+      // On validation failure, surface the summary box and move focus to it.
+      // Requestion animation frame: ref needs to attach to the freshly-rendered
+      // node before .focus() can land.
+      requestAnimationFrame(() => summaryRef.current?.focus());
+    },
+  );
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5">
+    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
+      <p className="text-xs text-navy/55">
+        Fields marked with{" "}
+        <span aria-hidden className="text-coral">
+          *
+        </span>{" "}
+        are required.
+      </p>
+      <ErrorSummary
+        errors={errors}
+        flatten={flattenSelfErrors}
+        summaryRef={summaryRef}
+      />
       {capacityFetchFailed && <CapacityErrorNotice />}
       {duplicate && (
         <div className="rounded-2xl border border-gold/30 bg-gold/8 p-4">
@@ -273,32 +405,55 @@ function SelfForm({
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Full name" error={errors.full_name?.message}>
-          <input className="form-input" {...register("full_name")} />
+        <Field label="Full name" required error={errors.full_name?.message}>
+          <input
+            className="form-input"
+            autoComplete="name"
+            aria-required="true"
+            {...register("full_name")}
+          />
         </Field>
-        <Field label="Email" error={errors.email?.message}>
+        <Field label="Email" required error={errors.email?.message}>
           <input
             type="email"
             className="form-input"
             autoComplete="email"
+            inputMode="email"
+            aria-required="true"
             {...register("email")}
           />
         </Field>
-        <Field label="Phone (WhatsApp preferred)" error={errors.phone?.message}>
+        <Field
+          label="Phone (WhatsApp preferred)"
+          required
+          error={errors.phone?.message}
+          hint="WhatsApp number preferred - we'll send your confirmation here."
+        >
           <input
             type="tel"
             className="form-input"
             autoComplete="tel"
+            inputMode="tel"
+            aria-required="true"
+            placeholder="08012345678 or +2348012345678"
             {...register("phone")}
           />
         </Field>
         <Field
-          label="Church or organisation (optional)"
+          label="Church or organisation"
+          required
           error={errors.church?.message}
+          hint={<WhyWeAskChurch />}
         >
-          <input className="form-input" {...register("church")} />
+          <ChurchSelect
+            value={watch("church")}
+            onChange={(v) => setValue("church", v, { shouldValidate: true })}
+            hasError={Boolean(errors.church)}
+            invalidId={errors.church ? churchErrorId : undefined}
+            required
+          />
         </Field>
-        <Field label="Gender" error={errors.gender?.message}>
+        <Field label="Gender" required error={errors.gender?.message}>
           <OptionSelect
             options={GENDER_OPTIONS}
             value={watch("gender")}
@@ -309,7 +464,7 @@ function SelfForm({
             }
           />
         </Field>
-        <Field label="Age group" error={errors.age_group?.message}>
+        <Field label="Age group" required error={errors.age_group?.message}>
           <OptionSelect
             options={AGE_GROUP_OPTIONS}
             value={watch("age_group")}
@@ -322,7 +477,7 @@ function SelfForm({
         </Field>
       </div>
 
-      <Field label="Skill track" error={errors.track_code?.message}>
+      <Field label="Skill track" required error={errors.track_code?.message}>
         <TrackSelect
           tracks={tracks}
           value={watch("track_code")}
@@ -388,6 +543,7 @@ function OthersForm({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
+  const summaryRef = useRef<HTMLDivElement | null>(null);
 
   const {
     register,
@@ -413,20 +569,37 @@ function OthersForm({
     name: "registrants",
   });
 
-  const onSubmit = handleSubmit((values) => {
-    setServerError(null);
-    startTransition(async () => {
-      const result = await registerOthersAction(values);
-      if (result.ok && result.batchId) {
-        router.push(`/skillup/register/success?batch=${result.batchId}`);
-      } else {
-        setServerError(result.message ?? "Something went wrong. Try again.");
-      }
-    });
-  });
+  const onSubmit = handleSubmit(
+    (values) => {
+      setServerError(null);
+      startTransition(async () => {
+        const result = await registerOthersAction(values);
+        if (result.ok && result.batchId) {
+          router.push(`/skillup/register/success?batch=${result.batchId}`);
+        } else {
+          setServerError(result.message ?? "Something went wrong. Try again.");
+        }
+      });
+    },
+    () => {
+      requestAnimationFrame(() => summaryRef.current?.focus());
+    },
+  );
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-7">
+    <form onSubmit={onSubmit} className="flex flex-col gap-7" noValidate>
+      <p className="text-xs text-navy/55">
+        Fields marked with{" "}
+        <span aria-hidden className="text-coral">
+          *
+        </span>{" "}
+        are required.
+      </p>
+      <ErrorSummary
+        errors={errors}
+        flatten={flattenOthersErrors}
+        summaryRef={summaryRef}
+      />
       {capacityFetchFailed && <CapacityErrorNotice />}
       <div>
         <div className="font-display text-lg font-semibold text-navy">
@@ -438,35 +611,48 @@ function OthersForm({
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field
             label="Your full name"
+            required
             error={errors.submitter?.submitter_name?.message}
           >
             <input
               className="form-input"
+              autoComplete="name"
+              aria-required="true"
               {...register("submitter.submitter_name")}
             />
           </Field>
           <Field
             label="Your email"
+            required
             error={errors.submitter?.submitter_email?.message}
           >
             <input
               type="email"
               className="form-input"
+              autoComplete="email"
+              inputMode="email"
+              aria-required="true"
               {...register("submitter.submitter_email")}
             />
           </Field>
           <Field
             label="Your phone"
+            required
             error={errors.submitter?.submitter_phone?.message}
           >
             <input
               type="tel"
               className="form-input"
+              autoComplete="tel"
+              inputMode="tel"
+              aria-required="true"
+              placeholder="08012345678 or +2348012345678"
               {...register("submitter.submitter_phone")}
             />
           </Field>
           <Field
             label="Relationship to registrants"
+            required
             error={errors.submitter?.relationship?.message}
           >
             <OptionSelect
@@ -482,11 +668,17 @@ function OthersForm({
             />
           </Field>
           <Field
-            label="Church or organisation"
+            label="Church or organisation (optional)"
             error={errors.submitter?.church?.message}
             wide
           >
-            <input className="form-input" {...register("submitter.church")} />
+            <ChurchSelect
+              value={watch("submitter.church")}
+              onChange={(v) =>
+                setValue("submitter.church", v, { shouldValidate: true })
+              }
+              hasError={Boolean(errors.submitter?.church)}
+            />
           </Field>
         </div>
       </div>
@@ -522,6 +714,7 @@ function OthersForm({
               phone: "",
               gender: "male",
               age_group: "18_25",
+              church: "",
               track_code: tracks.find((t) => !t.is_full)?.code ?? "",
             } as OthersRegistrantInput)
           }
@@ -589,16 +782,22 @@ function RegistrantBlock({
         )}
       </div>
       <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Full name" error={rErr?.full_name?.message}>
+        <Field label="Full name" required error={rErr?.full_name?.message}>
           <input
             className="form-input"
+            autoComplete="off"
+            aria-required="true"
             {...register(`registrants.${index}.full_name`)}
           />
         </Field>
-        <Field label="Phone" error={rErr?.phone?.message}>
+        <Field label="Phone" required error={rErr?.phone?.message}>
           <input
             type="tel"
             className="form-input"
+            autoComplete="off"
+            inputMode="tel"
+            aria-required="true"
+            placeholder="08012345678 or +2348012345678"
             {...register(`registrants.${index}.phone`)}
           />
         </Field>
@@ -606,16 +805,24 @@ function RegistrantBlock({
           <input
             type="email"
             className="form-input"
+            autoComplete="off"
+            inputMode="email"
             {...register(`registrants.${index}.email`)}
           />
         </Field>
-        <Field label="Church (optional)" error={rErr?.church?.message}>
-          <input
-            className="form-input"
-            {...register(`registrants.${index}.church`)}
+        <Field label="Church" required error={rErr?.church?.message}>
+          <ChurchSelect
+            value={watch(`registrants.${index}.church`)}
+            onChange={(v) =>
+              setValue(`registrants.${index}.church`, v, {
+                shouldValidate: true,
+              })
+            }
+            hasError={Boolean(rErr?.church)}
+            required
           />
         </Field>
-        <Field label="Gender" error={rErr?.gender?.message}>
+        <Field label="Gender" required error={rErr?.gender?.message}>
           <OptionSelect
             options={GENDER_OPTIONS}
             value={watch(`registrants.${index}.gender`)}
@@ -628,7 +835,7 @@ function RegistrantBlock({
             }
           />
         </Field>
-        <Field label="Age group" error={rErr?.age_group?.message}>
+        <Field label="Age group" required error={rErr?.age_group?.message}>
           <OptionSelect
             options={AGE_GROUP_OPTIONS}
             value={watch(`registrants.${index}.age_group`)}
@@ -643,7 +850,7 @@ function RegistrantBlock({
         </Field>
       </div>
       <div className="mt-4">
-        <Field label="Skill track" error={rErr?.track_code?.message}>
+        <Field label="Skill track" required error={rErr?.track_code?.message}>
           <TrackSelect
             tracks={tracks}
             value={watch(`registrants.${index}.track_code`)}
@@ -667,22 +874,98 @@ function Field({
   label,
   error,
   wide,
+  required,
+  hint,
   children,
 }: {
   label: string;
   error?: string;
   wide?: boolean;
+  required?: boolean;
+  /** Help text rendered under the input, before the error. */
+  hint?: React.ReactNode;
   children: React.ReactNode;
 }) {
   // Plain <div> wrapper (not <label>) so HeroUI's compositional Select /
   // Autocomplete don't get their popover toggled off by a label-relayed click.
+  // We expose the label's id and inject BOTH `aria-labelledby` (programmatic
+  // association with the visible label span) and `aria-label` (text fallback
+  // for any scanner that only checks the latter) onto the single child.
+  const labelId = useId();
+  const labelled = isValidElement(children)
+    ? cloneElement(
+        children as React.ReactElement<{
+          "aria-labelledby"?: string;
+          "aria-label"?: string;
+        }>,
+        {
+          "aria-labelledby":
+            (children.props as { "aria-labelledby"?: string })?.[
+              "aria-labelledby"
+            ] ?? labelId,
+          "aria-label":
+            (children.props as { "aria-label"?: string })?.["aria-label"] ??
+            label,
+        },
+      )
+    : children;
   return (
     <div className={cn("flex flex-col gap-1.5", wide && "sm:col-span-2")}>
-      <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
+      <span
+        id={labelId}
+        className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60"
+      >
         {label}
+        {required && (
+          <span aria-hidden className="ml-0.5 text-coral">
+            *
+          </span>
+        )}
       </span>
-      {children}
-      {error && <span className="text-xs text-coral">{error}</span>}
+      {labelled}
+      {hint && <span className="text-[11px] text-navy/55">{hint}</span>}
+      {error && (
+        <span role="alert" className="text-xs text-coral">
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Renders a focusable summary of every validation error, with text that maps
+ * each error to its label. The parent passes a `flatten()` helper because
+ * RHF's `errors` shape varies per form (flat vs nested vs arrayed).
+ */
+function ErrorSummary({
+  errors,
+  flatten,
+  summaryRef,
+}: {
+  errors: FieldErrors;
+  flatten: (errors: FieldErrors) => Array<{ key: string; message: string }>;
+  summaryRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const items = flatten(errors);
+  if (items.length === 0) return null;
+  return (
+    <div
+      ref={summaryRef}
+      tabIndex={-1}
+      role="alert"
+      aria-labelledby="error-summary-title"
+      className="rounded-2xl border border-coral/30 bg-coral/8 p-4 outline-none focus:ring-2 focus:ring-coral/40"
+    >
+      <div className="flex items-center gap-2 font-sans text-[10px] uppercase tracking-[0.18em] text-coral">
+        <AlertCircle className="h-3.5 w-3.5" aria-hidden />
+        <span id="error-summary-title">Please fix the following</span>
+      </div>
+      <ul className="mt-2 list-disc pl-5 text-sm text-navy/80 space-y-0.5">
+        {items.map((item) => (
+          <li key={item.key}>{item.message}</li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -704,11 +987,15 @@ function OptionSelect({
   onChange,
   options,
   placeholder = "Select…",
+  "aria-labelledby": ariaLabelledBy,
+  "aria-label": ariaLabel,
 }: {
   value: string | undefined;
   onChange: (value: string) => void;
   options: ReadonlyArray<{ value: string; label: string }>;
   placeholder?: string;
+  "aria-labelledby"?: string;
+  "aria-label"?: string;
 }) {
   return (
     <Select
@@ -716,6 +1003,10 @@ function OptionSelect({
       placeholder={placeholder}
       selectionMode="single"
       value={value ?? null}
+      // aria-label / aria-labelledby live on the root (react-aria Select).
+      // Trigger gets its accessible name stamped from these.
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabelledBy}
       onChange={(key: Key | Key[] | null) => {
         if (typeof key === "string") onChange(key);
         else if (typeof key === "number") onChange(String(key));
@@ -777,10 +1068,14 @@ function TrackSelect({
   tracks,
   value,
   onChange,
+  "aria-labelledby": ariaLabelledBy,
+  "aria-label": ariaLabel,
 }: {
   tracks: TrackWithCapacity[];
   value: string | undefined;
   onChange: (code: string) => void;
+  "aria-labelledby"?: string;
+  "aria-label"?: string;
 }) {
   const { contains } = useFilter({ sensitivity: "base" });
   return (
@@ -789,6 +1084,12 @@ function TrackSelect({
       placeholder="Search and pick a track…"
       selectionMode="single"
       value={value ?? null}
+      // aria-label / aria-labelledby live on the root; the underlying
+      // react-aria Select consumes them from here and stamps the trigger's
+      // accessible name. Putting them on `<Autocomplete.Trigger>` gets
+      // silently overridden by react-aria's internal label context.
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabelledBy}
       onChange={(key: Key | Key[] | null) => {
         if (typeof key === "string") onChange(key);
         else if (typeof key === "number") onChange(String(key));
@@ -801,11 +1102,19 @@ function TrackSelect({
       </Autocomplete.Trigger>
       <Autocomplete.Popover>
         <Autocomplete.Filter filter={contains}>
-          <SearchField autoFocus name="search" variant="secondary">
+          <SearchField
+            autoFocus
+            name="search"
+            variant="secondary"
+            aria-label="Search tracks"
+          >
             <SearchField.Group>
               <SearchField.SearchIcon />
-              <SearchField.Input placeholder="Search tracks…" />
-              <SearchField.ClearButton />
+              <SearchField.Input
+                placeholder="Search tracks…"
+                aria-label="Search tracks"
+              />
+              <SearchField.ClearButton aria-label="Clear search" />
             </SearchField.Group>
           </SearchField>
           <ListBox

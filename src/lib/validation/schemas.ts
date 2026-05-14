@@ -44,6 +44,19 @@ const optionalString = z
   .optional()
   .transform((v) => (v?.length ? v : undefined));
 
+/**
+ * Required church/organisation field. Used by self-registration and per-row
+ * Register-for-Others rows. The form's ChurchSelect lets users either pick
+ * from the district catalogue (`src/content/churches.ts`) or choose "Other"
+ * and type a free-text value. The schema doesn't care which path produced
+ * the value — only that some non-trivial string arrived.
+ */
+const requiredChurch = z
+  .string({ message: "Pick or type a church / organisation" })
+  .trim()
+  .min(2, "Pick or type a church / organisation")
+  .max(120, "That church name is too long");
+
 export const GenderEnum = z.enum(["male", "female"], {
   message: "Pick a gender",
 });
@@ -73,7 +86,7 @@ export const RegistrationSchema = z.object({
   phone: basePhone,
   gender: GenderEnum,
   age_group: AgeGroupEnum,
-  church: optionalString,
+  church: requiredChurch,
   track_code: z
     .string({ message: "Pick a track" })
     .trim()
@@ -108,7 +121,7 @@ export const OthersRegistrantSchema = z.object({
   phone: basePhone,
   gender: GenderEnum,
   age_group: AgeGroupEnum,
-  church: optionalString,
+  church: requiredChurch,
   track_code: z
     .string({ message: "Pick a track for this registrant" })
     .trim()
@@ -202,3 +215,42 @@ export const BroadcastSmsSchema = z.object({
 });
 
 export type BroadcastSmsInput = z.infer<typeof BroadcastSmsSchema>;
+
+/**
+ * Topics on the `/feedback` general-enquiry form. Mirrors the radio/select
+ * options shown to the user; admins use this to triage incoming requests.
+ */
+export const EnquiryTopicEnum = z.enum(
+  ["registration", "track", "church", "partnership", "feedback", "other"],
+  { message: "Pick a topic" },
+);
+
+export type EnquiryTopic = z.infer<typeof EnquiryTopicEnum>;
+
+/**
+ * Validation for the public `/feedback` page (general support / enquiries).
+ * Phone is optional so non-Nigerian or anonymous-leaning enquirers aren't
+ * blocked; everything else is required because we cannot route or follow up
+ * without it.
+ */
+export const EnquirySchema = z.object({
+  full_name: baseName,
+  email: baseEmail,
+  phone: basePhone.optional().or(z.literal("").transform(() => undefined)),
+  topic: EnquiryTopicEnum,
+  subject: z
+    .string({ message: "Add a short subject" })
+    .trim()
+    .min(3, "Add a short subject")
+    .max(120, "Keep the subject under 120 characters"),
+  message: z
+    .string({ message: "Tell us a little more" })
+    .trim()
+    .min(20, "Tell us a little more (at least 20 characters)")
+    .max(2000, "Keep the message under 2000 characters"),
+  consent: z.literal(true, {
+    message: "Tick the consent box so we can reply",
+  }),
+});
+
+export type EnquiryInput = z.infer<typeof EnquirySchema>;
