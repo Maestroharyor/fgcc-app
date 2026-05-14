@@ -74,8 +74,8 @@ async function IndividualSuccess({ refNumber }: { refNumber: string }) {
           You’re in, {firstName(registration.full_name)}.
         </h1>
         <p className="mt-2 text-navy/70">
-          Your spot is locked for SkillUp 1.0 · June 12 – 14, 2026 at Cement
-          Missionary HQ, Lagos. Save your reference number — it's your fast-pass
+          Your spot is locked for SkillUp 1.0 · June 12 - 14, 2026 at Cement
+          Missionary HQ, Lagos. Save your reference number - it's your fast-pass
           at the door.
         </p>
 

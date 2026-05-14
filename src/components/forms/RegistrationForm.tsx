@@ -302,8 +302,11 @@ function SelfForm({
     watch,
   } = useForm<RegistrationFormValues>({
     resolver: zodResolver(RegistrationSchema),
+    // Only honour an explicit ?track= deep-link as a pre-fill. Otherwise leave
+    // track_code empty so the user actively picks instead of unintentionally
+    // submitting whatever happens to be first in the catalogue.
     defaultValues: {
-      track_code: initialTrack ?? tracks.find((t) => !t.is_full)?.code ?? "",
+      track_code: initialTrack ?? "",
     },
   });
 
@@ -557,8 +560,9 @@ function OthersForm({
     defaultValues: {
       registrants: [
         {
-          track_code:
-            initialTrack ?? tracks.find((t) => !t.is_full)?.code ?? "",
+          // Pre-fill only from an explicit ?track= deep-link. Otherwise leave
+          // empty so the submitter actively picks for each registrant.
+          track_code: initialTrack ?? "",
         } as OthersRegistrantInput,
       ],
     },
@@ -715,7 +719,7 @@ function OthersForm({
               gender: "male",
               age_group: "18_25",
               church: "",
-              track_code: tracks.find((t) => !t.is_full)?.code ?? "",
+              track_code: "",
             } as OthersRegistrantInput)
           }
           className="mt-4 inline-flex items-center gap-2 rounded-full border border-navy/15 bg-white px-4 py-2 font-display text-sm font-semibold text-navy hover:bg-cream-100"
