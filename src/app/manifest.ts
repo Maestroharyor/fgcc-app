@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { TRACKS } from "@/content/tracks";
 
 /**
  * Web App Manifest. Lets Android / Chrome offer "Add to Home Screen" and
@@ -8,8 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "SkillUp 1.0 - From Skills to Income",
     short_name: "SkillUp 1.0",
-    description:
-      "Three-day youth empowerment programme by Foursquare Gospel Church, Cement Missionary HQ. 15 skill tracks. Free to attend. June 12 - 14, 2026.",
+    description: `Three-day youth empowerment programme by Foursquare Gospel Church, Cement Missionary HQ. ${TRACKS.length} skill tracks. Free to attend. June 12 - 14, 2026.`,
     start_url: "/skillup",
     scope: "/",
     display: "standalone",

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BrandMark } from "@/components/ui/BrandMark";
+import { TRACKS } from "@/content/tracks";
 import { VENUE } from "@/content/venue";
 
 export default function MarketingLayout({ children }: { children: ReactNode }) {
@@ -101,7 +102,7 @@ function SiteFooter() {
                   href="/skillup#tracks"
                   className="text-navy/75 hover:text-navy"
                 >
-                  The 15 tracks
+                  The {TRACKS.length} tracks
                 </a>
               </li>
               <li>

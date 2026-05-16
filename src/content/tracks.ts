@@ -1,5 +1,5 @@
 /**
- * Static catalogue of the 15 SkillUp 1.0 tracks.
+ * Static catalogue of the SkillUp 1.0 tracks.
  *
  * Source of truth for marketing pages, registration dropdowns, and confirmation
  * emails. The Supabase `tracks` table mirrors `code`, `name`, `category`,
@@ -21,16 +21,7 @@ export interface Track {
   telegramUrl: string | null;
 }
 
-/**
- * Placeholder shared across all 15 tracks until per-track groups are confirmed.
- * Swap each track's `whatsappUrl` to its real invite link as they're created.
- */
-const PLACEHOLDER_WHATSAPP_URL =
-  "https://chat.whatsapp.com/PLACEHOLDER_SKILLUP_GROUP";
-const PLACEHOLDER_TELEGRAM_URL: string | null = null;
-
-const wa = PLACEHOLDER_WHATSAPP_URL;
-const tg = PLACEHOLDER_TELEGRAM_URL;
+const wa = (suffix: string) => `https://chat.whatsapp.com/${suffix}?mode=gi_t`;
 
 export const TRACKS: Track[] = [
   {
@@ -42,8 +33,8 @@ export const TRACKS: Track[] = [
     description:
       "Design intuitive digital products. Learn user research, wireframing, and Figma fluency.",
     capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
+    whatsappUrl: wa("HnMYu2KvHBAL2vJB59YVwJ"),
+    telegramUrl: null,
   },
   {
     code: "PHO",
@@ -54,8 +45,8 @@ export const TRACKS: Track[] = [
     description:
       "Composition, lighting, and editing in Lightroom - from phone shots to portfolio pieces.",
     capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
+    whatsappUrl: wa("CLgAP6OVMEp1NRGjUZpWrI"),
+    telegramUrl: null,
   },
   {
     code: "VID",
@@ -66,56 +57,56 @@ export const TRACKS: Track[] = [
     description:
       "Tell stories that move. Shooting fundamentals, editing in CapCut/Premiere, and reels that convert.",
     capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
+    whatsappUrl: wa("Gz49acdlAFA5CvFXz1qfvP"),
+    telegramUrl: null,
   },
   {
     code: "GFX",
     name: "Graphic Design",
     category: "creative",
-    facilitator: "Joshomowole",
+    facilitator: "Josh Omowole",
     glyph: "palette",
     description:
       "Posters, flyers, social media kits - design that earns clients in Lagos and beyond.",
     capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
+    whatsappUrl: wa("JB3fGJ2btclITjTbpSpA6I"),
+    telegramUrl: null,
   },
   {
     code: "CWD",
     name: "Coding & Web Development",
     category: "digital",
-    facilitator: "Dozie",
+    facilitator: "Chidozie Moses",
     glyph: "code",
     description:
       "Build your first real website. HTML, CSS, and the JavaScript that powers modern apps.",
     capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
+    whatsappUrl: wa("GEInR19JTnh8spK5SUSXul"),
+    telegramUrl: null,
   },
   {
     code: "DMK",
     name: "Digital Marketing & Social Media",
     category: "digital",
-    facilitator: "Mide / Emma",
+    facilitator: "Olamuyiwa Olamide",
     glyph: "megaphone",
     description:
       "Turn attention into income - content strategy, paid ads, analytics, and brand growth.",
     capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
+    whatsappUrl: wa("KhkrGWjfMBJ8hKeeO0P2gt"),
+    telegramUrl: null,
   },
   {
     code: "CCB",
     name: "Content Creation & Personal Branding",
     category: "digital",
-    facilitator: "Idera Solomon",
+    facilitator: "Idara Solomon",
     glyph: "microphone",
     description:
       "Show up consistently. Build the on-camera and writing skills that compound into a personal brand.",
     capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
+    whatsappUrl: wa("ENArMTPDPrlBzCJtOJyy5W"),
+    telegramUrl: null,
   },
   {
     code: "DAT",
@@ -126,8 +117,8 @@ export const TRACKS: Track[] = [
     description:
       "Read data, shape insights. Excel, SQL basics, and dashboards that drive decisions.",
     capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
+    whatsappUrl: wa("BSphUAEPbYY03eC2wFgc0p"),
+    telegramUrl: null,
   },
   {
     code: "GYP",
@@ -138,8 +129,8 @@ export const TRACKS: Track[] = [
     description:
       "Cast, mould, and finish gypsum and resin pieces - décor and giftware that sells.",
     capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
+    whatsappUrl: wa("DuQtcrTzKeXAL1GbXgIG3D"),
+    telegramUrl: null,
   },
   {
     code: "SPM",
@@ -150,8 +141,8 @@ export const TRACKS: Track[] = [
     description:
       "Liquid soap, bar soap, detergents - formulate, brand, and price for a real market.",
     capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
+    whatsappUrl: wa("HEfINxQl1bdCAG3VBGPrQC"),
+    telegramUrl: null,
   },
   {
     code: "BMK",
@@ -162,8 +153,8 @@ export const TRACKS: Track[] = [
     description:
       "Bridal beads, everyday accessories - patterns, finishing, and pricing for profit.",
     capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
+    whatsappUrl: wa("Jrd5aFfEGuu5vEa8YDdYMl"),
+    telegramUrl: null,
   },
   {
     code: "CTR",
@@ -174,21 +165,25 @@ export const TRACKS: Track[] = [
     description:
       "Run a small chops side hustle - recipes, packaging, costing, and customer flow.",
     capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
+    whatsappUrl: wa("JH4S9jl1578HBFPNmJoN4w"),
+    telegramUrl: null,
   },
   {
     code: "SHO",
     name: "Shoe & Footwear Making",
     category: "vocational",
-    facilitator: "Pelumee",
+    facilitator: "Ade Footcraft",
     glyph: "footprint",
     description:
       "Handcraft sandals, slides, and palm slippers. Tools, leatherwork, and finishing.",
     capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
+    whatsappUrl: wa("HQTiDB2HjSdIu6ZEkM2Rn5"),
+    telegramUrl: null,
   },
+  /*
+   * Paused for SkillUp 1.0 — facilitators not yet confirmed.
+   * WhatsApp groups already exist; restore by uncommenting this block.
+   *
   {
     code: "PCM",
     name: "Perfume, Diffusers & Candle Making",
@@ -198,8 +193,8 @@ export const TRACKS: Track[] = [
     description:
       "Blend fragrances, pour candles, and craft reed diffusers - beautifully packaged.",
     capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
+    whatsappUrl: wa("HkqBv9QabiE991duMJXvVt"),
+    telegramUrl: null,
   },
   {
     code: "ADR",
@@ -210,9 +205,10 @@ export const TRACKS: Track[] = [
     description:
       "Tie-dye, stencil, and indigo techniques to produce Adire and Kampala fabrics for the runway.",
     capacity: 20,
-    whatsappUrl: wa,
-    telegramUrl: tg,
+    whatsappUrl: wa("J3kUWYynCqVAXA0YzNq8nz"),
+    telegramUrl: null,
   },
+  */
 ];
 
 export const TRACKS_BY_CODE: Record<string, Track> = Object.fromEntries(

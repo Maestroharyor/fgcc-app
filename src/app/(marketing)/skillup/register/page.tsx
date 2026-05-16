@@ -17,8 +17,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/skillup/register" },
   openGraph: {
     title: "Register · SkillUp 1.0",
-    description:
-      "Reserve your spot at SkillUp 1.0 — three days, 15 tracks, free to attend.",
+    description: `Reserve your spot at SkillUp 1.0 — three days, ${TRACKS.length} tracks, free to attend.`,
     url: "/skillup/register",
     type: "website",
   },

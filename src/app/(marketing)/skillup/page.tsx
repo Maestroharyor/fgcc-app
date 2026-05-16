@@ -1,4 +1,4 @@
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight, CalendarDays, MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -18,8 +18,7 @@ import { env } from "@/lib/utils/env";
 export const revalidate = 60;
 
 const PAGE_TITLE = "SkillUp 1.0 - From Skills to Income";
-const PAGE_DESCRIPTION =
-  "Three days of hands-on training across 15 skill tracks. Free youth empowerment programme by Foursquare Gospel Church, Cement Missionary HQ. June 12–14, 2026.";
+const PAGE_DESCRIPTION = `Three days of hands-on training across ${TRACKS.length} skill tracks. Free youth empowerment programme by Foursquare Gospel Church, Cement Missionary HQ. June 12–14, 2026.`;
 
 export const metadata: Metadata = {
   title: PAGE_TITLE,
@@ -45,8 +44,7 @@ const eventJsonLd = {
   "@context": "https://schema.org",
   "@type": "Event",
   name: "SkillUp 1.0 - From Skills to Income",
-  description:
-    "Three-day youth empowerment programme. 15 hands-on skill tracks across digital, creative, and vocational disciplines. Free to attend.",
+  description: `Three-day youth empowerment programme. ${TRACKS.length} hands-on skill tracks across digital, creative, and vocational disciplines. Free to attend.`,
   startDate: env.NEXT_PUBLIC_EVENT_START_ISO,
   endDate: "2026-06-14T17:00:00+01:00",
   eventStatus: "https://schema.org/EventScheduled",
@@ -179,7 +177,7 @@ function AboutSection() {
       description="SkillUp 1.0 brings together facilitators across digital, creative, and vocational disciplines to equip Nigerian youth - church members and the broader public - with practical skill that turns into income."
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-        <Stat label="Skill tracks" value="15" tone="blue" />
+        <Stat label="Skill tracks" value={String(TRACKS.length)} tone="blue" />
         <Stat label="Days of training" value="3" tone="gold" />
         <Stat label="Cost to attend" value="Free" tone="coral" />
       </div>
@@ -229,7 +227,7 @@ function TracksSection({
   return (
     <Section
       id="tracks"
-      eyebrow="The 15 tracks"
+      eyebrow={`The ${TRACKS.length} tracks`}
       title="Pick the skill you want to walk away with."
       description="Each track runs for the full three days, led by a facilitator already practising professionally. Choose one and go deep."
       className="bg-cream-100"
@@ -277,7 +275,7 @@ function TracksSectionSkeleton() {
   return (
     <Section
       id="tracks"
-      eyebrow="The 15 tracks"
+      eyebrow={`The ${TRACKS.length} tracks`}
       title="Pick the skill you want to walk away with."
       description="Each track runs for the full three days, led by a facilitator already practising professionally. Choose one and go deep."
       className="bg-cream-100"
@@ -429,24 +427,44 @@ function FAQSection() {
 function FinalCTA() {
   return (
     <section className="px-6 sm:px-10 py-20">
-      <div className="mx-auto max-w-6xl rounded-3xl bg-primary p-10 sm:p-16 text-center text-white shadow-lift">
-        <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-sans text-[10px] uppercase tracking-[0.2em] text-white/80">
-          Free admission
-        </span>
-        <h2 className="mt-4 font-display text-3xl sm:text-5xl font-semibold tracking-tight">
-          Your seat at SkillUp 1.0 is waiting.
-        </h2>
-        <p className="mt-3 max-w-xl mx-auto text-white/80">
-          Register in under two minutes. You will receive your reference code,
-          QR check-in pass, and track group link by email.
-        </p>
-        <Link
-          href="/skillup/register"
-          className="mt-8 inline-flex h-14 items-center justify-center gap-2 rounded-full bg-gold px-8 font-display font-semibold text-white shadow-lift transition hover:bg-gold-600"
-        >
-          Register your spot
-          <ArrowRight className="h-4 w-4" aria-hidden />
-        </Link>
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-8 flex justify-center">
+          <div className="inline-flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-0 rounded-3xl sm:rounded-full bg-navy px-6 py-3 sm:py-2.5 text-white shadow-lift">
+            <span className="inline-flex items-center gap-2.5 px-2 font-sans text-sm">
+              <CalendarDays className="h-4 w-4 text-primary-100" aria-hidden />
+              <span className="font-medium tracking-wide">
+                Fri 12 – Sun 14 June, 2026
+              </span>
+            </span>
+            <span className="hidden sm:block h-6 w-px bg-white/15" />
+            <span className="inline-flex items-center gap-2.5 px-2 font-sans text-sm">
+              <MapPin className="h-4 w-4 text-primary-100" aria-hidden />
+              <span className="font-medium tracking-wide">
+                Church Auditorium ·{" "}
+                <span className="text-white/75">{VENUE.full}</span>
+              </span>
+            </span>
+          </div>
+        </div>
+        <div className="rounded-3xl bg-primary p-10 sm:p-16 text-center text-white shadow-lift">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-sans text-[10px] uppercase tracking-[0.2em] text-white/80">
+            Free admission
+          </span>
+          <h2 className="mt-4 font-display text-3xl sm:text-5xl font-semibold tracking-tight">
+            Your seat at SkillUp 1.0 is waiting.
+          </h2>
+          <p className="mt-3 max-w-xl mx-auto text-white/80">
+            Register in under two minutes. You will receive your reference code,
+            QR check-in pass, and track group link by email.
+          </p>
+          <Link
+            href="/skillup/register"
+            className="mt-8 inline-flex h-14 items-center justify-center gap-2 rounded-full bg-gold px-8 font-display font-semibold text-white shadow-lift transition hover:bg-gold-600"
+          >
+            Register your spot
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </Link>
+        </div>
       </div>
     </section>
   );

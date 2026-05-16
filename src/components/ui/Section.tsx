@@ -29,7 +29,7 @@ export function Section({
         {(eyebrow || title || description) && (
           <div className="mb-10 sm:mb-14 max-w-2xl">
             {eyebrow && (
-              <span className="inline-block rounded-full border border-primary/15 bg-primary/5 px-3 py-1 font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
+              <span className="inline-block rounded-full border border-gold/60 bg-gold/30 px-3.5 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.2em] text-navy">
                 {eyebrow}
               </span>
             )}

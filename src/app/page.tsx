@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { CountdownTimer } from "@/components/ui/CountdownTimer";
+import { TRACKS } from "@/content/tracks";
 import { env } from "@/lib/utils/env";
 
 export const metadata: Metadata = {
@@ -94,9 +95,9 @@ export default function ComingSoonPage() {
               </span>
             </h2>
             <p className="mt-3 text-navy/70 leading-relaxed">
-              A three-day youth empowerment programme - 15 hands-on skill tracks
-              across digital, creative, and vocational disciplines. Free to
-              attend. Open to church members and the wider public.
+              A three-day youth empowerment programme - {TRACKS.length} hands-on
+              skill tracks across digital, creative, and vocational disciplines.
+              Free to attend. Open to church members and the wider public.
             </p>
 
             <div className="mt-6">

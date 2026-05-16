@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Inter, Playfair_Display, Space_Grotesk } from "next/font/google";
 import { HeroUIProvider } from "@/components/providers/HeroUIProvider";
+import { TRACKS } from "@/content/tracks";
 import { env } from "@/lib/utils/env";
 import "./globals.css";
 
 // Google Fonts via next/font - auto subsetting + preload + self-hosting.
 // Each font exposes a CSS variable on <html> which globals.css maps to the
-// `--font-display` and `--font-sans` Tailwind tokens.
+// `--font-display`, `--font-sans`, and `--font-serif` Tailwind tokens.
 const sans = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -21,10 +22,18 @@ const display = Space_Grotesk({
   weight: ["400", "500", "600", "700"],
 });
 
+// Playfair Display - high-contrast serif that echoes the publicity flyer's
+// "Skillup" wordmark. Only used for the hero headline.
+const serif = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  display: "swap",
+  weight: ["700", "800", "900"],
+});
+
 const SITE_NAME = "SkillUp 1.0";
 const DEFAULT_TITLE = "SkillUp 1.0 - From Skills to Income";
-const DEFAULT_DESCRIPTION =
-  "Three-day youth empowerment programme by Foursquare Gospel Church, Cement Missionary HQ. 15 hands-on skill tracks across digital, creative, and vocational disciplines. Free to attend · June 12 - 14, 2026.";
+const DEFAULT_DESCRIPTION = `Three-day youth empowerment programme by Foursquare Gospel Church, Cement Missionary HQ. ${TRACKS.length} hands-on skill tracks across digital, creative, and vocational disciplines. Free to attend · June 12 - 14, 2026.`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
@@ -111,7 +120,7 @@ export default function RootLayout({
       // smooth` rule during route transitions so back/forward jumps don't
       // animate weirdly.
       data-scroll-behavior="smooth"
-      className={`${sans.variable} ${display.variable} h-full antialiased`}
+      className={`${sans.variable} ${display.variable} ${serif.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <a

@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { TRACKS } from "@/content/tracks";
 
 export const alt =
   "SkillUp 1.0 - From Skills to Income · Foursquare Gospel Church, Cement Missionary HQ · June 12 - 14, 2026";
@@ -145,7 +146,9 @@ export default function OpenGraphImage(): ImageResponse {
           <div style={{ fontSize: 14, opacity: 0.7, letterSpacing: "0.22em" }}>
             TRACKS
           </div>
-          <div style={{ fontWeight: 600 }}>15 hands-on disciplines</div>
+          <div style={{ fontWeight: 600 }}>
+            {TRACKS.length} hands-on disciplines
+          </div>
         </div>
         <div
           style={{

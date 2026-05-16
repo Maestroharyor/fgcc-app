@@ -1,27 +1,42 @@
-import { ArrowRight, MapPin, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarDays, GraduationCap, MapPin } from "lucide-react";
 import Link from "next/link";
+import { TRACKS } from "@/content/tracks";
 import { env } from "@/lib/utils/env";
 import { CountdownTimer } from "./CountdownTimer";
 
 export function HeroSection() {
+  const trackCount = TRACKS.length;
+
   return (
-    <section className="hero-mesh relative px-6 sm:px-10 pt-12 sm:pt-16 pb-20">
-      <div className="mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16 items-center">
+    <section className="hero-sky relative px-6 sm:px-10 pt-12 sm:pt-16 pb-24 overflow-hidden">
+      <div className="relative mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-12 lg:gap-16 items-center">
         <div className="flex flex-col gap-7">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-4 py-1.5 font-sans text-[11px] uppercase tracking-[0.2em] text-gold-600">
-            <Sparkles className="h-3.5 w-3.5" aria-hidden />
+          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-gold/50 bg-gold/25 px-4 py-1.5 font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-navy">
+            <CalendarDays className="h-3.5 w-3.5 text-gold-600" aria-hidden />
             June 12 – 14, 2026 · Lagos
           </span>
 
-          <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-tight text-navy leading-[1.02]">
-            From skills <span className="text-primary">to income</span>
-            <span className="text-gold">.</span>
-          </h1>
+          <div className="relative inline-flex flex-col gap-0">
+            <h1 className="relative inline-block w-fit font-serif font-black tracking-tight text-navy leading-[0.92] text-[5rem] sm:text-[7rem] lg:text-[9rem]">
+              Skillup
+              <span
+                aria-hidden
+                className="absolute top-[8%] -right-3 sm:-right-4 lg:-right-6 grid place-items-center rounded-md bg-gold px-2 py-0.5 font-display text-xl sm:text-2xl lg:text-3xl font-bold text-white shadow-card rotate-[-4deg] tracking-wide"
+              >
+                1.0
+              </span>
+            </h1>
+            <div className="mt-3 sm:mt-4 ml-1">
+              <span className="inline-flex font-display text-base sm:text-2xl font-bold tracking-tight text-primary -translate-y-1.5">
+                From Skill to Income...
+              </span>
+            </div>
+          </div>
 
           <p className="max-w-xl text-lg sm:text-xl leading-relaxed text-navy/75">
             SkillUp 1.0 is a three-day youth empowerment programme by Foursquare
-            Gospel Church, Cement Missionary HQ - 15 hands-on skill tracks
-            across digital, creative, and vocational disciplines. Free to
+            Gospel Church, Cement Missionary HQ - {trackCount} hands-on skill
+            tracks across digital, creative, and vocational disciplines. Free to
             attend.
           </p>
 
@@ -46,7 +61,7 @@ export function HeroSection() {
               href="#tracks"
               className="inline-flex h-14 items-center justify-center gap-2 rounded-full border border-navy/15 bg-white/60 px-7 font-display font-medium text-navy backdrop-blur transition hover:bg-white"
             >
-              See the 15 tracks
+              See the {trackCount} tracks
             </a>
           </div>
 
@@ -56,19 +71,23 @@ export function HeroSection() {
               Cement HQ · Dopemu, Lagos
             </span>
             <span className="h-1 w-1 rounded-full bg-current opacity-30" />
-            <span>15 skill tracks</span>
+            <span>{trackCount} skill tracks</span>
             <span className="h-1 w-1 rounded-full bg-current opacity-30" />
             <span>Free admission</span>
           </div>
         </div>
 
-        <HeroVisual />
+        <HeroVisual trackCount={trackCount} />
+
+        {/* Free sticker floats over the boundary between text + visual. On
+            mobile it tucks into the top-right corner of the section. */}
+        <FreeSticker className="absolute z-10 -top-2 right-2 sm:top-1/2 sm:-translate-y-1/2 sm:right-2 sm:left-auto lg:right-[30%] xl:right-[33.5%]" />
       </div>
     </section>
   );
 }
 
-function HeroVisual() {
+function HeroVisual({ trackCount }: { trackCount: number }) {
   return (
     <div className="relative aspect-4/5 w-full max-w-md mx-auto">
       <div className="absolute inset-0 rounded-[2rem] bg-linear-to-br from-primary to-primary-700 shadow-lift" />
@@ -87,11 +106,11 @@ function HeroVisual() {
           </div>
         </div>
         <div className="grid place-items-center h-12 w-12 rounded-full bg-white/15 text-white backdrop-blur">
-          <Sparkles className="h-5 w-5" aria-hidden />
+          <GraduationCap className="h-5 w-5" aria-hidden />
         </div>
       </div>
       <div className="absolute -top-4 -right-4 grid h-20 w-20 place-items-center rounded-2xl bg-gold font-display font-bold text-white shadow-lift rotate-3">
-        <span className="text-2xl leading-none">15</span>
+        <span className="text-2xl leading-none">{trackCount}</span>
         <span className="text-[10px] uppercase tracking-widest">tracks</span>
       </div>
     </div>
@@ -147,5 +166,34 @@ function Decoration() {
         fill="none"
       />
     </svg>
+  );
+}
+
+/**
+ * 12-scallop "FREE" badge — echoes the flyer's red sticker. Path is
+ * geometrically symmetric around (50, 50) so the label sits visually centred.
+ * Float animation pauses under prefers-reduced-motion (see globals.css).
+ */
+function FreeSticker({ className }: { className?: string }) {
+  return (
+    <div
+      aria-hidden
+      className={`sticker-float pointer-events-none grid h-28 w-28 sm:h-32 sm:w-32 place-items-center ${className ?? ""}`}
+    >
+      <svg
+        viewBox="0 0 100 100"
+        className="absolute inset-0 h-full w-full"
+        aria-hidden="true"
+      >
+        <title>Free admission</title>
+        <path
+          d="M 50 4 L 59.83 13.29 L 73 10.16 L 76.87 23.13 L 89.84 27 L 86.71 40.17 L 96 50 L 86.71 59.83 L 89.84 73 L 76.87 76.87 L 73 89.84 L 59.83 86.71 L 50 96 L 40.17 86.71 L 27 89.84 L 23.13 76.87 L 10.16 73 L 13.29 59.83 L 4 50 L 13.29 40.17 L 10.16 27 L 23.13 23.13 L 27 10.16 L 40.17 13.29 Z"
+          fill="#dc2626"
+        />
+      </svg>
+      <div className="relative font-display text-xl sm:text-2xl font-extrabold text-white tracking-wider">
+        FREE
+      </div>
+    </div>
   );
 }

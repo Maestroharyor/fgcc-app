@@ -28,12 +28,14 @@
   --color-navy-muted: #475569;
 
   /* ── Typography ──────────────────────────────────────────────────────────
-     next/font/google in src/app/layout.tsx sets --font-space-grotesk and
-     --font-inter on <html>. Tailwind utilities `font-display` and `font-sans`
-     resolve through these mappings. */
+     next/font/google in src/app/layout.tsx sets --font-space-grotesk,
+     --font-inter, and --font-playfair on <html>. Tailwind utilities
+     `font-display`, `font-sans`, and `font-serif` resolve through these. */
   --font-display:
     var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif:
+    var(--font-playfair), ui-serif, Georgia, "Times New Roman", serif;
 
   /* ── Radii + shadows ─────────────────────────────────────────────────── */
   --radius-lg: 1rem;
@@ -90,7 +92,8 @@ button:not(:disabled) {
   }
 }
 
-/* Subtle cream-to-gold gradient mesh - opt-in via .hero-mesh wrapper */
+/* Subtle cream-to-gold gradient mesh - opt-in via .hero-mesh wrapper.
+   Used by the coming-soon page at /. */
 .hero-mesh {
   position: relative;
   isolation: isolate;
@@ -113,4 +116,58 @@ button:not(:disabled) {
       transparent 60%
     );
   pointer-events: none;
+}
+
+/* Pastel cyan "sky" background with cloud-wisp washes. Echoes the SkillUp
+   publicity flyer. Used on the /skillup hero. */
+.hero-sky {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(180deg, #f7faff 0%, #edf3fc 60%, #e1eaf7 100%);
+}
+
+.hero-sky::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(
+      ellipse 55% 35% at 12% 22%,
+      rgb(255 255 255 / 0.7),
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse 42% 24% at 80% 16%,
+      rgb(255 255 255 / 0.6),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 50% 28% at 65% 82%,
+      rgb(255 255 255 / 0.45),
+      transparent 70%
+    );
+  pointer-events: none;
+}
+
+/* Gentle float for the FREE sticker. Pauses with prefers-reduced-motion. */
+@keyframes sticker-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-12deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(-10deg);
+  }
+}
+
+.sticker-float {
+  animation: sticker-float 3.2s ease-in-out infinite;
+  filter: drop-shadow(0 8px 18px rgb(220 38 38 / 0.35));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sticker-float {
+    animation: none;
+  }
 }
