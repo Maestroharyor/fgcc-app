@@ -146,9 +146,9 @@ export default function OpenGraphImage(): ImageResponse {
           <div style={{ fontSize: 14, opacity: 0.7, letterSpacing: "0.22em" }}>
             TRACKS
           </div>
-          <div style={{ fontWeight: 600 }}>
-            {TRACKS.length} hands-on disciplines
-          </div>
+          <div
+            style={{ fontWeight: 600 }}
+          >{`${TRACKS.length} hands-on disciplines`}</div>
         </div>
         <div
           style={{
