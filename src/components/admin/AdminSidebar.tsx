@@ -90,58 +90,70 @@ export function AdminSidebar({ role, email }: Props) {
         </button>
       </header>
 
-      {/* Mobile drawer */}
-      {open && (
-        <div className="md:hidden fixed inset-0 z-50">
-          <button
-            type="button"
-            aria-label="Close menu"
-            className="absolute inset-0 bg-navy/50"
-            onClick={() => setOpen(false)}
-          />
-          <div
-            ref={drawerRef}
-            tabIndex={-1}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Admin menu"
-            className="absolute left-0 top-0 flex h-full w-72 max-w-[85%] flex-col bg-white shadow-xl outline-none"
-          >
-            <div className="flex items-center justify-between border-b border-navy/8 px-5 py-5">
-              <Link
-                href="/admin/dashboard"
-                className="flex items-center gap-3"
-                onClick={() => setOpen(false)}
-              >
-                <BrandMark size={36} />
-                <div className="leading-tight">
-                  <div className="font-display text-sm font-semibold text-navy">
-                    SkillUp Admin
-                  </div>
-                  <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-primary">
-                    {role}
-                  </div>
+      {/* Mobile drawer — always mounted so it can slide in/out; slides from the
+          right to match the top-right trigger. */}
+      <div
+        className={cn(
+          "md:hidden fixed inset-0 z-50 overflow-hidden",
+          open ? "" : "pointer-events-none",
+        )}
+        aria-hidden={!open}
+      >
+        <button
+          type="button"
+          tabIndex={open ? 0 : -1}
+          aria-label="Close menu"
+          className={cn(
+            "absolute inset-0 bg-navy/50 transition-opacity duration-300",
+            open ? "opacity-100" : "opacity-0",
+          )}
+          onClick={() => setOpen(false)}
+        />
+        <div
+          ref={drawerRef}
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Admin menu"
+          className={cn(
+            "absolute right-0 top-0 flex h-full w-72 max-w-[85%] flex-col bg-white shadow-xl outline-none transition-transform duration-300 ease-out",
+            open ? "translate-x-0" : "translate-x-full",
+          )}
+        >
+          <div className="flex items-center justify-between border-b border-navy/8 px-5 py-5">
+            <Link
+              href="/admin/dashboard"
+              className="flex items-center gap-3"
+              onClick={() => setOpen(false)}
+            >
+              <BrandMark size={36} />
+              <div className="leading-tight">
+                <div className="font-display text-sm font-semibold text-navy">
+                  SkillUp Admin
                 </div>
-              </Link>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label="Close menu"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-navy/70 hover:bg-cream-100"
-              >
-                <X className="h-5 w-5" aria-hidden />
-              </button>
-            </div>
-            <SidebarBody
-              role={role}
-              email={email}
-              pathname={pathname}
-              onNavigate={() => setOpen(false)}
-              onSignOut={onSignOut}
-            />
+                <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-primary">
+                  {role}
+                </div>
+              </div>
+            </Link>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Close menu"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-navy/70 hover:bg-cream-100"
+            >
+              <X className="h-5 w-5" aria-hidden />
+            </button>
           </div>
+          <SidebarBody
+            role={role}
+            email={email}
+            pathname={pathname}
+            onNavigate={() => setOpen(false)}
+            onSignOut={onSignOut}
+          />
         </div>
-      )}
+      </div>
 
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-64 md:flex-shrink-0 md:flex-col border-r border-navy/8 bg-white md:h-dvh md:sticky md:top-0">

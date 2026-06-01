@@ -37,7 +37,7 @@ export interface DBRegistration {
   reference_number: string;
   full_name: string;
   email: string;
-  phone: string;
+  phone: string | null;
   gender: Gender;
   age_group: AgeGroup;
   church: string | null;

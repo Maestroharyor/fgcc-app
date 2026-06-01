@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     referenceNumber: string;
     trackName: string;
     email: string;
-    phone: string;
+    phone?: string;
     church: string | null;
   }> = [];
   const confirmations: Array<Promise<unknown>> = [];
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       .insert({
         full_name: r.full_name,
         email: emailToUse,
-        phone: r.phone,
+        phone: r.phone ?? null,
         gender: r.gender,
         age_group: r.age_group,
         church: r.church ?? null,

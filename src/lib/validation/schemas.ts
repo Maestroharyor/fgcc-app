@@ -37,6 +37,11 @@ const basePhone = z
   .regex(phoneRegex, "Enter a valid phone number")
   .transform(normalisePhone);
 
+/** Phone that may be left blank. Mirrors the optional idiom used by EnquirySchema. */
+const basePhoneOptional = basePhone
+  .optional()
+  .or(z.literal("").transform(() => undefined));
+
 const optionalString = z
   .string()
   .trim()
@@ -141,13 +146,23 @@ export const RegisterOthersSchema = z.object({
 });
 
 /**
+ * One admin-entered (offline) row. Same as `OthersRegistrantSchema` but phone is
+ * ALSO optional — at the desk an admin may have neither email nor phone. The
+ * create route synthesises a placeholder email and stores a null phone.
+ */
+export const AdminRegistrantSchema = OthersRegistrantSchema.extend({
+  phone: basePhoneOptional,
+});
+
+export type AdminRegistrantInput = z.infer<typeof AdminRegistrantSchema>;
+
+/**
  * Admin-entered (offline) batch. No submitter block — the logged-in admin is the
- * one entering walk-ins. Each row reuses `OthersRegistrantSchema` (optional
- * email; the create route synthesises a placeholder when absent).
+ * one entering walk-ins.
  */
 export const AdminBatchRegistrationSchema = z.object({
   registrants: z
-    .array(OthersRegistrantSchema)
+    .array(AdminRegistrantSchema)
     .min(1, "Add at least one person")
     .max(20, "Add up to 20 people at a time"),
 });

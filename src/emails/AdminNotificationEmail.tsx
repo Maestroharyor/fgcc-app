@@ -8,13 +8,13 @@ export interface AdminNotificationEmailProps {
     referenceNumber: string;
     trackName: string;
     email: string;
-    phone: string;
+    phone?: string;
     church: string | null;
   }>;
   submitter?: {
     name: string;
     email: string;
-    phone: string;
+    phone?: string;
     relationship: string;
     church: string | null;
   };
@@ -62,8 +62,9 @@ export default function AdminNotificationEmail({
             borderRadius: 8,
           }}
         >
-          <strong>Submitter:</strong> {submitter.name} · {submitter.email} ·{" "}
-          {submitter.phone} ({submitter.relationship}){" "}
+          <strong>Submitter:</strong> {submitter.name} · {submitter.email}
+          {submitter.phone ? ` · ${submitter.phone}` : ""} (
+          {submitter.relationship}){" "}
           {submitter.church && `· ${submitter.church}`}
         </Text>
       )}
@@ -94,7 +95,8 @@ export default function AdminNotificationEmail({
           >
             {r.referenceNumber}
           </span>{" "}
-          - {r.fullName} · {r.trackName} · {r.email} · {r.phone}
+          - {r.fullName} · {r.trackName} · {r.email}
+          {r.phone ? ` · ${r.phone}` : ""}
           {r.church ? ` · ${r.church}` : ""}
         </Text>
       ))}

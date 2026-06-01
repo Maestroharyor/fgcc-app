@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         value: (r) => r.full_name,
       },
       { header: "Email", key: "email", width: 28, value: (r) => r.email },
-      { header: "Phone", key: "phone", width: 18, value: (r) => r.phone },
+      { header: "Phone", key: "phone", width: 18, value: (r) => r.phone ?? "" },
       {
         header: "Track",
         key: "track_name",
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
         { header: "Reference", width: 32, value: (r) => r.reference_number },
         { header: "Name", width: 55, value: (r) => r.full_name },
         { header: "Email", width: 60, value: (r) => r.email },
-        { header: "Phone", width: 40, value: (r) => r.phone },
+        { header: "Phone", width: 40, value: (r) => r.phone ?? "" },
         { header: "Track", width: 60, value: (r) => r.track_name },
         {
           header: "Attended",
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
     { header: "Reference", value: (r) => r.reference_number },
     { header: "Full name", value: (r) => r.full_name },
     { header: "Email", value: (r) => r.email },
-    { header: "Phone", value: (r) => r.phone },
+    { header: "Phone", value: (r) => r.phone ?? "" },
     { header: "Track", value: (r) => r.track_name },
     { header: "Gender", value: (r) => r.gender },
     { header: "Age group", value: (r) => r.age_group },

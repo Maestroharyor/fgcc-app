@@ -26,7 +26,7 @@ import { ChurchSelect } from "@/components/forms/ChurchSelect";
 import { useOverlayDismiss } from "@/lib/hooks/use-overlay-dismiss";
 import {
   AdminBatchRegistrationSchema,
-  type OthersRegistrantInput,
+  type AdminRegistrantInput,
 } from "@/lib/validation/schemas";
 
 type FormValues = z.input<typeof AdminBatchRegistrationSchema>;
@@ -63,13 +63,13 @@ const MAX_ROWS = 20;
 // render their placeholder (no pre-selected gender). Cast mirrors the public
 // RegistrationForm. A factory (not a shared object) avoids any chance of rows
 // sharing a reference across append/reset.
-const makeEmptyRow = (): OthersRegistrantInput =>
+const makeEmptyRow = (): AdminRegistrantInput =>
   ({
     full_name: "",
     email: "",
     phone: "",
     church: "",
-  }) as OthersRegistrantInput;
+  }) as AdminRegistrantInput;
 
 export function AdminRegistrationForm({ tracks }: Props) {
   const [pending, startTransition] = useTransition();
@@ -138,7 +138,7 @@ export function AdminRegistrationForm({ tracks }: Props) {
           <span aria-hidden className="text-coral">
             *
           </span>{" "}
-          are required. Email is optional.
+          are required. Email and phone are optional.
         </p>
 
         <div className="flex flex-col gap-4">
@@ -189,13 +189,12 @@ export function AdminRegistrationForm({ tracks }: Props) {
                       {...register(`registrants.${index}.email`)}
                     />
                   </Field>
-                  <Field label="Phone" required error={rErr?.phone?.message}>
+                  <Field label="Phone (optional)" error={rErr?.phone?.message}>
                     <input
                       type="tel"
                       className="form-input"
                       autoComplete="off"
                       inputMode="tel"
-                      aria-required="true"
                       placeholder="08012345678 or +2348012345678"
                       {...register(`registrants.${index}.phone`)}
                     />
@@ -224,7 +223,7 @@ export function AdminRegistrationForm({ tracks }: Props) {
                       onChange={(e) =>
                         setValue(
                           `registrants.${index}.gender`,
-                          e.target.value as OthersRegistrantInput["gender"],
+                          e.target.value as AdminRegistrantInput["gender"],
                           { shouldValidate: true },
                         )
                       }
@@ -248,7 +247,7 @@ export function AdminRegistrationForm({ tracks }: Props) {
                       onChange={(e) =>
                         setValue(
                           `registrants.${index}.age_group`,
-                          e.target.value as OthersRegistrantInput["age_group"],
+                          e.target.value as AdminRegistrantInput["age_group"],
                           { shouldValidate: true },
                         )
                       }

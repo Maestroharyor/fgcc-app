@@ -40,7 +40,7 @@ export const TRACKS: Track[] = [
     code: "PHO",
     name: "Photography & Photo Editing",
     category: "creative",
-    facilitator: "Ola",
+    facilitator: "Alantech",
     glyph: "camera",
     description:
       "Composition, lighting, and editing in Lightroom - from phone shots to portfolio pieces.",

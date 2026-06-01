@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { REGISTERED_VIA_LABEL } from "@/components/admin/RegistrationsTable";
 import { trackByCode } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
+import { getBatchById } from "@/lib/db/batches";
 import { getRegistrationById } from "@/lib/db/registrations";
 import type { Role } from "@/lib/db/types";
 
@@ -14,6 +15,26 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Registrant · SkillUp Admin",
   robots: { index: false, follow: false },
+};
+
+// Human labels so raw DB enum values render capitalised in the UI.
+const GENDER_LABEL: Record<string, string> = {
+  male: "Male",
+  female: "Female",
+  other: "Other",
+};
+const AGE_GROUP_LABEL: Record<string, string> = {
+  under_18: "Under 18",
+  "18_25": "18–25",
+  "26_35": "26–35",
+  "36_plus": "36+",
+};
+const RELATIONSHIP_LABEL: Record<string, string> = {
+  pastor: "Pastor",
+  parent: "Parent",
+  friend: "Friend",
+  church_worker: "Church worker",
+  other: "Other",
 };
 
 interface Props {
@@ -57,6 +78,10 @@ async function RegistrantProfileSection({
   const registration = await getRegistrationById(id);
   if (!registration) notFound();
   const track = trackByCode(registration.track_code);
+  // Who registered this person, for "register for others" submissions.
+  const batch = registration.batch_id
+    ? await getBatchById(registration.batch_id)
+    : null;
 
   return (
     <section className="rounded-2xl border border-navy/8 bg-white p-6 shadow-card">
@@ -88,15 +113,23 @@ async function RegistrantProfileSection({
           </a>
         </Row>
         <Row label="Phone">
-          <a
-            href={`tel:${registration.phone}`}
-            className="inline-flex items-center gap-1 text-primary hover:underline"
-          >
-            <Phone className="h-3.5 w-3.5" aria-hidden /> {registration.phone}
-          </a>
+          {registration.phone ? (
+            <a
+              href={`tel:${registration.phone}`}
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+            >
+              <Phone className="h-3.5 w-3.5" aria-hidden /> {registration.phone}
+            </a>
+          ) : (
+            "-"
+          )}
         </Row>
-        <Row label="Gender">{registration.gender}</Row>
-        <Row label="Age group">{registration.age_group.replace("_", " ")}</Row>
+        <Row label="Gender">
+          {GENDER_LABEL[registration.gender] ?? registration.gender}
+        </Row>
+        <Row label="Age group">
+          {AGE_GROUP_LABEL[registration.age_group] ?? registration.age_group}
+        </Row>
         <Row label="Church">{registration.church ?? "-"}</Row>
         <Row label="Registered at">
           {new Date(registration.created_at).toLocaleString()}
@@ -108,6 +141,39 @@ async function RegistrantProfileSection({
             : "-"}
         </Row>
       </dl>
+
+      {batch && (
+        <div className="mt-6 rounded-xl border border-navy/8 bg-cream/50 p-5">
+          <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
+            Registered by
+          </span>
+          <dl className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+            <Row label="Name">{batch.submitter_name}</Row>
+            <Row label="Relationship">
+              {RELATIONSHIP_LABEL[batch.relationship] ?? batch.relationship}
+            </Row>
+            <Row label="Email">
+              <a
+                href={`mailto:${batch.submitter_email}`}
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                <Mail className="h-3.5 w-3.5" aria-hidden />{" "}
+                {batch.submitter_email}
+              </a>
+            </Row>
+            <Row label="Phone">
+              <a
+                href={`tel:${batch.submitter_phone}`}
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                <Phone className="h-3.5 w-3.5" aria-hidden />{" "}
+                {batch.submitter_phone}
+              </a>
+            </Row>
+            {batch.church && <Row label="Church">{batch.church}</Row>}
+          </dl>
+        </div>
+      )}
 
       <div className="mt-8 flex flex-wrap gap-3">
         <form action="/api/admin/checkin" method="post">
@@ -123,7 +189,8 @@ async function RegistrantProfileSection({
             {registration.attended ? "Re-mark attended" : "Mark attended"}
           </button>
         </form>
-        {role === "superadmin" && (
+        {role === "superadmin" &&
+          /* Delete registration disabled per request. Restore this form to re-enable.
           <form
             action={`/api/admin/registrations/${registration.id}/delete`}
             method="post"
@@ -135,7 +202,8 @@ async function RegistrantProfileSection({
               Delete registration
             </button>
           </form>
-        )}
+          */
+          null}
       </div>
     </section>
   );

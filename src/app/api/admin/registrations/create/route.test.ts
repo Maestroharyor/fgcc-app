@@ -196,6 +196,20 @@ describe("POST /api/admin/registrations/create (batch)", () => {
     expect(hoisted.sendConfirmationEmail).not.toHaveBeenCalled();
   });
 
+  it("inserts a null phone when a row has none (admin phone is optional)", async () => {
+    const res = await POST(makeReq(batch(row({ phone: undefined }))));
+    const body = await res.json();
+    expect(body.ok).toBe(true);
+    expect(body.results[0].status).toBe("ok");
+
+    const insertCall = supabase._calls.find((c) =>
+      c.filters.some((f) => f.method === "insert"),
+    );
+    const insertPayload = insertCall?.filters.find((f) => f.method === "insert")
+      ?.args[0] as { phone: string | null };
+    expect(insertPayload.phone).toBeNull();
+  });
+
   it("sends a confirmation per real email and one admin notification", async () => {
     await POST(makeReq(batch(row())));
     expect(hoisted.sendConfirmationEmail).toHaveBeenCalledTimes(1);

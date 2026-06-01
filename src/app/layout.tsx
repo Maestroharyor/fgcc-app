@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display, Space_Grotesk } from "next/font/google";
+import NextTopLoader from "nextjs-toploader";
 import { HeroUIProvider } from "@/components/providers/HeroUIProvider";
 import { TRACKS } from "@/content/tracks";
 import { env } from "@/lib/utils/env";
@@ -123,6 +124,8 @@ export default function RootLayout({
       className={`${sans.variable} ${display.variable} ${serif.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {/* Top progress bar on route transitions. Brand primary, no spinner. */}
+        <NextTopLoader color="#003DA5" height={3} showSpinner={false} />
         <a
           href="#main"
           className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-3 focus-visible:left-3 focus-visible:z-50 focus-visible:rounded-md focus-visible:bg-primary focus-visible:px-3 focus-visible:py-2 focus-visible:text-white focus-visible:shadow-lift"
