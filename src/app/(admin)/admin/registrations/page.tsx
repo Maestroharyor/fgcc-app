@@ -18,7 +18,7 @@ interface PageProps {
     q?: string;
     page?: string;
     track?: string;
-    type?: "self" | "others";
+    type?: "self" | "others" | "offline";
     attended?: "yes" | "no";
   }>;
 }
@@ -82,6 +82,7 @@ export default async function RegistrationsPage({ searchParams }: PageProps) {
           <option value="">All types</option>
           <option value="self">Self-registered</option>
           <option value="others">Via someone else</option>
+          <option value="offline">Offline (admin)</option>
         </select>
         <select
           name="attended"
@@ -117,7 +118,7 @@ async function RegistrationsTableAsync({
     q?: string;
     page?: string;
     track?: string;
-    type?: "self" | "others";
+    type?: "self" | "others" | "offline";
     attended?: "yes" | "no";
   };
 }) {

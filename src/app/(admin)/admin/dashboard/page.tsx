@@ -1,4 +1,11 @@
-import { ArrowUpRight, BarChart3, ScanLine, Star, Users } from "lucide-react";
+import {
+  ArrowUpRight,
+  BarChart3,
+  Plus,
+  ScanLine,
+  Star,
+  Users,
+} from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -19,13 +26,21 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="px-6 md:px-10 py-10">
-      <div className="flex flex-col gap-1">
-        <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
-          Overview
-        </span>
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-navy">
-          SkillUp 1.0 - live snapshot
-        </h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
+            Overview
+          </span>
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-navy">
+            SkillUp 1.0 - live snapshot
+          </h1>
+        </div>
+        <Link
+          href="/admin/registrations/new"
+          className="inline-flex h-11 w-fit items-center justify-center gap-1.5 rounded-full bg-primary px-5 font-display text-sm font-semibold text-white hover:bg-primary-700"
+        >
+          <Plus className="h-4 w-4" aria-hidden /> Add registration
+        </Link>
       </div>
 
       <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -37,7 +52,11 @@ export default async function AdminDashboardPage() {
                 label="Registrations"
                 tone="blue"
               />
-              <StatCardSkeleton Icon={Star} label="Self / Others" tone="navy" />
+              <StatCardSkeleton
+                Icon={Star}
+                label="Self / Others / Offline"
+                tone="navy"
+              />
             </>
           }
         >
@@ -86,12 +105,10 @@ async function RegistrationsTotalsCards() {
     .select("registered_via", { count: "exact", head: false });
 
   const total = totalRegistered ?? 0;
-  const selfCount = (rows ?? []).filter(
-    (r) => (r as { registered_via: string }).registered_via === "self",
-  ).length;
-  const othersCount = (rows ?? []).filter(
-    (r) => (r as { registered_via: string }).registered_via === "others",
-  ).length;
+  const via = (r: unknown) => (r as { registered_via: string }).registered_via;
+  const selfCount = (rows ?? []).filter((r) => via(r) === "self").length;
+  const othersCount = (rows ?? []).filter((r) => via(r) === "others").length;
+  const offlineCount = (rows ?? []).filter((r) => via(r) === "offline").length;
 
   return (
     <>
@@ -103,8 +120,8 @@ async function RegistrationsTotalsCards() {
       />
       <StatCard
         Icon={Star}
-        label="Self / Others"
-        value={`${selfCount} / ${othersCount}`}
+        label="Self / Others / Offline"
+        value={`${selfCount} / ${othersCount} / ${offlineCount}`}
         tone="navy"
       />
     </>
@@ -267,7 +284,7 @@ function StatCard({
         </span>
         <Icon className="h-4 w-4 opacity-60" aria-hidden />
       </div>
-      <div className="mt-3 font-display text-3xl font-semibold tracking-tight text-navy">
+      <div className="mt-3 font-display text-2xl sm:text-3xl font-semibold tracking-tight text-navy">
         {value}
       </div>
     </div>

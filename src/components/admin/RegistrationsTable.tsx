@@ -1,6 +1,19 @@
 import Link from "next/link";
 import type { Track } from "@/content/tracks";
-import type { DBRegistration } from "@/lib/db/types";
+import type { DBRegistration, RegistrationVia } from "@/lib/db/types";
+
+/** Human label for each registration channel. Shared with the detail page. */
+export const REGISTERED_VIA_LABEL: Record<RegistrationVia, string> = {
+  self: "Self",
+  others: "Via others",
+  offline: "Offline",
+};
+
+const REGISTERED_VIA_TONE: Record<RegistrationVia, string> = {
+  self: "bg-primary/8 text-primary",
+  others: "bg-gold/12 text-gold-600",
+  offline: "bg-navy/8 text-navy",
+};
 
 interface Props {
   rows: DBRegistration[];
@@ -71,12 +84,12 @@ export function RegistrationsTable({
                   <Td>
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 font-sans text-[10px] uppercase tracking-[0.16em] ${
-                        r.registered_via === "self"
-                          ? "bg-primary/8 text-primary"
-                          : "bg-gold/12 text-gold-600"
+                        REGISTERED_VIA_TONE[r.registered_via] ??
+                        "bg-navy/8 text-navy"
                       }`}
                     >
-                      {r.registered_via === "self" ? "Self" : "Via others"}
+                      {REGISTERED_VIA_LABEL[r.registered_via] ??
+                        r.registered_via}
                     </span>
                   </Td>
                   <Td>

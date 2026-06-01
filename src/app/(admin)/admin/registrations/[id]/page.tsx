@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { REGISTERED_VIA_LABEL } from "@/components/admin/RegistrationsTable";
 import { trackByCode } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
 import { getRegistrationById } from "@/lib/db/registrations";
@@ -75,7 +76,8 @@ async function RegistrantProfileSection({
         <Row label="Track">{track?.name ?? "-"}</Row>
         <Row label="Facilitator">{track?.facilitator ?? "TBA"}</Row>
         <Row label="Registered via">
-          {registration.registered_via === "self" ? "Self" : "Someone else"}
+          {REGISTERED_VIA_LABEL[registration.registered_via] ??
+            registration.registered_via}
         </Row>
         <Row label="Email">
           <a

@@ -50,7 +50,7 @@ export interface RegistrationsFilter {
   query?: string;
   /** 3-letter track code from `src/content/tracks.ts`. */
   trackCode?: string;
-  type?: "self" | "others";
+  type?: "self" | "others" | "offline";
   attended?: boolean;
   page?: number;
   pageSize?: number;

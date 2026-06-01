@@ -21,6 +21,7 @@ export async function GET() {
     total: reg.count ?? 0,
     self: all.filter((r) => r.registered_via === "self").length,
     others: all.filter((r) => r.registered_via === "others").length,
+    offline: all.filter((r) => r.registered_via === "offline").length,
     attended: attended.count ?? 0,
     waitlist: waitlist.count ?? 0,
     capacity: capacity.data ?? [],

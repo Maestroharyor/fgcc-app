@@ -2,7 +2,7 @@ import { Heading, Text } from "@react-email/components";
 import { EmailLayout, palette } from "./_Layout";
 
 export interface AdminNotificationEmailProps {
-  type: "self" | "others";
+  type: "self" | "others" | "offline";
   registrants: Array<{
     fullName: string;
     referenceNumber: string;
@@ -44,7 +44,11 @@ export default function AdminNotificationEmail({
       </Heading>
       <Text style={{ fontSize: 13, color: palette.muted, marginTop: 4 }}>
         Type:{" "}
-        {type === "self" ? "Self-registration" : "Registered by someone else"}
+        {type === "self"
+          ? "Self-registration"
+          : type === "offline"
+            ? "Added by admin (offline)"
+            : "Registered by someone else"}
       </Text>
 
       {submitter && (

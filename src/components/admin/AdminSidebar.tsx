@@ -50,7 +50,7 @@ export function AdminSidebar({ role, email }: Props) {
 
   return (
     <aside className="w-full md:w-64 md:flex-shrink-0 border-r border-navy/8 bg-white md:h-dvh md:sticky md:top-0">
-      <div className="flex md:flex-col md:h-full">
+      <div className="flex flex-col md:h-full">
         <div className="px-5 py-5 border-b border-navy/8">
           <Link href="/admin/dashboard" className="flex items-center gap-3">
             <BrandMark size={36} />

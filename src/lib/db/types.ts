@@ -17,7 +17,7 @@ export type Relationship =
   | "friend"
   | "church_worker"
   | "other";
-export type RegistrationVia = "self" | "others";
+export type RegistrationVia = "self" | "others" | "offline";
 export type Role = "admin" | "superadmin";
 export type AttendNext = "yes" | "no" | "maybe";
 
