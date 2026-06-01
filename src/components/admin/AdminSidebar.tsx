@@ -58,8 +58,9 @@ export function AdminSidebar({ role, email }: Props) {
   useOverlayDismiss(open, () => setOpen(false));
 
   // Move focus into the drawer when it opens so keyboard users land inside.
+  // preventScroll avoids a scroll-into-view jump while the panel is mid-slide.
   useEffect(() => {
-    if (open) drawerRef.current?.focus();
+    if (open) drawerRef.current?.focus({ preventScroll: true });
   }, [open]);
 
   const onSignOut = async () => {
@@ -116,7 +117,7 @@ export function AdminSidebar({ role, email }: Props) {
           aria-modal="true"
           aria-label="Admin menu"
           className={cn(
-            "absolute right-0 top-0 flex h-full w-72 max-w-[85%] flex-col bg-white shadow-xl outline-none transition-transform duration-300 ease-out",
+            "absolute right-0 top-0 flex h-full w-72 max-w-[85%] flex-col bg-white shadow-xl outline-none transition-transform duration-300 ease-out will-change-transform",
             open ? "translate-x-0" : "translate-x-full",
           )}
         >

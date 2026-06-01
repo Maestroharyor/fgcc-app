@@ -52,6 +52,12 @@ body {
   scroll-behavior: smooth;
 }
 
+/* Reserve the scrollbar gutter so overlay scroll-locks (drawer, modal — see
+   useOverlayDismiss) don't remove the scrollbar and reflow the page. */
+html {
+  scrollbar-gutter: stable;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html,
   body {
