@@ -35,6 +35,7 @@ import {
   sendEnquiryAckEmail,
   sendEnquiryNotificationEmail,
   sendFeedbackRequestEmail,
+  sendRegistrationUpdatedEmail,
   sendReminder1DayEmail,
   sendReminder3DayEmail,
   sendSubmitterSummaryEmail,
@@ -193,6 +194,18 @@ describe("send helpers - happy paths", () => {
           topicLabel: "Registration help",
           subject: "Can't find ref",
           message: "Long message body here please respond.",
+          siteUrl: "http://x",
+        }),
+    ],
+    [
+      "registration updated",
+      () =>
+        sendRegistrationUpdatedEmail("u@x.com", {
+          firstName: "U",
+          referenceNumber: "SKU-UXD-001",
+          trackName: "T",
+          email: "u@x.com",
+          phone: null,
           siteUrl: "http://x",
         }),
     ],

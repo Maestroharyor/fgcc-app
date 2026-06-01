@@ -171,6 +171,26 @@ export type AdminBatchRegistrationInput = z.infer<
   typeof AdminBatchRegistrationSchema
 >;
 
+/**
+ * Admin edit of an existing registrant's correctable details. Track is
+ * intentionally excluded (it drives capacity/session counts). Email stays
+ * required because the column is NOT NULL; phone is optional to match offline
+ * rows that were entered without one.
+ */
+export const UpdateRegistrationSchema = z.object({
+  full_name: baseName,
+  email: baseEmail,
+  phone: basePhoneOptional,
+  gender: GenderEnum,
+  age_group: AgeGroupEnum,
+  church: requiredChurch,
+  // UI control only (not a DB column): whether to email the registrant about
+  // the change. Defaults on; the admin can uncheck it in the edit modal.
+  notify: z.boolean().optional().default(true),
+});
+
+export type UpdateRegistrationInput = z.infer<typeof UpdateRegistrationSchema>;
+
 export type RegisterOthersInput = z.infer<typeof RegisterOthersSchema>;
 
 export const FeedbackSchema = z.object({

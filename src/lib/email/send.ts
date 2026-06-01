@@ -17,6 +17,9 @@ import EnquiryNotificationEmail, {
 import FeedbackRequestEmail, {
   type FeedbackRequestEmailProps,
 } from "@/emails/FeedbackRequestEmail";
+import RegistrationUpdatedEmail, {
+  type RegistrationUpdatedEmailProps,
+} from "@/emails/RegistrationUpdatedEmail";
 import Reminder1DayEmail, {
   type Reminder1DayEmailProps,
 } from "@/emails/Reminder1DayEmail";
@@ -85,6 +88,18 @@ export function sendConfirmationEmail(
     to,
     subject: `You're in - SkillUp 1.0 · ${props.trackName}`,
     Component: ConfirmationEmail,
+    props,
+  });
+}
+
+export function sendRegistrationUpdatedEmail(
+  to: string,
+  props: RegistrationUpdatedEmailProps,
+) {
+  return dispatch({
+    to,
+    subject: `Your SkillUp 1.0 details were updated · ${props.trackName}`,
+    Component: RegistrationUpdatedEmail,
     props,
   });
 }

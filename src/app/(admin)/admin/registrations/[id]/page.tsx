@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { EditRegistrationButton } from "@/components/admin/EditRegistrationButton";
 import { REGISTERED_VIA_LABEL } from "@/components/admin/RegistrationsTable";
 import { trackByCode } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
 import { getBatchById } from "@/lib/db/batches";
 import { getRegistrationById } from "@/lib/db/registrations";
 import type { Role } from "@/lib/db/types";
+import { formatInLagos } from "@/lib/utils/date";
 
 export const dynamic = "force-dynamic";
 
@@ -132,12 +134,15 @@ async function RegistrantProfileSection({
         </Row>
         <Row label="Church">{registration.church ?? "-"}</Row>
         <Row label="Registered at">
-          {new Date(registration.created_at).toLocaleString()}
+          {formatInLagos(new Date(registration.created_at), "MMM d, yyyy")}
         </Row>
         <Row label="Attended">{registration.attended ? "Yes" : "No"}</Row>
         <Row label="Attended at">
           {registration.attended_at
-            ? new Date(registration.attended_at).toLocaleString()
+            ? formatInLagos(
+                new Date(registration.attended_at),
+                "MMM d, yyyy 'at' h:mm a",
+              )
             : "-"}
         </Row>
       </dl>
@@ -189,6 +194,15 @@ async function RegistrantProfileSection({
             {registration.attended ? "Re-mark attended" : "Mark attended"}
           </button>
         </form>
+        <EditRegistrationButton
+          id={registration.id}
+          fullName={registration.full_name}
+          email={registration.email}
+          phone={registration.phone}
+          gender={registration.gender}
+          ageGroup={registration.age_group}
+          church={registration.church}
+        />
         {role === "superadmin" &&
           /* Delete registration disabled per request. Restore this form to re-enable.
           <form
