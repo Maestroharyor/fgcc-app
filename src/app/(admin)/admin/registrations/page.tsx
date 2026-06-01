@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ExportMenu } from "@/components/admin/ExportMenu";
+import { RegistrationsFilters } from "@/components/admin/RegistrationsFilters";
 import { RegistrationsTable } from "@/components/admin/RegistrationsTable";
-import { TRACKS, TRACKS_BY_CODE } from "@/content/tracks";
+import { TRACKS_BY_CODE } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
 import { listRegistrations } from "@/lib/db/registrations";
 
@@ -50,56 +51,15 @@ export default async function RegistrationsPage({ searchParams }: PageProps) {
         <ExportMenu queryString={queryString} />
       </div>
 
-      {/* Filter form is static - render immediately. */}
-      <form
-        method="get"
-        className="mt-6 grid grid-cols-1 md:grid-cols-[1fr_220px_180px_160px_auto] gap-3"
+      {/* Live filters drive the URL search params (no Apply, soft navigation).
+          Suspense is required because the component reads useSearchParams. */}
+      <Suspense
+        fallback={
+          <div className="mt-6 h-11 rounded-full bg-navy/5 animate-pulse" />
+        }
       >
-        <input
-          type="search"
-          name="q"
-          defaultValue={params.q ?? ""}
-          placeholder="Name, email, or reference"
-          className="form-input"
-        />
-        <select
-          name="track"
-          defaultValue={params.track ?? ""}
-          className="form-input"
-        >
-          <option value="">All tracks</option>
-          {TRACKS.map((t) => (
-            <option key={t.code} value={t.code}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-        <select
-          name="type"
-          defaultValue={params.type ?? ""}
-          className="form-input"
-        >
-          <option value="">All types</option>
-          <option value="self">Self-registered</option>
-          <option value="others">Via someone else</option>
-          <option value="offline">Offline (admin)</option>
-        </select>
-        <select
-          name="attended"
-          defaultValue={params.attended ?? ""}
-          className="form-input"
-        >
-          <option value="">All check-ins</option>
-          <option value="yes">Checked in</option>
-          <option value="no">Not checked in</option>
-        </select>
-        <button
-          type="submit"
-          className="rounded-full bg-primary px-5 py-2.5 font-display text-sm font-semibold text-white hover:bg-primary-700"
-        >
-          Apply
-        </button>
-      </form>
+        <RegistrationsFilters />
+      </Suspense>
 
       {/* Table streams in once the DB query resolves. */}
       <div className="mt-6">
