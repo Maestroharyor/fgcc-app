@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createSupabaseMock, type SupabaseMock } from "@/test/mocks/supabase";
+import {
+  type ChainCall,
+  createSupabaseMock,
+  type MockResult,
+  type SupabaseMock,
+} from "@/test/mocks/supabase";
 
 let supabase: SupabaseMock;
 
@@ -48,10 +53,9 @@ function makeReq(payload: unknown) {
 const ctx = (id = "reg-1") => ({ params: Promise.resolve({ id }) });
 
 /** Configure the registrations table's terminal result for this test. */
-function mockRegistrations(result: {
-  data?: unknown;
-  error?: { message: string } | null;
-}) {
+function mockRegistrations(
+  result: MockResult | ((chain: ChainCall) => MockResult),
+) {
   supabase = createSupabaseMock({ from: { registrations: result } });
   hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
 }
@@ -63,11 +67,25 @@ const okRow = {
   full_name: "Ada Lovelace",
 };
 
+/**
+ * The route reads the current email (a plain SELECT) before the UPDATE to detect
+ * an email change. Differentiate the two by the recorded "update" filter:
+ * the pre-read returns `currentEmail`; the update returns `okRow`.
+ */
+function mockUpdateWithCurrentEmail(currentEmail: string) {
+  mockRegistrations((chain) =>
+    chain.filters.some((f) => f.method === "update")
+      ? { data: okRow, error: null }
+      : { data: { ...okRow, email: currentEmail }, error: null },
+  );
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   hoisted.requireRole.mockResolvedValue({ role: "admin", userId: "u1" });
   hoisted.sendRegistrationUpdatedEmail.mockResolvedValue({ ok: true });
-  mockRegistrations({ data: okRow, error: null });
+  // Default: the stored email differs from validBody's, so edits count as a change.
+  mockUpdateWithCurrentEmail("old@example.com");
 });
 
 describe("PATCH /api/admin/registrations/[id]", () => {
@@ -147,7 +165,7 @@ describe("PATCH /api/admin/registrations/[id]", () => {
     expect(body.error).toBe("update-failed");
   });
 
-  it("notifies the registrant by default when a real email is on file", async () => {
+  it("notifies the new address by default when the email changes", async () => {
     const res = await PATCH(makeReq(validBody()), ctx());
     expect(res.status).toBe(200);
     expect(hoisted.sendRegistrationUpdatedEmail).toHaveBeenCalledTimes(1);
@@ -157,7 +175,15 @@ describe("PATCH /api/admin/registrations/[id]", () => {
     );
   });
 
-  it("does not notify when notify is false", async () => {
+  it("does not notify when the email is unchanged", async () => {
+    // Stored email equals the submitted one → no change → no email.
+    mockUpdateWithCurrentEmail("ada@example.com");
+    const res = await PATCH(makeReq(validBody()), ctx());
+    expect(res.status).toBe(200);
+    expect(hoisted.sendRegistrationUpdatedEmail).not.toHaveBeenCalled();
+  });
+
+  it("does not notify when notify is false even if the email changed", async () => {
     const res = await PATCH(makeReq(validBody({ notify: false })), ctx());
     expect(res.status).toBe(200);
     expect(hoisted.sendRegistrationUpdatedEmail).not.toHaveBeenCalled();

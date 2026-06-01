@@ -43,6 +43,16 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     parsed.data;
 
   const supabase = await createSupabaseServerClient();
+
+  // Read the current email before the update so we can tell whether it changed
+  // (Postgres UPDATE can't return the pre-update value). Raw select here matches
+  // the route-level convention (see checkin/create routes).
+  const { data: before } = await supabase
+    .from("registrations")
+    .select("email")
+    .eq("id", id)
+    .maybeSingle();
+
   const { data, error } = await supabase
     .from("registrations")
     .update({
@@ -78,10 +88,13 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     );
   }
 
-  // Notify the registrant of the change when asked and a real email is on file
-  // (offline rows carry a synthesised @placeholder.skillup address — skip those).
+  // Notify the registrant only when the EMAIL itself changed, the admin left the
+  // toggle on, and the new address is real (offline rows carry a synthesised
+  // @placeholder.skillup address — skip those). If we couldn't read the old
+  // email, default to not sending rather than risk a spurious notice.
   // allSettled so a send failure can never reject the request.
-  if (notify && !email.endsWith("@placeholder.skillup")) {
+  const emailChanged = before ? before.email?.toLowerCase() !== email : false;
+  if (notify && emailChanged && !email.endsWith("@placeholder.skillup")) {
     const track = trackByCode(data.track_code);
     await Promise.allSettled([
       sendRegistrationUpdatedEmail(email, {

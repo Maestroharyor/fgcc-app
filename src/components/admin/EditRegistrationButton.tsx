@@ -120,6 +120,14 @@ function EditModal({
     panelRef.current?.focus();
   }, []);
 
+  // The notify toggle is only relevant when the email actually changed to a new,
+  // real address — the server gates on the same condition.
+  const currentEmail = (watch("email") ?? "").trim();
+  const emailChanged =
+    currentEmail.length > 0 &&
+    currentEmail.toLowerCase() !== email.trim().toLowerCase() &&
+    !currentEmail.endsWith("@placeholder.skillup");
+
   const onSubmit = handleSubmit((values) => {
     setServerError(null);
     startTransition(async () => {
@@ -258,7 +266,7 @@ function EditModal({
             </select>
           </Field>
 
-          {!watch("email")?.endsWith("@placeholder.skillup") && (
+          {emailChanged && (
             <label className="flex items-start gap-2 text-sm text-navy/75">
               <input
                 type="checkbox"
@@ -266,7 +274,8 @@ function EditModal({
                 {...register("notify")}
               />
               <span>
-                Email the registrant to let them know their details changed.
+                Email the registrant at the new address to let them know it
+                changed.
               </span>
             </label>
           )}
