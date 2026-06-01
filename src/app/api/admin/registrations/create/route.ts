@@ -9,26 +9,35 @@ import {
 } from "@/lib/email/send";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { env } from "@/lib/utils/env";
-import { AdminRegistrationSchema } from "@/lib/validation/schemas";
+import { AdminBatchRegistrationSchema } from "@/lib/validation/schemas";
 
 function firstName(full: string) {
   return full.trim().split(/\s+/)[0] ?? full;
 }
 
+interface RowResult {
+  fullName: string;
+  trackName: string | null;
+  status: "ok" | "duplicate" | "error";
+  referenceNumber?: string;
+  message?: string;
+}
+
 /**
- * Admin-initiated (offline) registration. Used by the dashboard's
- * "Add registration" form to enter walk-ins. Unlike the public flow there is
- * no capacity gate — an admin can add to a full track on purpose — and the
- * email is optional. Rows are stamped registered_via = 'offline'.
+ * Admin-initiated (offline) batch registration. Used by the dashboard's
+ * "Add registration" form to enter one or more walk-ins. Each row is processed
+ * independently: there is no capacity gate (an admin may add to a full track on
+ * purpose), the email is optional, and rows are stamped registered_via =
+ * 'offline'. Returns a per-row result array so the UI can show what landed.
  */
 export async function POST(request: NextRequest) {
   await requireRole("admin");
 
   const payload = await request.json().catch(() => ({}));
 
-  let parsed: ReturnType<typeof AdminRegistrationSchema.parse>;
+  let parsed: ReturnType<typeof AdminBatchRegistrationSchema.parse>;
   try {
-    parsed = AdminRegistrationSchema.parse(payload);
+    parsed = AdminBatchRegistrationSchema.parse(payload);
   } catch (e) {
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : "Invalid details" },
@@ -36,105 +45,144 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const track = trackByCode(parsed.track_code);
-  if (!track) {
-    return NextResponse.json(
-      { ok: false, error: "track-not-found" },
-      { status: 400 },
-    );
-  }
-
-  // email is UNIQUE on registrations. When a real address was captured, dedupe
-  // up front and hand back the existing reference (mirrors registerSelfAction)
-  // rather than letting the insert blow up with a raw constraint error.
-  if (parsed.email) {
-    const existing = await getRegistrationByEmail(parsed.email);
-    if (existing) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "duplicate",
-          referenceNumber: existing.reference_number,
-        },
-        { status: 409 },
-      );
-    }
-  }
-
-  // The DB requires a unique, non-null email per row. Synthesise a placeholder
-  // when the admin didn't capture one (mirrors the Register-for-Others flow).
-  const emailToUse =
-    parsed.email ??
-    `noemail+${track.code.toLowerCase()}-${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2, 8)}@placeholder.skillup`;
-
   const supabase = await createSupabaseServerClient();
-  const { data: inserted, error } = await supabase
-    .from("registrations")
-    .insert({
-      full_name: parsed.full_name,
-      email: emailToUse,
-      phone: parsed.phone,
-      gender: parsed.gender,
-      age_group: parsed.age_group,
-      church: parsed.church ?? null,
-      track_code: track.code,
-      registered_via: "offline",
-      how_heard: parsed.how_heard ?? null,
-    })
-    .select("reference_number")
-    .single();
+  const results: RowResult[] = [];
+  // Emails captured earlier in THIS request - the DB dedupe below can't see a
+  // not-yet-inserted row, so a repeated email within one batch is caught here.
+  const seenEmails = new Set<string>();
+  const okRegistrants: Array<{
+    fullName: string;
+    referenceNumber: string;
+    trackName: string;
+    email: string;
+    phone: string;
+    church: string | null;
+  }> = [];
+  const confirmations: Array<Promise<unknown>> = [];
 
-  if (error || !inserted) {
-    // Backstop for the race where two admins submit the same email at once -
-    // the unique index (23505) catches what the pre-check above missed.
-    if ((error as { code?: string } | null)?.code === "23505") {
-      return NextResponse.json(
-        { ok: false, error: "duplicate" },
-        { status: 409 },
-      );
+  for (const r of parsed.registrants) {
+    const track = trackByCode(r.track_code);
+    if (!track) {
+      results.push({
+        fullName: r.full_name,
+        trackName: null,
+        status: "error",
+        message: "track-not-found",
+      });
+      continue;
     }
-    return NextResponse.json(
-      { ok: false, error: error?.message ?? "Could not save registration" },
-      { status: 500 },
-    );
-  }
 
-  const referenceNumber = inserted.reference_number as string;
+    // email is UNIQUE on registrations. Dedupe up front when a real address was
+    // captured and hand back the existing reference (mirrors registerSelfAction).
+    if (r.email) {
+      if (seenEmails.has(r.email)) {
+        results.push({
+          fullName: r.full_name,
+          trackName: track.name,
+          status: "duplicate",
+          message: "repeated in this batch",
+        });
+        continue;
+      }
+      const existing = await getRegistrationByEmail(r.email);
+      if (existing) {
+        results.push({
+          fullName: r.full_name,
+          trackName: track.name,
+          status: "duplicate",
+          referenceNumber: existing.reference_number,
+        });
+        continue;
+      }
+      seenEmails.add(r.email);
+    }
 
-  // Comms are awaited (allSettled) so a send failure can't reject the request.
-  // Only email the registrant if a real address was captured; always notify
-  // admins for the audit trail.
-  await Promise.allSettled([
-    parsed.email
-      ? sendConfirmationEmail(parsed.email, {
-          firstName: firstName(parsed.full_name),
+    // Synthesise a unique placeholder email when none was provided - the DB
+    // requires a unique, non-null email per row.
+    const emailToUse =
+      r.email ??
+      `noemail+${track.code.toLowerCase()}-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 8)}@placeholder.skillup`;
+
+    const { data: inserted, error } = await supabase
+      .from("registrations")
+      .insert({
+        full_name: r.full_name,
+        email: emailToUse,
+        phone: r.phone,
+        gender: r.gender,
+        age_group: r.age_group,
+        church: r.church ?? null,
+        track_code: track.code,
+        registered_via: "offline",
+      })
+      .select("reference_number")
+      .single();
+
+    if (error || !inserted) {
+      results.push({
+        fullName: r.full_name,
+        trackName: track.name,
+        // 23505 = unique violation; covers the race the pre-check above missed.
+        status:
+          (error as { code?: string } | null)?.code === "23505"
+            ? "duplicate"
+            : "error",
+        message:
+          (error as { code?: string } | null)?.code === "23505"
+            ? undefined
+            : (error?.message ?? "Could not save registration"),
+      });
+      continue;
+    }
+
+    const referenceNumber = inserted.reference_number as string;
+    results.push({
+      fullName: r.full_name,
+      trackName: track.name,
+      status: "ok",
+      referenceNumber,
+    });
+    okRegistrants.push({
+      fullName: r.full_name,
+      referenceNumber,
+      trackName: track.name,
+      email: r.email ?? "",
+      phone: r.phone,
+      church: r.church ?? null,
+    });
+
+    if (r.email) {
+      confirmations.push(
+        sendConfirmationEmail(r.email, {
+          firstName: firstName(r.full_name),
           referenceNumber,
           trackName: track.name,
           facilitatorName: track.facilitator,
           whatsappUrl: track.whatsappUrl ?? env.NEXT_PUBLIC_SITE_URL,
           siteUrl: env.NEXT_PUBLIC_SITE_URL,
-        })
-      : Promise.resolve(),
-    sendAdminNotificationEmail({
-      type: "offline",
-      registrants: [
-        {
-          fullName: parsed.full_name,
-          referenceNumber,
-          trackName: track.name,
-          email: parsed.email ?? "",
-          phone: parsed.phone,
-          church: parsed.church ?? null,
-        },
-      ],
-      dashboardUrl: `${env.NEXT_PUBLIC_SITE_URL}/admin/registrations`,
-    }),
-  ]);
+        }),
+      );
+    }
+  }
+
+  // Comms are awaited (allSettled) so a send failure can't reject the request.
+  // One admin notification lists everyone that landed; per-registrant
+  // confirmations go to those who gave a real email.
+  if (okRegistrants.length > 0) {
+    confirmations.push(
+      sendAdminNotificationEmail({
+        type: "offline",
+        registrants: okRegistrants,
+        dashboardUrl: `${env.NEXT_PUBLIC_SITE_URL}/admin/registrations`,
+      }),
+    );
+  }
+  await Promise.allSettled(confirmations);
 
   revalidatePath("/admin/dashboard");
   revalidatePath("/admin/registrations");
 
-  return NextResponse.json({ ok: true, referenceNumber });
+  return NextResponse.json({ ok: true, results });
 }

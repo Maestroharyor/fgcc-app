@@ -98,37 +98,6 @@ export const RegistrationSchema = z.object({
 
 export type RegistrationInput = z.infer<typeof RegistrationSchema>;
 
-/**
- * Admin-entered (offline) registration. Mirrors `RegistrationSchema` but the
- * email is optional — walk-ins added at the desk may not have one. When absent,
- * the create route synthesises a unique placeholder, same as the
- * Register-for-Others flow. The optional-email shape matches
- * `OthersRegistrantSchema` below.
- */
-export const AdminRegistrationSchema = z.object({
-  full_name: baseName,
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .email("Enter a valid email address")
-    .optional()
-    .or(z.literal("").transform(() => undefined)),
-  phone: basePhone,
-  gender: GenderEnum,
-  age_group: AgeGroupEnum,
-  church: requiredChurch,
-  track_code: z
-    .string({ message: "Pick a track" })
-    .trim()
-    .min(2, "Pick a track")
-    .max(8, "Pick a track")
-    .transform((s) => s.toUpperCase()),
-  how_heard: HowHeardEnum.optional(),
-});
-
-export type AdminRegistrationInput = z.infer<typeof AdminRegistrationSchema>;
-
 export const SubmitterSchema = z.object({
   submitter_name: baseName,
   submitter_email: baseEmail,
@@ -170,6 +139,22 @@ export const RegisterOthersSchema = z.object({
     .min(1, "Add at least one person")
     .max(20, "Submit up to 20 people at a time"),
 });
+
+/**
+ * Admin-entered (offline) batch. No submitter block — the logged-in admin is the
+ * one entering walk-ins. Each row reuses `OthersRegistrantSchema` (optional
+ * email; the create route synthesises a placeholder when absent).
+ */
+export const AdminBatchRegistrationSchema = z.object({
+  registrants: z
+    .array(OthersRegistrantSchema)
+    .min(1, "Add at least one person")
+    .max(20, "Add up to 20 people at a time"),
+});
+
+export type AdminBatchRegistrationInput = z.infer<
+  typeof AdminBatchRegistrationSchema
+>;
 
 export type RegisterOthersInput = z.infer<typeof RegisterOthersSchema>;
 

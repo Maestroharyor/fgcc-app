@@ -41,8 +41,8 @@ export default async function AdminNewRegistrationPage() {
           Add a registration
         </h1>
         <p className="text-sm text-navy/65">
-          Enter a walk-in or offline sign-up. Email is optional, and a full
-          track won't block you.
+          Enter one or more walk-ins or offline sign-ups. Email is optional, and
+          a full track won't block you.
         </p>
       </div>
 
