@@ -72,16 +72,16 @@ describe("updateSignatory", () => {
   it("saves captions without a file", async () => {
     const res = await updateSignatory(
       makeFormData({
-        slot: "convener",
-        name: "Deacon B",
-        title: "Programme Convener",
+        slot: "chairman",
+        name: "Pastor A",
+        title: "Chairman, Planning Committee",
       }),
     );
     expect(res).toEqual({ ok: true });
     expect(hoisted.uploadSignatureImage).not.toHaveBeenCalled();
-    expect(hoisted.upsertSignatory).toHaveBeenCalledWith("convener", {
-      name: "Deacon B",
-      title: "Programme Convener",
+    expect(hoisted.upsertSignatory).toHaveBeenCalledWith("chairman", {
+      name: "Pastor A",
+      title: "Chairman, Planning Committee",
     });
   });
 

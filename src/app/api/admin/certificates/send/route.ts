@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { TRACKS } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
-import { loadCertificateSignatories } from "@/lib/db/signatories";
+import { loadCertificateSignatory } from "@/lib/db/signatories";
 import { sendCertificateEmail } from "@/lib/email/send";
 import { buildCertificate } from "@/lib/pdf/certificate";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const signatories = await loadCertificateSignatories();
+  const signatory = await loadCertificateSignatory();
   let sent = 0;
   let skipped = 0;
   for (const r of attendees as Array<{
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       fullName: r.full_name,
       referenceNumber: r.reference_number,
       trackName: track.name,
-      signatories,
+      signatory,
     });
     const result = await sendCertificateEmail(
       r.email,

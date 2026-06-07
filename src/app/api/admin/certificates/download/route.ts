@@ -2,7 +2,7 @@ import JSZip from "jszip";
 import { type NextRequest, NextResponse } from "next/server";
 import { TRACKS } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
-import { loadCertificateSignatories } from "@/lib/db/signatories";
+import { loadCertificateSignatory } from "@/lib/db/signatories";
 import { buildCertificate } from "@/lib/pdf/certificate";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -30,12 +30,12 @@ export async function GET(request: NextRequest) {
         { status: 404 },
       );
     }
-    const signatories = await loadCertificateSignatories();
+    const signatory = await loadCertificateSignatory();
     const pdf = await buildCertificate({
       fullName: data.full_name,
       referenceNumber: data.reference_number,
       trackName: trackMeta(data.track_code).name,
-      signatories,
+      signatory,
     });
     return new NextResponse(new Uint8Array(pdf), {
       status: 200,
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     .select("full_name, reference_number, attended, track_code")
     .eq("attended", true);
 
-  const signatories = await loadCertificateSignatories();
+  const signatory = await loadCertificateSignatory();
   const zip = new JSZip();
   for (const r of (attendees ?? []) as Array<{
     full_name: string;
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
       fullName: r.full_name,
       referenceNumber: r.reference_number,
       trackName: trackMeta(r.track_code).name,
-      signatories,
+      signatory,
     });
     zip.file(`SkillUp-${r.reference_number}.pdf`, pdf);
   }

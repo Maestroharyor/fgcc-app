@@ -20,30 +20,26 @@ export interface CertificateSignatoryData {
 
 export const SIGNATURE_BUCKET = "certificates";
 
-/** Mirrors the rows seeded by the migration; used when the DB is unreachable
- *  so certificates always render both signature blocks. */
-const DEFAULT_SIGNATORIES: Array<Pick<DBSignatory, "slot" | "name" | "title">> =
-  [
-    { slot: "chairman", name: "", title: "Chairman, Planning Committee" },
-    { slot: "convener", name: "", title: "Programme Convener" },
-  ];
+/** Mirrors the chairman row seeded by the migration; used when the DB is
+ *  unreachable so certificates always render a signature block. */
+const DEFAULT_SIGNATORY: Pick<DBSignatory, "slot" | "name" | "title"> = {
+  slot: "chairman",
+  name: "",
+  title: "Chairman, Planning Committee",
+};
 
-const SLOT_ORDER: Record<SignatorySlot, number> = { chairman: 0, convener: 1 };
-
-export async function getSignatories(): Promise<DBSignatory[]> {
+/** The chairman is the only signatory printed on certificates. */
+export async function getSignatory(): Promise<DBSignatory> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("certificate_signatories")
-    .select("slot, name, title, image_path, updated_at");
-  if (error || !data || data.length === 0) {
-    return DEFAULT_SIGNATORIES.map((d) => ({
-      ...d,
-      image_path: null,
-      updated_at: "",
-    }));
+    .select("slot, name, title, image_path, updated_at")
+    .eq("slot", "chairman");
+  const row = (data as DBSignatory[] | null)?.[0];
+  if (error || !row) {
+    return { ...DEFAULT_SIGNATORY, image_path: null, updated_at: "" };
   }
-  const rows = data as DBSignatory[];
-  return [...rows].sort((a, b) => SLOT_ORDER[a.slot] - SLOT_ORDER[b.slot]);
+  return row;
 }
 
 export async function upsertSignatory(
@@ -118,20 +114,14 @@ async function downloadSignatureImage(
 }
 
 /**
- * Rows + downloaded signature PNGs, ready for `buildCertificate`. Any failure
- * (missing env, missing object) degrades to a plain signature line.
+ * Chairman row + downloaded signature PNG, ready for `buildCertificate`. Any
+ * failure (missing env, missing object) degrades to a plain signature line.
  */
-export async function loadCertificateSignatories(): Promise<
-  CertificateSignatoryData[]
-> {
-  const rows = await getSignatories();
-  return Promise.all(
-    rows.map(async (row) => ({
-      name: row.name,
-      title: row.title,
-      image: row.image_path
-        ? await downloadSignatureImage(row.image_path)
-        : null,
-    })),
-  );
+export async function loadCertificateSignatory(): Promise<CertificateSignatoryData> {
+  const row = await getSignatory();
+  return {
+    name: row.name,
+    title: row.title,
+    image: row.image_path ? await downloadSignatureImage(row.image_path) : null,
+  };
 }

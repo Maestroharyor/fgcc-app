@@ -4,7 +4,6 @@ import {
   SCRIPT_FONT,
   SERIF_FONT,
 } from "@/lib/pdf/fonts";
-import { qrPngBuffer } from "@/lib/qr/generate";
 
 export interface CertificateSignatory {
   name: string;
@@ -17,8 +16,8 @@ export interface CertificateInput {
   fullName: string;
   trackName: string;
   referenceNumber: string;
-  /** Chairman + convener blocks, left to right. */
-  signatories?: CertificateSignatory[];
+  /** Chairman block, bottom left. */
+  signatory?: CertificateSignatory | null;
 }
 
 const PRIMARY = "#003DA5";
@@ -29,6 +28,10 @@ const GOLD_LIGHT = "#E3C766";
 const GOLD_DARK = "#8A6D14";
 const PAGE_BG = "#F7F8FC";
 const PATTERN = "#E7EBF5";
+const RIBBON_SHADOW = "#022B72";
+const RIBBON_HIGHLIGHT = "#2B62C4";
+const RIBBON_DEEP = "#021A4D";
+const SEAL_SHADOW = "#D5DAE7";
 
 const EVENT_DATES = "June 12 – 14, 2026";
 const VENUE = "Cement Missionary Headquarters, Lagos";
@@ -37,7 +40,7 @@ export async function buildCertificate({
   fullName,
   trackName,
   referenceNumber,
-  signatories = [],
+  signatory = null,
 }: CertificateInput): Promise<Buffer> {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   registerCertificateFonts(doc);
@@ -124,27 +127,28 @@ export async function buildCertificate({
   const wrapped = doc.splitTextToSize(body, 170) as string[];
   doc.text(wrapped, CX, 119, { align: "center", lineHeightFactor: 1.5 });
 
-  // ── Signature blocks + centred date ───────────────────────────────────────
-  const [left, right] = [signatories[0], signatories[1]];
-  if (left) drawSignatureBlock(doc, left, 80, 166);
-  if (right) drawSignatureBlock(doc, right, W - 80, 166);
+  // ── Bottom row: signature left, dates + venue right ───────────────────────
+  if (signatory) drawSignatureBlock(doc, signatory, 80, 166);
 
+  const dateX = W - 84;
+  doc.setDrawColor(NAVY);
+  doc.setLineWidth(0.4);
+  doc.line(dateX - 28, 166, dateX + 28, 166);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(NAVY);
-  doc.text(EVENT_DATES, CX, 167, { align: "center" });
+  doc.text(EVENT_DATES, dateX, 171.5, { align: "center" });
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
+  doc.setFontSize(8);
   doc.setTextColor(MUTED);
-  doc.text(VENUE, CX, 172, { align: "center" });
+  // Narrow wrap so the venue clears the bottom-right corner triangles.
+  const venueLines = doc.splitTextToSize(VENUE, 38) as string[];
+  doc.text(venueLines, dateX, 176.5, {
+    align: "center",
+    lineHeightFactor: 1.4,
+  });
 
-  // ── QR + reference (bottom left, inside the frame) ────────────────────────
-  try {
-    const qr = await qrPngBuffer(referenceNumber, { width: 220 });
-    doc.addImage(qr, "PNG", 15, H - 36, 19, 19);
-  } catch {
-    // ignore - certificate still valid without QR.
-  }
+  // ── Reference (bottom left, inside the frame) ─────────────────────────────
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(MUTED);
@@ -314,31 +318,16 @@ function drawCornerGeometry(doc: jsPDF, w: number, h: number): void {
   );
 }
 
-/** Gold rosette seal with a scalloped edge and navy ribbon tails. */
+/** Gold rosette seal with a scalloped edge and splayed swallowtail ribbons. */
 function drawSeal(doc: jsPDF, cx: number, cy: number): void {
-  // Ribbon tails first so the disc overlaps them.
-  polygon(
-    doc,
-    [
-      [cx - 9, cy + 8],
-      [cx - 2, cy + 10],
-      [cx - 2, cy + 27],
-      [cx - 5.5, cy + 22.5],
-      [cx - 9, cy + 27],
-    ],
-    PRIMARY,
-  );
-  polygon(
-    doc,
-    [
-      [cx + 2, cy + 10],
-      [cx + 9, cy + 8],
-      [cx + 9, cy + 27],
-      [cx + 5.5, cy + 22.5],
-      [cx + 2, cy + 27],
-    ],
-    PRIMARY,
-  );
+  // Soft page shadow so the medal lifts off the background. Drawn before the
+  // ribbon so it never greys the blue tails.
+  doc.setFillColor(SEAL_SHADOW);
+  doc.circle(cx + 0.8, cy + 1.3, 16.3, "F");
+
+  // Ribbon tails next so the disc overlaps their tops.
+  drawRibbonTail(doc, cx, cy, -1);
+  drawRibbonTail(doc, cx, cy, 1);
 
   // Scalloped edge — ring of small discs behind the main circle.
   doc.setFillColor(GOLD);
@@ -349,6 +338,9 @@ function drawSeal(doc: jsPDF, cx: number, cy: number): void {
 
   doc.setFillColor(GOLD);
   doc.circle(cx, cy, 14.2, "F");
+  doc.setDrawColor(GOLD_DARK);
+  doc.setLineWidth(0.45);
+  doc.circle(cx, cy, 14.2, "S");
   doc.setDrawColor(GOLD_LIGHT);
   doc.setLineWidth(0.6);
   doc.circle(cx, cy, 11.6, "S");
@@ -362,6 +354,72 @@ function drawSeal(doc: jsPDF, cx: number, cy: number): void {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.text("1.0", cx, cy + 5, { align: "center" });
+}
+
+type Point = [number, number];
+
+const lerp = (p: Point, q: Point, t: number): Point => [
+  p[0] + (q[0] - p[0]) * t,
+  p[1] + (q[1] - p[1]) * t,
+];
+
+/**
+ * One satin ribbon tail, splayed outward with a swallowtail end.
+ * `side` is -1 for the left tail, 1 for the right. Depth comes from layered
+ * flat tones: a shadowed inner half, a sheen strip on the outer half, and a
+ * dark band where the disc casts its shadow as the tail emerges.
+ */
+function drawRibbonTail(
+  doc: jsPDF,
+  cx: number,
+  cy: number,
+  side: 1 | -1,
+): void {
+  // Edge rails; the tops tuck behind the disc (drawn after).
+  const aIn: Point = [cx + side * 1.5, cy + 8];
+  const aOut: Point = [cx + side * 11, cy + 4];
+  const bIn: Point = [cx + side * 8.5, cy + 31.5];
+  const bOut: Point = [cx + side * 17.5, cy + 27.5];
+
+  const top = (t: number) => lerp(aIn, aOut, t);
+  const straightBottom = (t: number) => lerp(bIn, bOut, t);
+
+  // Swallowtail apex: bottom midpoint pulled back toward the disc.
+  const aMid = top(0.5);
+  const bMid = straightBottom(0.5);
+  const len = Math.hypot(bMid[0] - aMid[0], bMid[1] - aMid[1]);
+  const apex: Point = [
+    bMid[0] - ((bMid[0] - aMid[0]) / len) * 5,
+    bMid[1] - ((bMid[1] - aMid[1]) / len) * 5,
+  ];
+  // Bottom edge following the notch.
+  const bottom = (t: number) =>
+    t < 0.5 ? lerp(bIn, apex, t / 0.5) : lerp(apex, bOut, (t - 0.5) / 0.5);
+  // Point at `t` across the width, `s` along the length.
+  const at = (t: number, s: number) => lerp(top(t), straightBottom(t), s);
+
+  // Two-tone fold: shadowed inner half, base outer half.
+  polygon(doc, [aIn, top(0.5), apex, bIn], RIBBON_SHADOW);
+  polygon(doc, [top(0.5), aOut, bOut, apex], PRIMARY);
+
+  // Satin sheen strip running down the outer half.
+  polygon(
+    doc,
+    [top(0.66), top(0.82), bottom(0.82), bottom(0.66)],
+    RIBBON_HIGHLIGHT,
+  );
+
+  // Shadow the disc casts across the tail just below where it emerges.
+  polygon(
+    doc,
+    [at(0, 0.4), at(0.5, 0.4), at(0.5, 0.49), at(0, 0.49)],
+    RIBBON_DEEP,
+  );
+  polygon(
+    doc,
+    [at(0.5, 0.4), at(1, 0.4), at(1, 0.49), at(0.5, 0.49)],
+    RIBBON_SHADOW,
+  );
 }
 
 function drawSignatureBlock(

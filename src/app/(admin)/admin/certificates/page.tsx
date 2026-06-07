@@ -5,7 +5,7 @@ import { CertificateActions } from "@/components/admin/CertificateActions";
 import { SignatoryEditor } from "@/components/admin/SignatoryEditor";
 import { TRACKS_BY_CODE } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
-import { getSignatories, getSignatureSignedUrl } from "@/lib/db/signatories";
+import { getSignatory, getSignatureSignedUrl } from "@/lib/db/signatories";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -33,14 +33,14 @@ export default async function CertificatesPage() {
       </p>
 
       <h2 className="mt-8 font-display text-lg font-semibold text-navy">
-        Signatories
+        Signatory
       </h2>
       <p className="mt-1 text-sm text-navy/65">
-        The chairman and convener sign every certificate. Upload each signature
-        as a PNG and set the caption printed beneath it.
+        The chairman signs every certificate. Upload the signature as a PNG and
+        set the caption printed beneath it.
       </p>
-      <Suspense fallback={<SignatoriesSkeleton />}>
-        <SignatoriesPanel />
+      <Suspense fallback={<SignatorySkeleton />}>
+        <SignatoryPanel />
       </Suspense>
 
       <div className="mt-10 flex flex-wrap items-center gap-3">
@@ -75,39 +75,28 @@ export default async function CertificatesPage() {
   );
 }
 
-async function SignatoriesPanel() {
-  const signatories = await getSignatories();
-  const withUrls = await Promise.all(
-    signatories.map(async (s) => ({
-      ...s,
-      imageUrl: s.image_path ? await getSignatureSignedUrl(s.image_path) : null,
-    })),
-  );
+async function SignatoryPanel() {
+  const signatory = await getSignatory();
+  const imageUrl = signatory.image_path
+    ? await getSignatureSignedUrl(signatory.image_path)
+    : null;
 
   return (
-    <div className="mt-4 grid gap-4 sm:grid-cols-2 max-w-3xl">
-      {withUrls.map((s) => (
-        <SignatoryEditor
-          key={s.slot}
-          slot={s.slot}
-          name={s.name}
-          title={s.title}
-          imageUrl={s.imageUrl}
-        />
-      ))}
+    <div className="mt-4 max-w-sm">
+      <SignatoryEditor
+        slot={signatory.slot}
+        name={signatory.name}
+        title={signatory.title}
+        imageUrl={imageUrl}
+      />
     </div>
   );
 }
 
-function SignatoriesSkeleton() {
+function SignatorySkeleton() {
   return (
-    <div className="mt-4 grid gap-4 sm:grid-cols-2 max-w-3xl">
-      {["chairman", "convener"].map((slot) => (
-        <div
-          key={slot}
-          className="h-72 rounded-2xl border border-navy/8 bg-white shadow-card animate-pulse"
-        />
-      ))}
+    <div className="mt-4 max-w-sm">
+      <div className="h-72 rounded-2xl border border-navy/8 bg-white shadow-card animate-pulse" />
     </div>
   );
 }

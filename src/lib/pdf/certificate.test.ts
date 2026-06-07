@@ -8,10 +8,7 @@ describe("buildCertificate", () => {
       fullName: "Ada Lovelace",
       trackName: "UI/UX Design",
       referenceNumber: "SKU-UXD-001",
-      signatories: [
-        { name: "Pastor A", title: "Chairman, Planning Committee" },
-        { name: "Deacon B", title: "Programme Convener" },
-      ],
+      signatory: { name: "Pastor A", title: "Chairman, Planning Committee" },
     });
     expect(Buffer.isBuffer(buf)).toBe(true);
     expect(buf.slice(0, 5).toString()).toBe("%PDF-");
@@ -28,7 +25,7 @@ describe("buildCertificate", () => {
     expect(buf.slice(0, 5).toString()).toBe("%PDF-");
   });
 
-  it("works without signatories", async () => {
+  it("works without a signatory", async () => {
     const buf = await buildCertificate({
       fullName: "Test User",
       trackName: "Soap Making",
@@ -37,16 +34,14 @@ describe("buildCertificate", () => {
     expect(buf.slice(0, 5).toString()).toBe("%PDF-");
   });
 
-  it("embeds signature images when provided", async () => {
+  it("embeds the signature image when provided", async () => {
+    // Any valid PNG works as a stand-in signature; QR output is convenient.
     const png = await qrPngBuffer("signature", { width: 64 });
     const buf = await buildCertificate({
       fullName: "Test User",
       trackName: "Photography",
       referenceNumber: "SKU-PHO-002",
-      signatories: [
-        { name: "Pastor A", title: "Chairman", image: png },
-        { name: "", title: "Programme Convener", image: null },
-      ],
+      signatory: { name: "Pastor A", title: "Chairman", image: png },
     });
     expect(buf.slice(0, 5).toString()).toBe("%PDF-");
   });
@@ -56,9 +51,11 @@ describe("buildCertificate", () => {
       fullName: "Test User",
       trackName: "Photography",
       referenceNumber: "SKU-PHO-003",
-      signatories: [
-        { name: "Pastor A", title: "Chairman", image: Buffer.from("not-png") },
-      ],
+      signatory: {
+        name: "Pastor A",
+        title: "Chairman",
+        image: Buffer.from("not-png"),
+      },
     });
     expect(buf.slice(0, 5).toString()).toBe("%PDF-");
   });

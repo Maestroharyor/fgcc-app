@@ -7,7 +7,7 @@ let supabase: SupabaseMock;
 const hoisted = vi.hoisted(() => ({
   requireRole: vi.fn(),
   createSupabaseServerClient: vi.fn(),
-  loadCertificateSignatories: vi.fn(),
+  loadCertificateSignatory: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/require-role", () => ({
@@ -19,7 +19,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 vi.mock("@/lib/db/signatories", () => ({
-  loadCertificateSignatories: hoisted.loadCertificateSignatories,
+  loadCertificateSignatory: hoisted.loadCertificateSignatory,
 }));
 
 import { GET } from "./route";
@@ -27,10 +27,11 @@ import { GET } from "./route";
 beforeEach(() => {
   vi.clearAllMocks();
   hoisted.requireRole.mockResolvedValue({ role: "admin", userId: "u1" });
-  hoisted.loadCertificateSignatories.mockResolvedValue([
-    { name: "Pastor A", title: "Chairman, Planning Committee", image: null },
-    { name: "", title: "Programme Convener", image: null },
-  ]);
+  hoisted.loadCertificateSignatory.mockResolvedValue({
+    name: "Pastor A",
+    title: "Chairman, Planning Committee",
+    image: null,
+  });
   supabase = createSupabaseMock();
   hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
 });

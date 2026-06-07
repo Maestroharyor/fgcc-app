@@ -44,19 +44,12 @@ beforeEach(() => {
   );
 });
 
-describe("getSignatories", () => {
-  it("returns rows ordered chairman → convener", async () => {
+describe("getSignatory", () => {
+  it("returns the chairman row", async () => {
     supabase = createSupabaseMock({
       from: {
         certificate_signatories: {
           data: [
-            {
-              slot: "convener",
-              name: "B",
-              title: "Programme Convener",
-              image_path: null,
-              updated_at: "",
-            },
             {
               slot: "chairman",
               name: "A",
@@ -70,22 +63,25 @@ describe("getSignatories", () => {
       },
     });
     createSupabaseServerClient.mockImplementation(async () => supabase);
-    const { getSignatories } = await import("./signatories");
-    const rows = await getSignatories();
-    expect(rows.map((r) => r.slot)).toEqual(["chairman", "convener"]);
+    const { getSignatory } = await import("./signatories");
+    const row = await getSignatory();
+    expect(row).toMatchObject({
+      slot: "chairman",
+      name: "A",
+      image_path: "signatures/chairman.png",
+    });
   });
 
-  it("falls back to seeded defaults on error", async () => {
+  it("falls back to the seeded default on error", async () => {
     supabase = createSupabaseMock({
       from: {
         certificate_signatories: { data: null, error: { message: "boom" } },
       },
     });
     createSupabaseServerClient.mockImplementation(async () => supabase);
-    const { getSignatories } = await import("./signatories");
-    const rows = await getSignatories();
-    expect(rows).toHaveLength(2);
-    expect(rows[0]).toMatchObject({
+    const { getSignatory } = await import("./signatories");
+    const row = await getSignatory();
+    expect(row).toMatchObject({
       slot: "chairman",
       title: "Chairman, Planning Committee",
       image_path: null,
@@ -153,8 +149,8 @@ describe("uploadSignatureImage", () => {
   });
 });
 
-describe("loadCertificateSignatories", () => {
-  it("downloads images for rows that have one", async () => {
+describe("loadCertificateSignatory", () => {
+  it("downloads the image when the row has one", async () => {
     supabase = createSupabaseMock({
       from: {
         certificate_signatories: {
@@ -164,13 +160,6 @@ describe("loadCertificateSignatories", () => {
               name: "A",
               title: "Chairman",
               image_path: "signatures/chairman.png",
-              updated_at: "",
-            },
-            {
-              slot: "convener",
-              name: "B",
-              title: "Convener",
-              image_path: null,
               updated_at: "",
             },
           ],
@@ -187,14 +176,13 @@ describe("loadCertificateSignatories", () => {
       })),
     });
     createSupabaseAdminClient.mockImplementation(() => client);
-    const { loadCertificateSignatories } = await import("./signatories");
-    const result = await loadCertificateSignatories();
-    expect(result).toHaveLength(2);
-    expect(result[0].image).toBeInstanceOf(Buffer);
-    expect(result[1].image).toBeNull();
+    const { loadCertificateSignatory } = await import("./signatories");
+    const result = await loadCertificateSignatory();
+    expect(result).toMatchObject({ name: "A", title: "Chairman" });
+    expect(result.image).toBeInstanceOf(Buffer);
   });
 
-  it("degrades to null images when storage is unavailable", async () => {
+  it("degrades to a null image when storage is unavailable", async () => {
     supabase = createSupabaseMock({
       from: {
         certificate_signatories: {
@@ -215,8 +203,8 @@ describe("loadCertificateSignatories", () => {
     createSupabaseAdminClient.mockImplementation(() => {
       throw new Error("no env");
     });
-    const { loadCertificateSignatories } = await import("./signatories");
-    const result = await loadCertificateSignatories();
-    expect(result[0].image).toBeNull();
+    const { loadCertificateSignatory } = await import("./signatories");
+    const result = await loadCertificateSignatory();
+    expect(result.image).toBeNull();
   });
 });
