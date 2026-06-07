@@ -130,20 +130,21 @@ export async function buildCertificate({
   // ── Bottom row: signature left, dates + venue right ───────────────────────
   if (signatory) drawSignatureBlock(doc, signatory, 80, 166);
 
+  // Date sits above the rule, mirroring the signature image on the left.
   const dateX = W - 84;
-  doc.setDrawColor(NAVY);
-  doc.setLineWidth(0.4);
-  doc.line(dateX - 28, 166, dateX + 28, 166);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(NAVY);
-  doc.text(EVENT_DATES, dateX, 171.5, { align: "center" });
+  doc.text(EVENT_DATES, dateX, 163.5, { align: "center" });
+  doc.setDrawColor(NAVY);
+  doc.setLineWidth(0.4);
+  doc.line(dateX - 28, 166, dateX + 28, 166);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(MUTED);
   // Narrow wrap so the venue clears the bottom-right corner triangles.
   const venueLines = doc.splitTextToSize(VENUE, 38) as string[];
-  doc.text(venueLines, dateX, 176.5, {
+  doc.text(venueLines, dateX, 171.5, {
     align: "center",
     lineHeightFactor: 1.4,
   });
@@ -347,9 +348,10 @@ function drawSeal(doc: jsPDF, cx: number, cy: number): void {
   doc.setLineWidth(0.25);
   doc.circle(cx, cy, 10.6, "S");
 
+  // Navy lettering for contrast against the gold disc.
   doc.setFont(SERIF_FONT, "bold");
   doc.setFontSize(10);
-  doc.setTextColor(GOLD_DARK);
+  doc.setTextColor(NAVY);
   doc.text("SKILLUP", cx, cy - 0.5, { align: "center" });
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
