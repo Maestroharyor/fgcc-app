@@ -2,8 +2,10 @@ import { Download } from "lucide-react";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { CertificateActions } from "@/components/admin/CertificateActions";
+import { SignatoryEditor } from "@/components/admin/SignatoryEditor";
 import { TRACKS_BY_CODE } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
+import { getSignatories, getSignatureSignedUrl } from "@/lib/db/signatories";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -25,11 +27,23 @@ export default async function CertificatesPage() {
         Certificates of participation
       </h1>
       <p className="mt-1 text-sm text-navy/65">
-        Preview, download, or email checked-in attendees - every send requires
-        explicit confirmation in the UI below.
+        Preview any registrant&apos;s certificate, then download or email the
+        ones marked present - every send requires explicit confirmation in the
+        UI below.
       </p>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
+      <h2 className="mt-8 font-display text-lg font-semibold text-navy">
+        Signatories
+      </h2>
+      <p className="mt-1 text-sm text-navy/65">
+        The chairman and convener sign every certificate. Upload each signature
+        as a PNG and set the caption printed beneath it.
+      </p>
+      <Suspense fallback={<SignatoriesSkeleton />}>
+        <SignatoriesPanel />
+      </Suspense>
+
+      <div className="mt-10 flex flex-wrap items-center gap-3">
         <a
           href="/api/admin/certificates/download"
           download
@@ -47,6 +61,7 @@ export default async function CertificatesPage() {
               <th className="px-4 py-3">Ref</th>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Track</th>
+              <th className="px-4 py-3">Attendance</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3" />
             </tr>
@@ -60,6 +75,43 @@ export default async function CertificatesPage() {
   );
 }
 
+async function SignatoriesPanel() {
+  const signatories = await getSignatories();
+  const withUrls = await Promise.all(
+    signatories.map(async (s) => ({
+      ...s,
+      imageUrl: s.image_path ? await getSignatureSignedUrl(s.image_path) : null,
+    })),
+  );
+
+  return (
+    <div className="mt-4 grid gap-4 sm:grid-cols-2 max-w-3xl">
+      {withUrls.map((s) => (
+        <SignatoryEditor
+          key={s.slot}
+          slot={s.slot}
+          name={s.name}
+          title={s.title}
+          imageUrl={s.imageUrl}
+        />
+      ))}
+    </div>
+  );
+}
+
+function SignatoriesSkeleton() {
+  return (
+    <div className="mt-4 grid gap-4 sm:grid-cols-2 max-w-3xl">
+      {["chairman", "convener"].map((slot) => (
+        <div
+          key={slot}
+          className="h-72 rounded-2xl border border-navy/8 bg-white shadow-card animate-pulse"
+        />
+      ))}
+    </div>
+  );
+}
+
 async function CertificatesTbody() {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
@@ -67,7 +119,6 @@ async function CertificatesTbody() {
     .select(
       "id, full_name, email, reference_number, attended, certificate_sent_at, track_code",
     )
-    .eq("attended", true)
     .order("created_at", { ascending: false });
 
   type Row = {
@@ -86,10 +137,10 @@ async function CertificatesTbody() {
       {rows.length === 0 && (
         <tr>
           <td
-            colSpan={5}
+            colSpan={6}
             className="px-4 py-10 text-center text-sm text-navy/55"
           >
-            Nobody has been checked in yet. Mark attendance first.
+            No registrations yet.
           </td>
         </tr>
       )}
@@ -111,6 +162,17 @@ async function CertificatesTbody() {
             <td className="px-4 py-3">
               <span
                 className={`inline-flex rounded-full px-2 py-0.5 font-sans text-[10px] uppercase tracking-[0.16em] ${
+                  r.attended
+                    ? "bg-primary/8 text-primary"
+                    : "bg-navy/8 text-navy/60"
+                }`}
+              >
+                {r.attended ? "Attended" : "Registered"}
+              </span>
+            </td>
+            <td className="px-4 py-3">
+              <span
+                className={`inline-flex rounded-full px-2 py-0.5 font-sans text-[10px] uppercase tracking-[0.16em] ${
                   sent
                     ? "bg-emerald-100 text-emerald-700"
                     : "bg-navy/8 text-navy/60"
@@ -120,7 +182,10 @@ async function CertificatesTbody() {
               </span>
             </td>
             <td className="px-4 py-3">
-              <CertificateActions reference={r.reference_number} />
+              <CertificateActions
+                reference={r.reference_number}
+                attended={r.attended}
+              />
             </td>
           </tr>
         );
@@ -151,10 +216,13 @@ function CertificatesTbodySkeleton() {
             <span className="block h-3 w-32 rounded bg-navy/8 animate-pulse" />
           </td>
           <td className="px-4 py-3">
+            <span className="block h-5 w-20 rounded-full bg-navy/8 animate-pulse" />
+          </td>
+          <td className="px-4 py-3">
             <span className="block h-5 w-16 rounded-full bg-navy/8 animate-pulse" />
           </td>
           <td className="px-4 py-3">
-            <span className="block h-7 w-20 rounded-full bg-navy/8 animate-pulse" />
+            <span className="block h-7 w-32 rounded-full bg-navy/8 animate-pulse" />
           </td>
         </tr>
       ))}

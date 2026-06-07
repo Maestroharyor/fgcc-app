@@ -1,16 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { TRACKS } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
+import { loadCertificateSignatories } from "@/lib/db/signatories";
 import { sendCertificateEmail } from "@/lib/email/send";
 import { buildCertificate } from "@/lib/pdf/certificate";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 function trackMeta(code: string | null | undefined) {
-  const t = TRACKS.find((x) => x.code === code);
-  return {
-    name: t?.name ?? "SkillUp track",
-    facilitator: t?.facilitator ?? null,
-  };
+  return { name: TRACKS.find((x) => x.code === code)?.name ?? "SkillUp track" };
 }
 
 interface SendBody {
@@ -49,6 +46,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const signatories = await loadCertificateSignatories();
   let sent = 0;
   let skipped = 0;
   for (const r of attendees as Array<{
@@ -67,7 +65,7 @@ export async function POST(request: NextRequest) {
       fullName: r.full_name,
       referenceNumber: r.reference_number,
       trackName: track.name,
-      facilitatorName: track.facilitator,
+      signatories,
     });
     const result = await sendCertificateEmail(
       r.email,

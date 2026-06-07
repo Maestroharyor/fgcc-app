@@ -8,6 +8,10 @@ const hoisted = vi.hoisted(() => ({
   requireRole: vi.fn(),
   createSupabaseServerClient: vi.fn(),
   sendCertificateEmail: vi.fn(async () => ({ ok: true })),
+  loadCertificateSignatories: vi.fn(async () => [
+    { name: "Pastor A", title: "Chairman, Planning Committee", image: null },
+    { name: "", title: "Programme Convener", image: null },
+  ]),
 }));
 
 vi.mock("@/lib/auth/require-role", () => ({
@@ -20,6 +24,10 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/email/send", () => ({
   sendCertificateEmail: hoisted.sendCertificateEmail,
+}));
+
+vi.mock("@/lib/db/signatories", () => ({
+  loadCertificateSignatories: hoisted.loadCertificateSignatories,
 }));
 
 import { POST } from "./route";

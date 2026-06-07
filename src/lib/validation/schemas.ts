@@ -305,3 +305,25 @@ export const EnquirySchema = z.object({
 });
 
 export type EnquiryInput = z.infer<typeof EnquirySchema>;
+
+/**
+ * Certificate signatory captions (superadmin certificates page). The name may
+ * be empty while the committee is still deciding; the title always prints.
+ * The signature PNG itself is validated separately in the server action
+ * (magic bytes + size cap) because Zod doesn't see the FormData file.
+ */
+export const SignatorySchema = z.object({
+  slot: z.enum(["chairman", "convener"], { message: "Unknown signatory" }),
+  name: z
+    .string()
+    .trim()
+    .max(80, "Keep the name under 80 characters")
+    .default(""),
+  title: z
+    .string({ message: "Add a title" })
+    .trim()
+    .min(2, "Add a title")
+    .max(80, "Keep the title under 80 characters"),
+});
+
+export type SignatoryInput = z.infer<typeof SignatorySchema>;

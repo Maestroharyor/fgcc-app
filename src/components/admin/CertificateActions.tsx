@@ -1,14 +1,16 @@
 "use client";
 
-import { Download, Mail } from "lucide-react";
+import { Download, Eye, Mail } from "lucide-react";
 import { useState, useTransition } from "react";
 
 interface Props {
   reference?: string;
   bulk?: boolean;
+  /** Download + Send only make sense once the registrant is marked present. */
+  attended?: boolean;
 }
 
-export function CertificateActions({ reference, bulk }: Props) {
+export function CertificateActions({ reference, bulk, attended }: Props) {
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
 
@@ -16,7 +18,7 @@ export function CertificateActions({ reference, bulk }: Props) {
     const isBulk = Boolean(bulk);
     const confirmed = window.confirm(
       isBulk
-        ? "Send certificate emails to ALL checked-in attendees with a valid email?"
+        ? "Send certificate emails to ALL attendees with a valid email?"
         : `Send certificate to ${reference}?`,
     );
     if (!confirmed) return;
@@ -63,21 +65,33 @@ export function CertificateActions({ reference, bulk }: Props) {
   return (
     <div className="flex items-center gap-2">
       <a
-        href={`/api/admin/certificates/download?ref=${reference}`}
-        download
+        href={`/api/admin/certificates/download?ref=${reference}&preview=1`}
+        target="_blank"
+        rel="noreferrer"
         className="inline-flex items-center gap-1.5 rounded-full border border-navy/15 bg-white px-3 py-1 font-display text-xs font-semibold text-navy hover:bg-cream-100"
       >
-        <Download className="h-3.5 w-3.5" aria-hidden /> PDF
+        <Eye className="h-3.5 w-3.5" aria-hidden /> Preview
       </a>
-      <button
-        type="button"
-        onClick={onSend}
-        disabled={pending}
-        className="inline-flex items-center gap-1.5 rounded-full bg-primary/8 px-3 py-1 font-display text-xs font-semibold text-primary hover:bg-primary/15 disabled:opacity-60"
-      >
-        <Mail className="h-3.5 w-3.5" aria-hidden />{" "}
-        {pending ? "Sending…" : "Send"}
-      </button>
+      {attended && (
+        <>
+          <a
+            href={`/api/admin/certificates/download?ref=${reference}`}
+            download
+            className="inline-flex items-center gap-1.5 rounded-full border border-navy/15 bg-white px-3 py-1 font-display text-xs font-semibold text-navy hover:bg-cream-100"
+          >
+            <Download className="h-3.5 w-3.5" aria-hidden /> PDF
+          </a>
+          <button
+            type="button"
+            onClick={onSend}
+            disabled={pending}
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary/8 px-3 py-1 font-display text-xs font-semibold text-primary hover:bg-primary/15 disabled:opacity-60"
+          >
+            <Mail className="h-3.5 w-3.5" aria-hidden />{" "}
+            {pending ? "Sending…" : "Send"}
+          </button>
+        </>
+      )}
       {message && <span className="text-xs text-navy/60">{message}</span>}
     </div>
   );
