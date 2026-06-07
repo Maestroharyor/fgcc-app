@@ -52,11 +52,17 @@ export async function buildCertificate({
   doc.setFillColor(PAGE_BG);
   doc.rect(0, 0, W, H, "F");
   drawDiamondPattern(doc, W, H);
+  drawWatermarkSeal(doc, CX, 100, 40);
 
-  // Thin gold frame.
+  // Double frame: thin gold outer rect, navy hairline inside, gold corner
+  // ticks for the engraved look.
   doc.setDrawColor(GOLD);
   doc.setLineWidth(0.5);
   doc.rect(11, 11, W - 22, H - 22, "S");
+  doc.setDrawColor(NAVY);
+  doc.setLineWidth(0.2);
+  doc.rect(13.5, 13.5, W - 27, H - 27, "S");
+  drawCornerTicks(doc, W, H);
 
   drawCornerGeometry(doc, W, H);
   drawSeal(doc, W - 50, 52);
@@ -101,6 +107,21 @@ export async function buildCertificate({
   doc.setDrawColor(PRIMARY);
   doc.setLineWidth(0.4);
   doc.line(CX - 85, 98, CX + 85, 98);
+
+  // Gold diamond ornament on the rule, echoing the background pattern.
+  polygon(
+    doc,
+    [
+      [CX, 98 - 2.2],
+      [CX + 2.2, 98],
+      [CX, 98 + 2.2],
+      [CX - 2.2, 98],
+    ],
+    GOLD,
+  );
+  doc.setFillColor(GOLD);
+  doc.circle(CX - 5.5, 98, 0.55, "F");
+  doc.circle(CX + 5.5, 98, 0.55, "F");
 
   // ── Track + body copy ─────────────────────────────────────────────────────
   const trackLine = `For completing the ${trackName} track`;
@@ -153,7 +174,8 @@ export async function buildCertificate({
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(MUTED);
-  doc.text(`Ref: ${referenceNumber}`, 15.5, H - 13.5);
+  // Inside the hairline and clear of the corner tick.
+  doc.text(`Ref: ${referenceNumber}`, 22, H - 17);
 
   const arrayBuffer = doc.output("arraybuffer");
   return Buffer.from(arrayBuffer);
@@ -204,6 +226,45 @@ function polygon(
     return [p[0] - prev[0], p[1] - prev[1]];
   });
   doc.lines(segments, first[0], first[1], [1, 1], "F", true);
+}
+
+const WM_FILL = "#EFF2F9";
+const WM_LINE = "#E1E6F2";
+
+/** Large, very faint ghost of the rosette behind the body copy. */
+function drawWatermarkSeal(
+  doc: jsPDF,
+  cx: number,
+  cy: number,
+  r: number,
+): void {
+  doc.setFillColor(WM_FILL);
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2;
+    doc.circle(cx + Math.cos(a) * r, cy + Math.sin(a) * r, r * 0.14, "F");
+  }
+  doc.circle(cx, cy, r, "F");
+  doc.setDrawColor(WM_LINE);
+  doc.setLineWidth(0.5);
+  doc.circle(cx, cy, r * 0.82, "S");
+  doc.setLineWidth(0.25);
+  doc.circle(cx, cy, r * 0.75, "S");
+}
+
+/** Small gold L-brackets just inside the navy hairline corners. */
+function drawCornerTicks(doc: jsPDF, w: number, h: number): void {
+  const inset = 13.5 + 2.2;
+  const arm = 5;
+  doc.setDrawColor(GOLD);
+  doc.setLineWidth(0.4);
+  for (const dx of [1, -1] as const) {
+    for (const dy of [1, -1] as const) {
+      const x = dx === 1 ? inset : w - inset;
+      const y = dy === 1 ? inset : h - inset;
+      doc.line(x, y, x + dx * arm, y);
+      doc.line(x, y, x, y + dy * arm);
+    }
+  }
 }
 
 /** Sparse grid of tiny diamonds, offset every other row. */
