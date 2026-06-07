@@ -36,6 +36,7 @@ export const fixtureRegistration: DBRegistration = {
   how_heard: "whatsapp",
   attended: false,
   attended_at: null,
+  attendance_log: null,
   reminder_3day_sent_at: null,
   reminder_1day_sent_at: null,
   feedback_request_sent_at: null,
@@ -49,4 +50,5 @@ export const fixtureAttendedRegistration: DBRegistration = {
   reference_number: "SKU-UXD-002",
   attended: true,
   attended_at: "2026-06-12T09:30:00Z",
+  attendance_log: ["2026-06-12T09:30:00Z"],
 };

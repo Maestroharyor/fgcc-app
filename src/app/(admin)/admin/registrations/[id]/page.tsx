@@ -1,4 +1,4 @@
-import { ArrowLeft, Mail, Phone } from "lucide-react";
+import { ArrowLeft, Award, Mail, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -80,6 +80,13 @@ async function RegistrantProfileSection({
   const registration = await getRegistrationById(id);
   if (!registration) notFound();
   const track = trackByCode(registration.track_code);
+  // Every checked-in day; rows from before the attendance_log migration fall
+  // back to the single legacy timestamp.
+  const attendanceDays = registration.attendance_log?.length
+    ? registration.attendance_log
+    : registration.attended_at
+      ? [registration.attended_at]
+      : [];
   // Who registered this person, for "register for others" submissions.
   const batch = registration.batch_id
     ? await getBatchById(registration.batch_id)
@@ -136,14 +143,25 @@ async function RegistrantProfileSection({
         <Row label="Registered at">
           {formatInLagos(new Date(registration.created_at), "MMM d, yyyy")}
         </Row>
-        <Row label="Attended">{registration.attended ? "Yes" : "No"}</Row>
+        <Row label="Attended">
+          {registration.attended
+            ? attendanceDays.length > 1
+              ? `Yes · ${attendanceDays.length} days`
+              : "Yes"
+            : "No"}
+        </Row>
         <Row label="Attended at">
-          {registration.attended_at
-            ? formatInLagos(
-                new Date(registration.attended_at),
-                "MMM d, yyyy 'at' h:mm a",
-              )
-            : "-"}
+          {attendanceDays.length === 0 ? (
+            "-"
+          ) : (
+            <span className="flex flex-col gap-0.5">
+              {attendanceDays.map((d) => (
+                <span key={d}>
+                  {formatInLagos(new Date(d), "EEE, MMM d 'at' h:mm a")}
+                </span>
+              ))}
+            </span>
+          )}
         </Row>
       </dl>
 
@@ -191,9 +209,17 @@ async function RegistrantProfileSection({
             type="submit"
             className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 font-display text-sm font-semibold text-white hover:bg-primary-700"
           >
-            {registration.attended ? "Re-mark attended" : "Mark attended"}
+            {registration.attended ? "Check in for today" : "Mark attended"}
           </button>
         </form>
+        {role === "superadmin" && (
+          <Link
+            href={`/admin/certificates?q=${registration.reference_number}`}
+            className="inline-flex items-center gap-2 rounded-full border border-navy/15 bg-white px-4 py-2 font-display text-sm font-semibold text-navy hover:bg-cream-100"
+          >
+            <Award className="h-4 w-4" aria-hidden /> View certificate
+          </Link>
+        )}
         <EditRegistrationButton
           id={registration.id}
           fullName={registration.full_name}

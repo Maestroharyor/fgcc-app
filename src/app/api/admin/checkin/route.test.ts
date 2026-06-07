@@ -49,7 +49,7 @@ describe("POST /api/admin/checkin", () => {
     expect(res.status).toBe(404);
   });
 
-  it("returns alreadyChecked:true when already attended", async () => {
+  it("returns alreadyChecked:true when already checked in today (legacy row)", async () => {
     supabase = createSupabaseMock({
       from: {
         registrations: {
@@ -58,6 +58,8 @@ describe("POST /api/admin/checkin", () => {
             reference_number: "SKU-UXD-001",
             full_name: "Ada",
             attended: true,
+            // Pre-migration row: no attendance_log, single attended_at today.
+            attended_at: new Date().toISOString(),
             track_id: "t1",
             tracks: { name: "UI/UX Design" },
           },
@@ -70,7 +72,75 @@ describe("POST /api/admin/checkin", () => {
     const body = await res.json();
     expect(body.ok).toBe(false);
     expect(body.alreadyChecked).toBe(true);
+    expect(body.daysAttended).toBe(1);
     expect(body.registrant.referenceNumber).toBe("SKU-UXD-001");
+  });
+
+  it("returns alreadyChecked:true when today is already in the log", async () => {
+    supabase = createSupabaseMock({
+      from: {
+        registrations: {
+          data: {
+            id: "r1",
+            reference_number: "SKU-UXD-001",
+            full_name: "Ada",
+            attended: true,
+            attended_at: new Date().toISOString(),
+            attendance_log: [
+              "2020-01-01T09:30:00.000Z",
+              new Date().toISOString(),
+            ],
+            track_id: "t1",
+            tracks: { name: "UI/UX Design" },
+          },
+          error: null,
+        },
+      },
+    });
+    hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
+    const res = await POST(makeJsonReq({ reference_number: "SKU-UXD-001" }));
+    const body = await res.json();
+    expect(body.ok).toBe(false);
+    expect(body.alreadyChecked).toBe(true);
+    expect(body.daysAttended).toBe(2);
+  });
+
+  it("appends a second day to the attendance log", async () => {
+    supabase = createSupabaseMock({
+      from: {
+        registrations: {
+          data: {
+            id: "r1",
+            reference_number: "SKU-UXD-001",
+            full_name: "Ada",
+            attended: true,
+            attended_at: "2020-01-01T09:30:00.000Z",
+            attendance_log: ["2020-01-01T09:30:00.000Z"],
+            track_id: "t1",
+            tracks: { name: "UI/UX Design" },
+          },
+          error: null,
+        },
+      },
+    });
+    hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
+    const res = await POST(makeJsonReq({ reference_number: "SKU-UXD-001" }));
+    const body = await res.json();
+    expect(body.ok).toBe(true);
+    expect(body.daysAttended).toBe(2);
+    const updatePayload = supabase._calls
+      .find(
+        (c) =>
+          c.table === "registrations" &&
+          c.filters.some((f) => f.method === "update"),
+      )
+      ?.filters.find((f) => f.method === "update")?.args[0] as {
+      attended: boolean;
+      attendance_log: string[];
+    };
+    expect(updatePayload.attended).toBe(true);
+    expect(updatePayload.attendance_log).toHaveLength(2);
+    expect(updatePayload.attendance_log[0]).toBe("2020-01-01T09:30:00.000Z");
   });
 
   it("flips attended → true on the happy path", async () => {

@@ -47,7 +47,10 @@ export interface DBRegistration {
   batch_id: string | null;
   how_heard: string | null;
   attended: boolean;
+  /** Most recent check-in. */
   attended_at: string | null;
+  /** ISO timestamp per checked-in day; null until migration 005 is applied. */
+  attendance_log: string[] | null;
   reminder_3day_sent_at: string | null;
   reminder_1day_sent_at: string | null;
   feedback_request_sent_at: string | null;

@@ -6,6 +6,8 @@ import { useState, useTransition } from "react";
 interface CheckinResult {
   ok: boolean;
   alreadyChecked?: boolean;
+  /** Distinct days checked in, including today's. */
+  daysAttended?: number;
   registrant?: {
     referenceNumber: string;
     fullName: string;
@@ -79,6 +81,9 @@ export function CheckinForm() {
                 </div>
                 <div className="font-sans text-xs">
                   {result.registrant.referenceNumber} marked present
+                  {result.daysAttended && result.daysAttended > 1
+                    ? ` · day ${result.daysAttended}`
+                    : ""}
                 </div>
               </div>
             </div>
@@ -89,7 +94,7 @@ export function CheckinForm() {
               <div>
                 <div className="font-display font-semibold">
                   {result.alreadyChecked
-                    ? "Already checked in"
+                    ? "Already checked in today"
                     : "Couldn't check in"}
                 </div>
                 {result.registrant && (

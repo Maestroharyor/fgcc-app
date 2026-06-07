@@ -1,12 +1,14 @@
 import { Download } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { CertificateActions } from "@/components/admin/CertificateActions";
+import { CertificatesFilters } from "@/components/admin/CertificatesFilters";
 import { SignatoryEditor } from "@/components/admin/SignatoryEditor";
 import { TRACKS_BY_CODE } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
+import { listRegistrations } from "@/lib/db/registrations";
 import { getSignatory, getSignatureSignedUrl } from "@/lib/db/signatories";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +17,19 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function CertificatesPage() {
+interface PageProps {
+  searchParams: Promise<{
+    q?: string;
+    page?: string;
+    track?: string;
+    attended?: "yes" | "no";
+    sent?: "yes" | "no";
+  }>;
+}
+
+export default async function CertificatesPage({ searchParams }: PageProps) {
   await requireRole("superadmin");
+  const params = await searchParams;
 
   return (
     <div className="px-6 md:px-10 py-10">
@@ -54,23 +67,19 @@ export default async function CertificatesPage() {
         <CertificateActions bulk />
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-navy/8 bg-white shadow-card">
-        <table className="min-w-full text-sm">
-          <thead className="bg-cream-100">
-            <tr className="text-left font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
-              <th className="px-4 py-3">Ref</th>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Track</th>
-              <th className="px-4 py-3">Attendance</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <Suspense fallback={<CertificatesTbodySkeleton />}>
-            <CertificatesTbody />
-          </Suspense>
-        </table>
-      </div>
+      {/* Live filters drive the URL search params (no Apply, soft navigation).
+          Suspense is required because the component reads useSearchParams. */}
+      <Suspense
+        fallback={
+          <div className="mt-6 h-11 rounded-full bg-navy/5 animate-pulse" />
+        }
+      >
+        <CertificatesFilters />
+      </Suspense>
+
+      <Suspense fallback={<CertificatesTableSkeleton />}>
+        <CertificatesTable params={params} />
+      </Suspense>
     </div>
   );
 }
@@ -101,120 +110,174 @@ function SignatorySkeleton() {
   );
 }
 
-async function CertificatesTbody() {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("registrations")
-    .select(
-      "id, full_name, email, reference_number, attended, certificate_sent_at, track_code",
-    )
-    .order("created_at", { ascending: false });
+interface CertificatesTableParams {
+  q?: string;
+  page?: string;
+  track?: string;
+  attended?: "yes" | "no";
+  sent?: "yes" | "no";
+}
 
-  type Row = {
-    id: string;
-    full_name: string;
-    email: string;
-    reference_number: string;
-    attended: boolean;
-    certificate_sent_at: string | null;
-    track_code: string;
+async function CertificatesTable({
+  params,
+}: {
+  params: CertificatesTableParams;
+}) {
+  const page = Number(params.page ?? "1") || 1;
+  const { rows, total, pageSize } = await listRegistrations({
+    query: params.q,
+    trackCode: params.track,
+    attended:
+      params.attended === "yes"
+        ? true
+        : params.attended === "no"
+          ? false
+          : undefined,
+    certificateSent:
+      params.sent === "yes" ? true : params.sent === "no" ? false : undefined,
+    page,
+    pageSize: 50,
+  });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const buildHref = (overrides: Record<string, string | number>) => {
+    const sp = new URLSearchParams();
+    const merge = { ...params, ...overrides };
+    for (const [k, v] of Object.entries(merge)) {
+      if (v !== undefined && v !== "" && v !== null) sp.set(k, String(v));
+    }
+    return `/admin/certificates?${sp.toString()}`;
   };
-  const rows = (data ?? []) as Row[];
 
   return (
-    <tbody>
-      {rows.length === 0 && (
-        <tr>
-          <td
-            colSpan={6}
-            className="px-4 py-10 text-center text-sm text-navy/55"
-          >
-            No registrations yet.
-          </td>
-        </tr>
-      )}
-      {rows.map((r) => {
-        const trackName = TRACKS_BY_CODE[r.track_code]?.name ?? r.track_code;
-        const sent = Boolean(r.certificate_sent_at);
-        return (
-          <tr key={r.id} className="border-t border-navy/6 hover:bg-cream">
-            <td className="px-4 py-3 font-sans text-[12px] text-primary">
-              {r.reference_number}
-            </td>
-            <td className="px-4 py-3">
-              <div className="font-display font-medium text-navy">
-                {r.full_name}
-              </div>
-              <div className="text-xs text-navy/55">{r.email}</div>
-            </td>
-            <td className="px-4 py-3">{trackName}</td>
-            <td className="px-4 py-3">
-              <span
-                className={`inline-flex rounded-full px-2 py-0.5 font-sans text-[10px] uppercase tracking-[0.16em] ${
-                  r.attended
-                    ? "bg-primary/8 text-primary"
-                    : "bg-navy/8 text-navy/60"
-                }`}
+    <>
+      <p className="mt-6 mb-3 text-sm text-navy/65">
+        {total.toLocaleString()} total
+      </p>
+      <div className="overflow-hidden rounded-2xl border border-navy/8 bg-white shadow-card">
+        <table className="min-w-full text-sm">
+          <thead className="bg-cream-100">
+            <tr className="text-left font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
+              <th className="px-4 py-3">Ref</th>
+              <th className="px-4 py-3">Name</th>
+              <th className="px-4 py-3">Track</th>
+              <th className="px-4 py-3">Attendance</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-4 py-10 text-center text-sm text-navy/55"
+                >
+                  No matching registrations.
+                </td>
+              </tr>
+            )}
+            {rows.map((r) => {
+              const trackName =
+                TRACKS_BY_CODE[r.track_code]?.name ?? r.track_code;
+              const sent = Boolean(r.certificate_sent_at);
+              const days = r.attendance_log?.length ?? 0;
+              return (
+                <tr
+                  key={r.id}
+                  className="border-t border-navy/6 hover:bg-cream"
+                >
+                  <td className="px-4 py-3 font-sans text-[12px] text-primary">
+                    {r.reference_number}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="font-display font-medium text-navy">
+                      {r.full_name}
+                    </div>
+                    <div className="text-xs text-navy/55">{r.email}</div>
+                  </td>
+                  <td className="px-4 py-3">{trackName}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex rounded-full px-2 py-0.5 font-sans text-[10px] uppercase tracking-[0.16em] ${
+                        r.attended
+                          ? "bg-primary/8 text-primary"
+                          : "bg-navy/8 text-navy/60"
+                      }`}
+                    >
+                      {r.attended
+                        ? days > 1
+                          ? `Attended · ${days} days`
+                          : "Attended"
+                        : "Registered"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex rounded-full px-2 py-0.5 font-sans text-[10px] uppercase tracking-[0.16em] ${
+                        sent
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-navy/8 text-navy/60"
+                      }`}
+                    >
+                      {sent ? "Sent" : "Not sent"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <CertificateActions
+                      reference={r.reference_number}
+                      attended={r.attended}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-navy/6 text-xs">
+          <span className="text-navy/55">
+            {total === 0
+              ? "0 records"
+              : `Showing ${(page - 1) * pageSize + 1} – ${Math.min(page * pageSize, total)} of ${total}`}
+          </span>
+          <div className="flex items-center gap-2">
+            {page > 1 && (
+              <Link
+                href={buildHref({ page: page - 1 })}
+                className="rounded-full border border-navy/15 px-3 py-1 font-display font-medium text-navy hover:bg-cream-100"
               >
-                {r.attended ? "Attended" : "Registered"}
-              </span>
-            </td>
-            <td className="px-4 py-3">
-              <span
-                className={`inline-flex rounded-full px-2 py-0.5 font-sans text-[10px] uppercase tracking-[0.16em] ${
-                  sent
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-navy/8 text-navy/60"
-                }`}
+                Previous
+              </Link>
+            )}
+            <span className="font-sans text-navy/55">
+              {page} / {totalPages}
+            </span>
+            {page < totalPages && (
+              <Link
+                href={buildHref({ page: page + 1 })}
+                className="rounded-full border border-navy/15 px-3 py-1 font-display font-medium text-navy hover:bg-cream-100"
               >
-                {sent ? "Sent" : "Not sent"}
-              </span>
-            </td>
-            <td className="px-4 py-3">
-              <CertificateActions
-                reference={r.reference_number}
-                attended={r.attended}
-              />
-            </td>
-          </tr>
-        );
-      })}
-    </tbody>
+                Next
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
-function CertificatesTbodySkeleton() {
+function CertificatesTableSkeleton() {
   return (
-    <tbody>
-      {Array.from({ length: 6 }).map((_, i) => (
-        <tr
-          key={`cert-skel-${
-            // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder
-            i
-          }`}
-          className="border-t border-navy/6"
-        >
-          <td className="px-4 py-3">
-            <span className="block h-3 w-20 rounded bg-navy/8 animate-pulse" />
-          </td>
-          <td className="px-4 py-3">
-            <span className="block h-4 w-40 rounded bg-navy/8 animate-pulse" />
-            <span className="mt-1 block h-3 w-32 rounded bg-navy/8 animate-pulse" />
-          </td>
-          <td className="px-4 py-3">
-            <span className="block h-3 w-32 rounded bg-navy/8 animate-pulse" />
-          </td>
-          <td className="px-4 py-3">
-            <span className="block h-5 w-20 rounded-full bg-navy/8 animate-pulse" />
-          </td>
-          <td className="px-4 py-3">
-            <span className="block h-5 w-16 rounded-full bg-navy/8 animate-pulse" />
-          </td>
-          <td className="px-4 py-3">
-            <span className="block h-7 w-32 rounded-full bg-navy/8 animate-pulse" />
-          </td>
-        </tr>
-      ))}
-    </tbody>
+    <div className="mt-6 rounded-2xl border border-navy/8 bg-white shadow-card overflow-hidden">
+      <div className="space-y-px">
+        {["a", "b", "c", "d", "e", "f"].map((row) => (
+          <div key={`cert-skel-${row}`} className="px-4 py-4">
+            <span className="block h-4 w-2/3 rounded bg-navy/8 animate-pulse" />
+            <span className="mt-2 block h-3 w-1/3 rounded bg-navy/8 animate-pulse" />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

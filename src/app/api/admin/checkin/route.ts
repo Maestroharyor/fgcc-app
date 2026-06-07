@@ -1,7 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { TRACKS } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
+import type { DBRegistration } from "@/lib/db/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { formatInLagos } from "@/lib/utils/date";
 import { CheckinSchema } from "@/lib/validation/schemas";
 
 export async function POST(request: NextRequest) {
@@ -31,11 +33,12 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const { data: row, error } = await supabase
+  const { data, error } = await supabase
     .from("registrations")
-    .select("id, reference_number, full_name, attended, track_code")
+    .select("*")
     .eq("reference_number", parsed.reference_number)
     .maybeSingle();
+  const row = data as DBRegistration | null;
 
   if (error || !row) {
     return NextResponse.json(
@@ -51,18 +54,46 @@ export async function POST(request: NextRequest) {
     trackName,
   };
 
-  if (row.attended) {
+  // One check-in per Lagos calendar day. Rows from before migration 005 have
+  // no log; their single attended_at stands in for it.
+  const log: string[] = Array.isArray(row.attendance_log)
+    ? row.attendance_log
+    : row.attended_at
+      ? [row.attended_at]
+      : [];
+  const now = new Date();
+  const today = formatInLagos(now, "yyyy-MM-dd");
+  const alreadyToday = log.some(
+    (d) => formatInLagos(new Date(d), "yyyy-MM-dd") === today,
+  );
+
+  if (alreadyToday) {
     return NextResponse.json({
       ok: false,
       alreadyChecked: true,
+      daysAttended: log.length,
       registrant,
     });
   }
 
-  const { error: updErr } = await supabase
+  const nowIso = now.toISOString();
+  let { error: updErr } = await supabase
     .from("registrations")
-    .update({ attended: true, attended_at: new Date().toISOString() })
+    .update({
+      attended: true,
+      attended_at: nowIso,
+      attendance_log: [...log, nowIso],
+    })
     .eq("id", row.id);
+
+  if (updErr) {
+    // attendance_log may not exist yet (migration 005 unapplied) — fall back
+    // to the legacy single-day update so check-in keeps working.
+    ({ error: updErr } = await supabase
+      .from("registrations")
+      .update({ attended: true, attended_at: nowIso })
+      .eq("id", row.id));
+  }
 
   if (updErr) {
     return NextResponse.json(
@@ -71,5 +102,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({ ok: true, registrant });
+  return NextResponse.json({
+    ok: true,
+    daysAttended: log.length + 1,
+    registrant,
+  });
 }

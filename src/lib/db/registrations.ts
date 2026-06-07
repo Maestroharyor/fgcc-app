@@ -52,6 +52,8 @@ export interface RegistrationsFilter {
   trackCode?: string;
   type?: "self" | "others" | "offline";
   attended?: boolean;
+  /** true = certificate_sent_at set, false = still null. */
+  certificateSent?: boolean;
   page?: number;
   pageSize?: number;
   sortBy?: "created_at" | "full_name" | "reference_number";
@@ -73,6 +75,7 @@ export async function listRegistrations(
     trackCode,
     type,
     attended,
+    certificateSent,
     page = 1,
     pageSize = 50,
     sortBy = "created_at",
@@ -93,6 +96,11 @@ export async function listRegistrations(
   if (trackCode) q = q.eq("track_code", trackCode.toUpperCase());
   if (type) q = q.eq("registered_via", type);
   if (attended !== undefined) q = q.eq("attended", attended);
+  if (certificateSent !== undefined) {
+    q = certificateSent
+      ? q.not("certificate_sent_at", "is", null)
+      : q.is("certificate_sent_at", null);
+  }
 
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;

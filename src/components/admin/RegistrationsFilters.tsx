@@ -1,8 +1,7 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TRACKS } from "@/content/tracks";
-import { useDebouncedCallback } from "@/lib/hooks/use-debounced-callback";
+import { useUrlFilters } from "@/lib/hooks/use-url-filters";
 
 /**
  * Live filter bar for /admin/registrations. The URL search params ARE the state
@@ -11,27 +10,7 @@ import { useDebouncedCallback } from "@/lib/hooks/use-debounced-callback";
  * navigation, no full reload), and the server page re-queries on the new params.
  */
 export function RegistrationsFilters() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  // Merge updates into the current params (empty = delete), reset pagination,
-  // and soft-navigate. replace (not push) so keystrokes don't flood history.
-  const apply = (updates: Record<string, string>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(updates)) {
-      if (value) params.set(key, value);
-      else params.delete(key);
-    }
-    params.delete("page");
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  };
-
-  const debouncedSearch = useDebouncedCallback(
-    (value: string) => apply({ q: value }),
-    400,
-  );
+  const { searchParams, apply, debouncedSearch } = useUrlFilters();
 
   return (
     <div className="mt-6 grid grid-cols-1 md:grid-cols-[1fr_220px_180px_160px] gap-3">

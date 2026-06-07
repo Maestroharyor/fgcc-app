@@ -131,6 +131,33 @@ describe("listRegistrations", () => {
     expect(range?.args).toEqual([25, 49]);
   });
 
+  it("applies the certificateSent filter in both directions", async () => {
+    supabase = createSupabaseMock({
+      from: { registrations: { data: [], error: null, count: 0 } },
+    });
+    createSupabaseServerClient.mockImplementation(async () => supabase);
+    const { listRegistrations } = await import("./registrations");
+
+    await listRegistrations({ certificateSent: true });
+    let filters = supabase._calls.at(-1)?.filters ?? [];
+    expect(
+      filters.some(
+        (f) => f.method === "not" && f.args[0] === "certificate_sent_at",
+      ),
+    ).toBe(true);
+
+    await listRegistrations({ certificateSent: false });
+    filters = supabase._calls.at(-1)?.filters ?? [];
+    expect(
+      filters.some(
+        (f) =>
+          f.method === "is" &&
+          f.args[0] === "certificate_sent_at" &&
+          f.args[1] === null,
+      ),
+    ).toBe(true);
+  });
+
   it("returns empty page when query errors out", async () => {
     supabase = createSupabaseMock({
       from: {
