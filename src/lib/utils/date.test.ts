@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countdownTo, formatInLagos } from "./date";
+import { countdownTo, formatDate } from "./date";
 
 describe("countdownTo", () => {
   it("computes days/hours/minutes/seconds for a future target", () => {
@@ -44,9 +44,9 @@ describe("countdownTo", () => {
   });
 });
 
-describe("formatInLagos", () => {
+describe("formatDate", () => {
   it("formats a date using the Africa/Lagos timezone", () => {
     const date = new Date("2026-06-12T08:00:00Z"); // 09:00 in Lagos (UTC+1)
-    expect(formatInLagos(date, "yyyy-MM-dd HH:mm")).toBe("2026-06-12 09:00");
+    expect(formatDate(date, "yyyy-MM-dd HH:mm")).toBe("2026-06-12 09:00");
   });
 });

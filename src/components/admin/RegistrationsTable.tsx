@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Track } from "@/content/tracks";
 import type { DBRegistration, RegistrationVia } from "@/lib/db/types";
+import { formatDate } from "@/lib/utils/date";
 
 /** Human label for each registration channel. Shared with the detail page. */
 export const REGISTERED_VIA_LABEL: Record<RegistrationVia, string> = {
@@ -104,7 +105,7 @@ export function RegistrationsTable({
                     </span>
                   </Td>
                   <Td className="whitespace-nowrap text-navy/65">
-                    {new Date(r.created_at).toLocaleDateString()}
+                    {formatDate(new Date(r.created_at), "MMM d, yyyy")}
                   </Td>
                   <Td>
                     <Link

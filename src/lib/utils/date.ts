@@ -47,6 +47,12 @@ export function countdownTo(
   };
 }
 
-export function formatInLagos(date: Date, pattern: string): string {
+/**
+ * Format a date pinned to Africa/Lagos (the event timezone), regardless of
+ * where the code runs. Server renders happen in UTC on Vercel, so a naive
+ * toLocaleDateString would show the wrong day around midnight; this keeps
+ * every display (and the per-day check-in boundary) on Lagos time.
+ */
+export function formatDate(date: Date, pattern: string): string {
   return format(date, pattern, { in: lagos });
 }

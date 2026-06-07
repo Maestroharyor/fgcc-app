@@ -5,6 +5,7 @@ import { buildCsv } from "@/lib/csv/export";
 import { listRegistrations } from "@/lib/db/registrations";
 import { buildXlsx } from "@/lib/excel/export";
 import { buildPrintableList } from "@/lib/pdf/printable-list";
+import { formatDate } from "@/lib/utils/date";
 
 export async function GET(request: NextRequest) {
   await requireRole("admin");
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest) {
   if (format === "pdf") {
     const buf = buildPrintableList(
       "SkillUp 1.0 - Registrations",
-      `${decorated.length} records · ${new Date().toLocaleString()}`,
+      `${decorated.length} records · ${formatDate(new Date(), "MMM d, yyyy 'at' h:mm a")}`,
       decorated,
       [
         { header: "Reference", width: 32, value: (r) => r.reference_number },

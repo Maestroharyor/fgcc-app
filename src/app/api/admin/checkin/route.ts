@@ -3,7 +3,7 @@ import { TRACKS } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
 import type { DBRegistration } from "@/lib/db/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { formatInLagos } from "@/lib/utils/date";
+import { formatDate } from "@/lib/utils/date";
 import { CheckinSchema } from "@/lib/validation/schemas";
 
 export async function POST(request: NextRequest) {
@@ -62,9 +62,9 @@ export async function POST(request: NextRequest) {
       ? [row.attended_at]
       : [];
   const now = new Date();
-  const today = formatInLagos(now, "yyyy-MM-dd");
+  const today = formatDate(now, "yyyy-MM-dd");
   const alreadyToday = log.some(
-    (d) => formatInLagos(new Date(d), "yyyy-MM-dd") === today,
+    (d) => formatDate(new Date(d), "yyyy-MM-dd") === today,
   );
 
   if (alreadyToday) {

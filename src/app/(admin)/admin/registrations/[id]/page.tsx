@@ -10,7 +10,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { getBatchById } from "@/lib/db/batches";
 import { getRegistrationById } from "@/lib/db/registrations";
 import type { Role } from "@/lib/db/types";
-import { formatInLagos } from "@/lib/utils/date";
+import { formatDate } from "@/lib/utils/date";
 
 export const dynamic = "force-dynamic";
 
@@ -141,7 +141,7 @@ async function RegistrantProfileSection({
         </Row>
         <Row label="Church">{registration.church ?? "-"}</Row>
         <Row label="Registered at">
-          {formatInLagos(new Date(registration.created_at), "MMM d, yyyy")}
+          {formatDate(new Date(registration.created_at), "MMM d, yyyy")}
         </Row>
         <Row label="Attended">
           {registration.attended
@@ -157,7 +157,7 @@ async function RegistrantProfileSection({
             <span className="flex flex-col gap-0.5">
               {attendanceDays.map((d) => (
                 <span key={d}>
-                  {formatInLagos(new Date(d), "EEE, MMM d 'at' h:mm a")}
+                  {formatDate(new Date(d), "EEE, MMM d 'at' h:mm a")}
                 </span>
               ))}
             </span>

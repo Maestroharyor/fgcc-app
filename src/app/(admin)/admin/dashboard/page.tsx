@@ -13,6 +13,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { getTrackCounts, withCapacity } from "@/lib/db/tracks";
 import type { DBRegistration } from "@/lib/db/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { formatDate } from "@/lib/utils/date";
 
 export const dynamic = "force-dynamic";
 
@@ -243,7 +244,9 @@ async function RecentRegistrationsPanel() {
               </div>
             </div>
             <div className="text-right text-xs text-navy/60 shrink-0">
-              {new Date(r.created_at ?? "").toLocaleDateString()}
+              {r.created_at
+                ? formatDate(new Date(r.created_at), "MMM d, yyyy")
+                : "-"}
             </div>
           </Link>
         ))}
