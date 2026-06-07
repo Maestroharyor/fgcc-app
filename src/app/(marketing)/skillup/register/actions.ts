@@ -60,7 +60,8 @@ async function resolveTrack(code: string) {
     capacity: track.capacity,
     whatsappUrl: track.whatsappUrl,
     currentCount,
-    isFull: currentCount >= track.capacity,
+    // Closed tracks behave exactly like full ones: submissions go to the waitlist.
+    isFull: track.closed === true || currentCount >= track.capacity,
   };
 }
 

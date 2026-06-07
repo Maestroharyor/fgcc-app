@@ -46,28 +46,38 @@ describe("getTrackCounts", () => {
 });
 
 describe("withCapacity", () => {
+  // Closed tracks always read as full, so these tests pick an open one.
+  const openTrack = TRACKS.find((t) => !t.closed);
+  if (!openTrack) throw new Error("No open track in the catalogue");
+
   it("merges static track metadata with counts and computes remaining/is_full", async () => {
     const { withCapacity } = await import("./tracks");
-    const result = withCapacity({ UXD: 5 });
-    const uxd = result.find((r) => r.code === "UXD");
-    if (!uxd) throw new Error("UXD missing from result");
-    expect(uxd.current_count).toBe(5);
-    expect(uxd.remaining).toBe(uxd.capacity - 5);
-    expect(uxd.is_full).toBe(false);
+    const result = withCapacity({ [openTrack.code]: 5 });
+    const row = result.find((r) => r.code === openTrack.code);
+    if (!row) throw new Error(`${openTrack.code} missing from result`);
+    expect(row.current_count).toBe(5);
+    expect(row.remaining).toBe(row.capacity - 5);
+    expect(row.is_full).toBe(false);
     // Tracks with no count default to 0
-    const other = result.find((r) => r.code !== "UXD");
+    const other = result.find((r) => r.code !== openTrack.code && !r.is_full);
     expect(other?.current_count).toBe(0);
     expect(result).toHaveLength(TRACKS.length);
   });
 
   it("flags is_full when current >= capacity", async () => {
     const { withCapacity } = await import("./tracks");
-    const uxd = TRACKS.find((t) => t.code === "UXD");
-    if (!uxd) throw new Error("UXD missing from fixture catalogue");
-    const result = withCapacity({ UXD: uxd.capacity });
-    const row = result.find((r) => r.code === "UXD");
+    const result = withCapacity({ [openTrack.code]: openTrack.capacity });
+    const row = result.find((r) => r.code === openTrack.code);
     expect(row?.is_full).toBe(true);
     expect(row?.remaining).toBe(0);
+  });
+
+  it("treats a closed track as full even with zero registrations", async () => {
+    const { withCapacity } = await import("./tracks");
+    const result = withCapacity({}, [{ ...openTrack, closed: true }]);
+    expect(result[0]?.is_full).toBe(true);
+    expect(result[0]?.remaining).toBe(0);
+    expect(result[0]?.current_count).toBe(0);
   });
 
   it("accepts a custom source list", async () => {

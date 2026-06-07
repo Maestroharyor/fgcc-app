@@ -29,6 +29,7 @@ vi.mock("@/lib/utils/env", () => ({
 }));
 
 import {
+  sendAdminActionCodeEmail,
   sendAdminNotificationEmail,
   sendCertificateEmail,
   sendConfirmationEmail,
@@ -39,8 +40,10 @@ import {
   sendReminder1DayEmail,
   sendReminder3DayEmail,
   sendSubmitterSummaryEmail,
+  sendTrackChangedEmail,
   sendWaitlistConfirmEmail,
   sendWaitlistOfferEmail,
+  sendWhatsAppReminderEmail,
 } from "./send";
 
 beforeEach(() => {
@@ -206,6 +209,40 @@ describe("send helpers - happy paths", () => {
           trackName: "T",
           email: "u@x.com",
           phone: null,
+          siteUrl: "http://x",
+        }),
+    ],
+    [
+      "whatsapp reminder",
+      () =>
+        sendWhatsAppReminderEmail("w@x.com", {
+          firstName: "W",
+          referenceNumber: "SKU-UXD-001",
+          trackName: "T",
+          whatsappUrl: "https://chat.whatsapp.com/abc",
+          siteUrl: "http://x",
+        }),
+    ],
+    [
+      "admin action code",
+      () =>
+        sendAdminActionCodeEmail("admin@x.com", {
+          code: "AB12CD",
+          actionLabel: "Change track",
+          registrantName: "Jane Doe",
+          detail: "UI/UX Design -> Photography",
+          expiresMinutes: 10,
+        }),
+    ],
+    [
+      "track changed",
+      () =>
+        sendTrackChangedEmail("t@x.com", {
+          firstName: "T",
+          trackName: "Photography & Photo Editing",
+          facilitatorName: "F",
+          referenceNumber: "SKU-PHO-001",
+          whatsappUrl: "https://chat.whatsapp.com/abc",
           siteUrl: "http://x",
         }),
     ],

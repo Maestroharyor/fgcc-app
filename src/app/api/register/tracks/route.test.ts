@@ -22,11 +22,13 @@ beforeEach(() => {
 
 describe("GET /api/register/tracks", () => {
   it("returns the full catalogue with live counts merged in", async () => {
+    // Closed tracks always read as full, so this test picks an open one.
+    const openCode = TRACKS.find((t) => !t.closed)?.code ?? "PHO";
     supabase = createSupabaseMock({
       from: {
         v_track_counts: {
           data: [
-            { track_code: "UXD", current_count: 5 },
+            { track_code: openCode, current_count: 5 },
             { track_code: "CWD", current_count: 17 },
           ],
           error: null,
@@ -40,10 +42,10 @@ describe("GET /api/register/tracks", () => {
     const body = (await res.json()) as TrackWithCapacity[];
     expect(body).toHaveLength(TRACKS.length);
 
-    const uxd = body.find((r) => r.code === "UXD");
-    expect(uxd?.current_count).toBe(5);
-    expect(uxd?.remaining).toBe((uxd?.capacity ?? 0) - 5);
-    expect(uxd?.is_full).toBe(false);
+    const open = body.find((r) => r.code === openCode);
+    expect(open?.current_count).toBe(5);
+    expect(open?.remaining).toBe((open?.capacity ?? 0) - 5);
+    expect(open?.is_full).toBe(false);
 
     const cwd = body.find((r) => r.code === "CWD");
     expect(cwd?.current_count).toBe(17);
@@ -62,7 +64,18 @@ describe("GET /api/register/tracks", () => {
     const body = (await res.json()) as TrackWithCapacity[];
     expect(body).toHaveLength(TRACKS.length);
     expect(body.every((r) => r.current_count === 0)).toBe(true);
-    expect(body.every((r) => r.remaining === r.capacity)).toBe(true);
+    // Closed tracks report remaining 0 regardless of count.
+    const closedCodes = new Set(
+      TRACKS.filter((t) => t.closed).map((t) => t.code),
+    );
+    expect(
+      body
+        .filter((r) => !closedCodes.has(r.code))
+        .every((r) => r.remaining === r.capacity),
+    ).toBe(true);
+    expect(
+      body.filter((r) => closedCodes.has(r.code)).every((r) => r.is_full),
+    ).toBe(true);
   });
 
   it("emits the SWR cache header so bursts share one query per 10s", async () => {

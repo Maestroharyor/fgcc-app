@@ -93,7 +93,8 @@ const validSelf = {
   phone: "08012345678",
   gender: "female",
   age_group: "26_35",
-  track_code: "UXD",
+  // PHO, not UXD: UXD is closed in the catalogue and would always waitlist.
+  track_code: "PHO",
   church: "Cement HQ",
   how_heard: "whatsapp",
 };
@@ -156,7 +157,7 @@ describe("registerSelfAction", () => {
     const waitlistCall = supabase._calls.find((c) => c.table === "waitlist");
     expect(waitlistCall?.operation).toBe("insert");
     expect((waitlistCall?.payload as { track_code: string })?.track_code).toBe(
-      "UXD",
+      "PHO",
     );
   });
 
@@ -217,7 +218,8 @@ const validOthersPayload = {
       phone: "08011111111",
       gender: "male" as const,
       age_group: "18_25" as const,
-      track_code: "UXD",
+      // PHO, not UXD: UXD is closed in the catalogue and would always waitlist.
+      track_code: "PHO",
       email: "member@example.com",
       church: "Cement",
     },

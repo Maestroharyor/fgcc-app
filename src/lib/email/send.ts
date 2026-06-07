@@ -1,4 +1,7 @@
 import type { ReactElement } from "react";
+import AdminActionCodeEmail, {
+  type AdminActionCodeEmailProps,
+} from "@/emails/AdminActionCodeEmail";
 import AdminNotificationEmail, {
   type AdminNotificationEmailProps,
 } from "@/emails/AdminNotificationEmail";
@@ -29,12 +32,18 @@ import Reminder3DayEmail, {
 import SubmitterSummaryEmail, {
   type SubmitterSummaryEmailProps,
 } from "@/emails/SubmitterSummaryEmail";
+import TrackChangedEmail, {
+  type TrackChangedEmailProps,
+} from "@/emails/TrackChangedEmail";
 import WaitlistConfirmEmail, {
   type WaitlistConfirmEmailProps,
 } from "@/emails/WaitlistConfirmEmail";
 import WaitlistOfferEmail, {
   type WaitlistOfferEmailProps,
 } from "@/emails/WaitlistOfferEmail";
+import WhatsAppReminderEmail, {
+  type WhatsAppReminderEmailProps,
+} from "@/emails/WhatsAppReminderEmail";
 import { adminNotificationEmails, env } from "@/lib/utils/env";
 import { isEmailConfigured, resendClient } from "./client";
 
@@ -219,6 +228,48 @@ export function sendEnquiryNotificationEmail(
     Component: EnquiryNotificationEmail,
     props,
     replyTo: props.email,
+  });
+}
+
+/** Nudge a registrant to join their track's WhatsApp group. Admin-triggered. */
+export function sendWhatsAppReminderEmail(
+  to: string,
+  props: WhatsAppReminderEmailProps,
+) {
+  return dispatch({
+    to,
+    subject: `Join your ${props.trackName} WhatsApp group - SkillUp 1.0`,
+    Component: WhatsAppReminderEmail,
+    props,
+  });
+}
+
+/**
+ * Confirmation code for a sensitive admin action (track change, delete).
+ * Goes to the LOGGED-IN admin's email, never the registrant.
+ */
+export function sendAdminActionCodeEmail(
+  to: string,
+  props: AdminActionCodeEmailProps,
+) {
+  return dispatch({
+    to,
+    subject: `${props.code} is your SkillUp admin confirmation code`,
+    Component: AdminActionCodeEmail,
+    props,
+  });
+}
+
+/** Tell a registrant their track (and reference number) changed. */
+export function sendTrackChangedEmail(
+  to: string,
+  props: TrackChangedEmailProps,
+) {
+  return dispatch({
+    to,
+    subject: `Your SkillUp 1.0 track is now ${props.trackName}`,
+    Component: TrackChangedEmail,
+    props,
   });
 }
 

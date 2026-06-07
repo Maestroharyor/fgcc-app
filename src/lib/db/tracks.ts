@@ -44,6 +44,9 @@ export function withCapacity(
 ): TrackWithCapacity[] {
   return source.map((t) => {
     const current = counts[t.code] ?? 0;
+    // A closed track reads as full regardless of count, so every consumer
+    // (cards, selects, track-change targets) greys it out the same way.
+    const closed = t.closed === true;
     return {
       code: t.code,
       name: t.name,
@@ -52,8 +55,8 @@ export function withCapacity(
       glyph_key: t.glyph,
       capacity: t.capacity,
       current_count: current,
-      remaining: Math.max(0, t.capacity - current),
-      is_full: current >= t.capacity,
+      remaining: closed ? 0 : Math.max(0, t.capacity - current),
+      is_full: closed || current >= t.capacity,
     };
   });
 }

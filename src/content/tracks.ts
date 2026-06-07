@@ -19,6 +19,8 @@ export interface Track {
   capacity: number;
   whatsappUrl: string;
   telegramUrl: string | null;
+  /** Registration closed regardless of count - renders exactly like a full track. */
+  closed?: boolean;
 }
 
 const wa = (suffix: string) => `https://chat.whatsapp.com/${suffix}?mode=gi_t`;
@@ -35,6 +37,7 @@ export const TRACKS: Track[] = [
     capacity: 20,
     whatsappUrl: wa("HnMYu2KvHBAL2vJB59YVwJ"),
     telegramUrl: null,
+    closed: true, // registration paused - shows as full everywhere
   },
   {
     code: "PHO",

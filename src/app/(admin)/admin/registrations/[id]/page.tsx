@@ -3,12 +3,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ChangeTrackButton } from "@/components/admin/ChangeTrackButton";
+import { DeleteRegistrationButton } from "@/components/admin/DeleteRegistrationButton";
 import { EditRegistrationButton } from "@/components/admin/EditRegistrationButton";
 import { REGISTERED_VIA_LABEL } from "@/components/admin/RegistrationsTable";
+import { ResendWhatsAppButton } from "@/components/admin/ResendWhatsAppButton";
 import { trackByCode } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
 import { getBatchById } from "@/lib/db/batches";
 import { getRegistrationById } from "@/lib/db/registrations";
+import { getTrackCounts, withCapacity } from "@/lib/db/tracks";
 import type { Role } from "@/lib/db/types";
 import { formatDate } from "@/lib/utils/date";
 
@@ -91,6 +95,13 @@ async function RegistrantProfileSection({
   const batch = registration.batch_id
     ? await getBatchById(registration.batch_id)
     : null;
+  // Live capacity for the change-track modal: full/closed targets get disabled.
+  const trackOptions = withCapacity(await getTrackCounts()).map((t) => ({
+    code: t.code,
+    name: t.name,
+    remaining: t.remaining,
+    is_full: t.is_full,
+  }));
 
   return (
     <section className="rounded-2xl border border-navy/8 bg-white p-6 shadow-card">
@@ -229,21 +240,19 @@ async function RegistrantProfileSection({
           ageGroup={registration.age_group}
           church={registration.church}
         />
-        {role === "superadmin" &&
-          /* Delete registration disabled per request. Restore this form to re-enable.
-          <form
-            action={`/api/admin/registrations/${registration.id}/delete`}
-            method="post"
-          >
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-full border border-coral/30 bg-white px-4 py-2 font-display text-sm font-semibold text-coral hover:bg-coral/8"
-            >
-              Delete registration
-            </button>
-          </form>
-          */
-          null}
+        <ChangeTrackButton
+          id={registration.id}
+          currentTrackCode={registration.track_code}
+          tracks={trackOptions}
+        />
+        <ResendWhatsAppButton id={registration.id} />
+        {role === "superadmin" && (
+          <DeleteRegistrationButton
+            id={registration.id}
+            fullName={registration.full_name}
+            reference={registration.reference_number}
+          />
+        )}
       </div>
     </section>
   );

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { ExportMenu } from "@/components/admin/ExportMenu";
 import { RegistrationsFilters } from "@/components/admin/RegistrationsFilters";
 import { RegistrationsTable } from "@/components/admin/RegistrationsTable";
+import { WhatsAppReminderBulkButton } from "@/components/admin/WhatsAppReminderBulkButton";
 import { TRACKS_BY_CODE } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
 import { listRegistrations } from "@/lib/db/registrations";
@@ -48,7 +49,10 @@ export default async function RegistrationsPage({ searchParams }: PageProps) {
           </h1>
           <p className="text-sm text-navy/65">Search and filter to slice.</p>
         </div>
-        <ExportMenu queryString={queryString} />
+        <div className="flex flex-wrap items-center gap-3">
+          <WhatsAppReminderBulkButton />
+          <ExportMenu queryString={queryString} />
+        </div>
       </div>
 
       {/* Live filters drive the URL search params (no Apply, soft navigation).
