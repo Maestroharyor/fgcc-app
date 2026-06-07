@@ -14,6 +14,41 @@ function firstName(full: string) {
   return full.trim().split(/\s+/)[0] ?? full;
 }
 
+/** Offline rows get a synthesised address; those can't receive the reminder. */
+function isDeliverable(row: { email: string; track_code: string }) {
+  return (
+    !row.email.endsWith("@placeholder.skillup") &&
+    Boolean(trackByCode(row.track_code)?.whatsappUrl)
+  );
+}
+
+/**
+ * Counts for the bulk confirm modal: how many registrants would receive the
+ * reminder and how many are excluded (placeholder email / unknown track).
+ */
+export async function GET() {
+  await requireRole("admin");
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("registrations")
+    .select("email, track_code");
+  if (error) {
+    return NextResponse.json(
+      { ok: false, error: error.message },
+      { status: 500 },
+    );
+  }
+
+  const rows = (data ?? []) as Array<{ email: string; track_code: string }>;
+  const recipients = rows.filter(isDeliverable).length;
+  return NextResponse.json({
+    ok: true,
+    recipients,
+    excluded: rows.length - recipients,
+  });
+}
+
 /**
  * Re-send the "join your track WhatsApp group" email. Body is either
  * `{ id }` for one registrant or `{ all: true }` for every registrant with a
@@ -60,7 +95,7 @@ export async function POST(request: NextRequest) {
     track_code: string;
   }>) {
     const track = trackByCode(r.track_code);
-    if (r.email.endsWith("@placeholder.skillup") || !track?.whatsappUrl) {
+    if (!isDeliverable(r) || !track) {
       skipped++;
       continue;
     }

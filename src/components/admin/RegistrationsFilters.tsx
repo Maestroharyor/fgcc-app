@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { useState } from "react";
+import { TrackSelect } from "@/components/forms/TrackSelect";
 import { TRACKS } from "@/content/tracks";
 import { useUrlFilters } from "@/lib/hooks/use-url-filters";
 
@@ -54,19 +55,13 @@ export function RegistrationsFilters() {
             </button>
           )}
         </div>
-        <select
-          value={searchParams.get("track") ?? ""}
-          onChange={(e) => apply({ track: e.target.value })}
+        <TrackSelect
           aria-label="Filter by track"
-          className="form-input"
-        >
-          <option value="">All tracks</option>
-          {TRACKS.map((t) => (
-            <option key={t.code} value={t.code}>
-              {t.name}
-            </option>
-          ))}
-        </select>
+          allLabel="All tracks"
+          value={searchParams.get("track") ?? ""}
+          onChange={(code) => apply({ track: code })}
+          options={TRACKS.map((t) => ({ code: t.code, name: t.name }))}
+        />
         <select
           value={searchParams.get("type") ?? ""}
           onChange={(e) => apply({ type: e.target.value })}

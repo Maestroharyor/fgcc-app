@@ -1,7 +1,4 @@
 import type { ReactElement } from "react";
-import AdminActionCodeEmail, {
-  type AdminActionCodeEmailProps,
-} from "@/emails/AdminActionCodeEmail";
 import AdminNotificationEmail, {
   type AdminNotificationEmailProps,
 } from "@/emails/AdminNotificationEmail";
@@ -240,22 +237,6 @@ export function sendWhatsAppReminderEmail(
     to,
     subject: `Join your ${props.trackName} WhatsApp group - SkillUp 1.0`,
     Component: WhatsAppReminderEmail,
-    props,
-  });
-}
-
-/**
- * Confirmation code for a sensitive admin action (track change, delete).
- * Goes to the LOGGED-IN admin's email, never the registrant.
- */
-export function sendAdminActionCodeEmail(
-  to: string,
-  props: AdminActionCodeEmailProps,
-) {
-  return dispatch({
-    to,
-    subject: `${props.code} is your SkillUp admin confirmation code`,
-    Component: AdminActionCodeEmail,
     props,
   });
 }

@@ -2,6 +2,7 @@
 
 import { Send } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
+import { TrackSelect } from "@/components/forms/TrackSelect";
 import type { Track } from "@/content/tracks";
 
 interface Props {
@@ -80,23 +81,19 @@ export function BulkSMSComposer({ tracks }: Props) {
           </select>
         </label>
         {audience === "track" && (
-          <label className="flex flex-col gap-1.5">
+          // div, not label: the searchable select isn't a labelable control.
+          <div className="flex flex-col gap-1.5">
             <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
               Track
             </span>
-            <select
-              className="form-input"
+            <TrackSelect
+              aria-label="Track"
+              placeholder="Pick a track…"
               value={trackCode}
-              onChange={(e) => setTrackCode(e.target.value)}
-            >
-              <option value="">Pick a track…</option>
-              {tracks.map((t) => (
-                <option key={t.code} value={t.code}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={setTrackCode}
+              options={tracks.map((t) => ({ code: t.code, name: t.name }))}
+            />
+          </div>
         )}
       </div>
 

@@ -27,7 +27,7 @@ vi.mock("@/lib/email/send", () => ({
   sendWhatsAppReminderEmail: hoisted.sendWhatsAppReminderEmail,
 }));
 
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 function makeReq(payload: unknown) {
   return new NextRequest(
@@ -128,5 +128,30 @@ describe("POST /api/admin/registrations/whatsapp-reminder", () => {
     mockRegistrations({ data: [], error: null });
     const res = await POST(makeReq({ id: "missing" }));
     expect(res.status).toBe(404);
+  });
+});
+
+describe("GET /api/admin/registrations/whatsapp-reminder", () => {
+  it("counts deliverable recipients vs excluded placeholder rows", async () => {
+    mockRegistrations({
+      data: [
+        row(),
+        row({ id: "reg-2", email: "noemail+x@placeholder.skillup" }),
+        row({ id: "reg-3", email: "real@example.com", track_code: "ZZZ" }),
+        row({ id: "reg-4", email: "another@example.com" }),
+      ],
+      error: null,
+    });
+
+    const res = await GET();
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body).toMatchObject({ ok: true, recipients: 2, excluded: 2 });
+  });
+
+  it("returns 500 on a query error", async () => {
+    mockRegistrations({ data: null, error: { message: "boom" } });
+    const res = await GET();
+    expect(res.status).toBe(500);
   });
 });

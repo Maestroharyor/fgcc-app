@@ -13,9 +13,6 @@ const hoisted = vi.hoisted(() => ({
   requireRole: vi.fn(),
   createSupabaseServerClient: vi.fn(),
   getTrackCounts: vi.fn(),
-  createActionCode: vi.fn(),
-  verifyAndConsumeActionCode: vi.fn(),
-  sendAdminActionCodeEmail: vi.fn(),
   sendTrackChangedEmail: vi.fn(),
 }));
 
@@ -33,25 +30,19 @@ vi.mock("@/lib/db/tracks", async (importOriginal) => {
   return { ...actual, getTrackCounts: hoisted.getTrackCounts };
 });
 
-vi.mock("@/lib/db/action-codes", () => ({
-  createActionCode: hoisted.createActionCode,
-  verifyAndConsumeActionCode: hoisted.verifyAndConsumeActionCode,
-}));
-
 vi.mock("@/lib/email/send", () => ({
-  sendAdminActionCodeEmail: hoisted.sendAdminActionCodeEmail,
   sendTrackChangedEmail: hoisted.sendTrackChangedEmail,
 }));
 
-import { PATCH, POST } from "./route";
+import { PATCH } from "./route";
 
 const ctx = (id = "reg-1") => ({ params: Promise.resolve({ id }) });
 
-function makeReq(method: string, payload: unknown) {
+function makeReq(payload: unknown) {
   return new NextRequest(
     "http://localhost:3000/api/admin/registrations/reg-1/track-change",
     {
-      method,
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     },
@@ -91,58 +82,24 @@ beforeEach(() => {
     email: "admin@x.com",
   });
   hoisted.getTrackCounts.mockResolvedValue({});
-  hoisted.createActionCode.mockResolvedValue({
-    ok: true,
-    code: "AB12CD",
-    expiresMinutes: 10,
-  });
-  hoisted.verifyAndConsumeActionCode.mockResolvedValue({
-    ok: true,
-    payload: { new_track_code: "GFX" },
-  });
-  hoisted.sendAdminActionCodeEmail.mockResolvedValue({ ok: true });
   hoisted.sendTrackChangedEmail.mockResolvedValue({ ok: true });
   mockRegistrations();
 });
 
-describe("POST /api/admin/registrations/[id]/track-change (request code)", () => {
-  it("creates a code and emails it to the logged-in admin", async () => {
-    const res = await POST(makeReq("POST", { track_code: "GFX" }), ctx());
-    const body = await res.json();
-    expect(res.status).toBe(200);
-    expect(body.ok).toBe(true);
-
-    expect(hoisted.createActionCode).toHaveBeenCalledWith({
-      registrationId: "reg-1",
-      adminUserId: "u1",
-      action: "track_change",
-      payload: { new_track_code: "GFX" },
-    });
-    expect(hoisted.sendAdminActionCodeEmail).toHaveBeenCalledWith(
-      "admin@x.com",
-      expect.objectContaining({
-        code: "AB12CD",
-        actionLabel: "Change track",
-        registrantName: "John Adeyemi",
-      }),
-    );
+describe("PATCH /api/admin/registrations/[id]/track-change", () => {
+  it("returns 400 for an invalid body", async () => {
+    const res = await PATCH(makeReq({}), ctx());
+    expect(res.status).toBe(400);
   });
 
-  it("rejects when the admin has no email", async () => {
-    hoisted.requireRole.mockResolvedValue({
-      role: "admin",
-      userId: "u1",
-      email: null,
-    });
-    const res = await POST(makeReq("POST", { track_code: "GFX" }), ctx());
-    const body = await res.json();
-    expect(res.status).toBe(400);
-    expect(body.error).toBe("admin-no-email");
-    expect(hoisted.createActionCode).not.toHaveBeenCalled();
+  it("returns 404 when the registration is missing", async () => {
+    mockRegistrations({ data: null, error: null });
+    const res = await PATCH(makeReq({ track_code: "GFX" }), ctx("missing"));
+    expect(res.status).toBe(404);
   });
 
   it("rejects the registrant's current track", async () => {
-    const res = await POST(makeReq("POST", { track_code: "PHO" }), ctx());
+    const res = await PATCH(makeReq({ track_code: "PHO" }), ctx());
     const body = await res.json();
     expect(res.status).toBe(400);
     expect(body.error).toBe("same-track");
@@ -150,74 +107,27 @@ describe("POST /api/admin/registrations/[id]/track-change (request code)", () =>
 
   it("rejects a full target track", async () => {
     hoisted.getTrackCounts.mockResolvedValue({ GFX: 999 });
-    const res = await POST(makeReq("POST", { track_code: "GFX" }), ctx());
+    const res = await PATCH(makeReq({ track_code: "GFX" }), ctx());
     const body = await res.json();
     expect(res.status).toBe(409);
     expect(body.error).toBe("track-full");
-    expect(hoisted.createActionCode).not.toHaveBeenCalled();
   });
 
   it("rejects a closed target track", async () => {
     // UXD is closed in the catalogue, so it reads as full even when empty.
-    const res = await POST(makeReq("POST", { track_code: "UXD" }), ctx());
+    const res = await PATCH(makeReq({ track_code: "UXD" }), ctx());
     const body = await res.json();
     expect(res.status).toBe(409);
     expect(body.error).toBe("track-full");
   });
 
   it("rejects an unknown track", async () => {
-    const res = await POST(makeReq("POST", { track_code: "ZZZ" }), ctx());
+    const res = await PATCH(makeReq({ track_code: "ZZZ" }), ctx());
     expect(res.status).toBe(404);
-  });
-});
-
-describe("PATCH /api/admin/registrations/[id]/track-change (confirm)", () => {
-  it("rejects a wrong code without touching the row", async () => {
-    hoisted.verifyAndConsumeActionCode.mockResolvedValue({
-      ok: false,
-      error: "invalid",
-    });
-    const res = await PATCH(
-      makeReq("PATCH", { track_code: "GFX", code: "WRONG1" }),
-      ctx(),
-    );
-    const body = await res.json();
-    expect(res.status).toBe(400);
-    expect(body.error).toBe("invalid");
-    expect(
-      supabase._calls.some((c) => c.filters.some((f) => f.method === "update")),
-    ).toBe(false);
-  });
-
-  it("re-checks capacity BEFORE consuming the code", async () => {
-    hoisted.getTrackCounts.mockResolvedValue({ GFX: 999 });
-    const res = await PATCH(
-      makeReq("PATCH", { track_code: "GFX", code: "AB12CD" }),
-      ctx(),
-    );
-    expect(res.status).toBe(409);
-    expect(hoisted.verifyAndConsumeActionCode).not.toHaveBeenCalled();
-  });
-
-  it("rejects a code issued for a different target track", async () => {
-    hoisted.verifyAndConsumeActionCode.mockResolvedValue({
-      ok: true,
-      payload: { new_track_code: "CWD" },
-    });
-    const res = await PATCH(
-      makeReq("PATCH", { track_code: "GFX", code: "AB12CD" }),
-      ctx(),
-    );
-    const body = await res.json();
-    expect(res.status).toBe(400);
-    expect(body.error).toBe("code-mismatch");
   });
 
   it("updates the track, returns the regenerated reference, and emails the registrant", async () => {
-    const res = await PATCH(
-      makeReq("PATCH", { track_code: "GFX", code: "AB12CD" }),
-      ctx(),
-    );
+    const res = await PATCH(makeReq({ track_code: "GFX" }), ctx());
     const body = await res.json();
     expect(res.status).toBe(200);
     expect(body).toMatchObject({ ok: true, reference_number: "SKU-GFX-009" });
@@ -226,6 +136,11 @@ describe("PATCH /api/admin/registrations/[id]/track-change (confirm)", () => {
       c.filters.some((f) => f.method === "update"),
     );
     expect(updateCall?.payload).toEqual({ track_code: "GFX" });
+    expect(
+      updateCall?.filters.some(
+        (f) => f.method === "eq" && f.args[0] === "id" && f.args[1] === "reg-1",
+      ),
+    ).toBe(true);
 
     expect(hoisted.sendTrackChangedEmail).toHaveBeenCalledWith(
       "john@example.com",
@@ -246,11 +161,20 @@ describe("PATCH /api/admin/registrations/[id]/track-change (confirm)", () => {
             error: null,
           },
     );
-    const res = await PATCH(
-      makeReq("PATCH", { track_code: "GFX", code: "AB12CD" }),
-      ctx(),
-    );
+    const res = await PATCH(makeReq({ track_code: "GFX" }), ctx());
     expect(res.status).toBe(200);
     expect(hoisted.sendTrackChangedEmail).not.toHaveBeenCalled();
+  });
+
+  it("returns 500 when the update fails", async () => {
+    mockRegistrations((chain: ChainCall) =>
+      chain.filters.some((f) => f.method === "update")
+        ? { data: null, error: { message: "boom" } }
+        : { data: regRow, error: null },
+    );
+    const res = await PATCH(makeReq({ track_code: "GFX" }), ctx());
+    const body = await res.json();
+    expect(res.status).toBe(500);
+    expect(body.error).toBe("update-failed");
   });
 });

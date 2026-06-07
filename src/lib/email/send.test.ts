@@ -29,7 +29,6 @@ vi.mock("@/lib/utils/env", () => ({
 }));
 
 import {
-  sendAdminActionCodeEmail,
   sendAdminNotificationEmail,
   sendCertificateEmail,
   sendConfirmationEmail,
@@ -221,17 +220,6 @@ describe("send helpers - happy paths", () => {
           trackName: "T",
           whatsappUrl: "https://chat.whatsapp.com/abc",
           siteUrl: "http://x",
-        }),
-    ],
-    [
-      "admin action code",
-      () =>
-        sendAdminActionCodeEmail("admin@x.com", {
-          code: "AB12CD",
-          actionLabel: "Change track",
-          registrantName: "Jane Doe",
-          detail: "UI/UX Design -> Photography",
-          expiresMinutes: 10,
         }),
     ],
     [

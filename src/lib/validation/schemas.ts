@@ -191,43 +191,17 @@ export const UpdateRegistrationSchema = z.object({
 
 export type UpdateRegistrationInput = z.infer<typeof UpdateRegistrationSchema>;
 
-/** 6-char alphanumeric email confirmation code for sensitive admin actions. */
-export const ActionCodeSchema = z
-  .string({ message: "Enter the code from your email" })
-  .trim()
-  .toUpperCase()
-  .regex(/^[A-Z0-9]{6}$/, "Enter the 6-character code from your email");
-
-const trackCodeField = z
-  .string({ message: "Pick a track" })
-  .trim()
-  .min(2, "Pick a track")
-  .max(8, "Pick a track")
-  .transform((s) => s.toUpperCase());
-
-/** Step 1 of an admin track change: which track to move the registrant to. */
+/** Admin track change: which track to move the registrant to. */
 export const TrackChangeRequestSchema = z.object({
-  track_code: trackCodeField,
+  track_code: z
+    .string({ message: "Pick a track" })
+    .trim()
+    .min(2, "Pick a track")
+    .max(8, "Pick a track")
+    .transform((s) => s.toUpperCase()),
 });
 
 export type TrackChangeRequestInput = z.infer<typeof TrackChangeRequestSchema>;
-
-/** Step 2 of an admin track change: the emailed code plus the same target track. */
-export const TrackChangeConfirmSchema = z.object({
-  track_code: trackCodeField,
-  code: ActionCodeSchema,
-});
-
-export type TrackChangeConfirmInput = z.infer<typeof TrackChangeConfirmSchema>;
-
-/** Step 2 of a registration delete: just the emailed code. */
-export const DeleteRegistrationConfirmSchema = z.object({
-  code: ActionCodeSchema,
-});
-
-export type DeleteRegistrationConfirmInput = z.infer<
-  typeof DeleteRegistrationConfirmSchema
->;
 
 export type RegisterOthersInput = z.infer<typeof RegisterOthersSchema>;
 

@@ -23,6 +23,7 @@ import {
 import { useFieldArray, useForm } from "react-hook-form";
 import type { z } from "zod";
 import { ChurchSelect } from "@/components/forms/ChurchSelect";
+import { TrackSelect } from "@/components/forms/TrackSelect";
 import { useOverlayDismiss } from "@/lib/hooks/use-overlay-dismiss";
 import {
   AdminBatchRegistrationSchema,
@@ -269,28 +270,21 @@ export function AdminRegistrationForm({ tracks }: Props) {
                     required
                     error={rErr?.track_code?.message}
                   >
-                    <select
-                      className="form-input"
+                    <TrackSelect
+                      placeholder="Pick a track…"
                       value={watch(`registrants.${index}.track_code`) ?? ""}
-                      aria-required="true"
-                      onChange={(e) =>
-                        setValue(
-                          `registrants.${index}.track_code`,
-                          e.target.value,
-                          { shouldValidate: true },
-                        )
+                      onChange={(code) =>
+                        setValue(`registrants.${index}.track_code`, code, {
+                          shouldValidate: true,
+                        })
                       }
-                    >
-                      <option value="" disabled>
-                        Pick a track…
-                      </option>
-                      {tracks.map((t) => (
-                        <option key={t.code} value={t.code}>
-                          {t.name} ({t.current_count}/{t.capacity})
-                          {t.is_full ? " — full" : ""}
-                        </option>
-                      ))}
-                    </select>
+                      options={tracks.map((t) => ({
+                        code: t.code,
+                        name: t.name,
+                        // Full tracks stay selectable - admins can override.
+                        hint: `(${t.current_count}/${t.capacity})${t.is_full ? " · full" : ""}`,
+                      }))}
+                    />
                   </Field>
                   {rowTrack?.is_full && (
                     <div className="mt-2 flex items-start gap-2 rounded-xl border border-gold/30 bg-gold/8 p-3">
