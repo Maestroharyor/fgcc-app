@@ -193,9 +193,9 @@ export async function buildCertificate({
   doc.setFontSize(7);
   doc.setTextColor(MUTED);
   // Inside the hairline and clear of the corner tick. The courtesy credit sits
-  // one line above the reference.
-  doc.text(COURTESY, 22, H - 22);
-  doc.text(`Ref: ${referenceNumber}`, 22, H - 17);
+  // one line below the reference.
+  doc.text(`Ref: ${referenceNumber}`, 22, H - 22);
+  doc.text(COURTESY, 22, H - 17);
 
   const arrayBuffer = doc.output("arraybuffer");
   return Buffer.from(arrayBuffer);
