@@ -36,6 +36,21 @@ const SEAL_SHADOW = "#D5DAE7";
 const EVENT_DATES = "June 12 – 14, 2026";
 const VENUE =
   "Foursquare Gospel Church, Cement Missionary District Headquarters";
+const COURTESY = "Courtesy: FGCC Youths";
+
+// Capitalise the first letter after a start, space, hyphen, or apostrophe so a
+// name typed as "john doe" or "JOHN DOE" renders "John Doe". Surnames with
+// intentional internal caps (e.g. "McDonald") become "Mcdonald".
+function toTitleCase(name: string): string {
+  return name
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase()
+    .replace(
+      /(^|[\s'-])([a-z])/g,
+      (_, sep: string, ch: string) => sep + ch.toUpperCase(),
+    );
+}
 
 export async function buildCertificate({
   fullName,
@@ -90,10 +105,12 @@ export async function buildCertificate({
     align: "center",
   });
 
-  // Name — script font, fitted to the column.
+  // Name — script font, fitted to the column. Title-cased for consistent
+  // presentation regardless of how it was typed at registration.
+  const displayName = toTitleCase(fullName);
   const nameSize = fitFontSize(
     doc,
-    fullName,
+    displayName,
     SCRIPT_FONT,
     "normal",
     168,
@@ -103,7 +120,7 @@ export async function buildCertificate({
   doc.setFont(SCRIPT_FONT, "normal");
   doc.setFontSize(nameSize);
   doc.setTextColor(GOLD_DARK);
-  doc.text(fullName, CX, 93, { align: "center" });
+  doc.text(displayName, CX, 93, { align: "center" });
 
   doc.setDrawColor(PRIMARY);
   doc.setLineWidth(0.4);
@@ -175,7 +192,9 @@ export async function buildCertificate({
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(MUTED);
-  // Inside the hairline and clear of the corner tick.
+  // Inside the hairline and clear of the corner tick. The courtesy credit sits
+  // one line above the reference.
+  doc.text(COURTESY, 22, H - 22);
   doc.text(`Ref: ${referenceNumber}`, 22, H - 17);
 
   const arrayBuffer = doc.output("arraybuffer");

@@ -37,7 +37,7 @@ beforeEach(() => {
 });
 
 describe("GET /api/admin/certificates/download", () => {
-  it("returns 404 when ref is not attended or missing", async () => {
+  it("returns 404 when ref is missing from the database", async () => {
     supabase = createSupabaseMock({
       from: { registrations: { data: null, error: null } },
     });
@@ -48,6 +48,32 @@ describe("GET /api/admin/certificates/download", () => {
       ),
     );
     expect(res.status).toBe(404);
+  });
+
+  it("downloads a certificate for a NON-attended registrant", async () => {
+    supabase = createSupabaseMock({
+      from: {
+        registrations: {
+          data: {
+            full_name: "Ada",
+            reference_number: "SKU-UXD-001",
+            attended: false,
+            track_code: "UXD",
+          },
+          error: null,
+        },
+      },
+    });
+    hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
+    const res = await GET(
+      new NextRequest(
+        "http://localhost:3000/api/admin/certificates/download?ref=SKU-UXD-001",
+      ),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toBe("application/pdf");
+    const buf = Buffer.from(await res.arrayBuffer());
+    expect(buf.slice(0, 5).toString()).toBe("%PDF-");
   });
 
   it("returns a PDF when ref is provided and attended", async () => {
@@ -108,7 +134,7 @@ describe("GET /api/admin/certificates/download", () => {
     expect(buf[1]).toBe(0x4b);
   });
 
-  it("returns 404 (not an empty zip) when no one has attended", async () => {
+  it("returns 404 (not an empty zip) when there are no registrations", async () => {
     supabase = createSupabaseMock({
       from: { registrations: { data: [], error: null } },
     });
@@ -119,7 +145,7 @@ describe("GET /api/admin/certificates/download", () => {
     expect(res.status).toBe(404);
     const body = (await res.json()) as { ok: boolean; error: string };
     expect(body.ok).toBe(false);
-    expect(body.error).toMatch(/attendance/i);
+    expect(body.error).toMatch(/no registrations/i);
   });
 
   it("returns 500 when the attendees query errors", async () => {
@@ -203,7 +229,7 @@ describe("GET /api/admin/certificates/download?preview=1", () => {
     expect(res.status).toBe(404);
   });
 
-  it("keeps the 404 for non-attended WITHOUT preview", async () => {
+  it("downloads (200) for a non-attended registrant WITHOUT preview", async () => {
     supabase = createSupabaseMock({
       from: {
         registrations: {
@@ -223,6 +249,7 @@ describe("GET /api/admin/certificates/download?preview=1", () => {
         "http://localhost:3000/api/admin/certificates/download?ref=SKU-UXD-001",
       ),
     );
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Disposition")).toContain("attachment");
   });
 });

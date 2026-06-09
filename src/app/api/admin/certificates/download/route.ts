@@ -21,12 +21,13 @@ export async function GET(request: NextRequest) {
   if (ref) {
     const { data } = await supabase
       .from("registrations")
-      .select("full_name, reference_number, attended, track_code")
+      .select("full_name, reference_number, track_code")
       .eq("reference_number", ref)
       .maybeSingle();
-    if (!data || (!data.attended && !preview)) {
+    // Certificates download regardless of attendance — only a missing row 404s.
+    if (!data) {
       return NextResponse.json(
-        { ok: false, error: "Not attended or not found" },
+        { ok: false, error: "Registration not found" },
         { status: 404 },
       );
     }
@@ -46,20 +47,19 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // ZIP everyone attended
-  const { data: attendees, error } = await supabase
+  // ZIP every registration — certificates download regardless of attendance.
+  const { data: registrations, error } = await supabase
     .from("registrations")
-    .select("full_name, reference_number, attended, track_code")
-    .eq("attended", true);
+    .select("full_name, reference_number, track_code");
 
   if (error) {
     return NextResponse.json(
-      { ok: false, error: "Could not load attendees" },
+      { ok: false, error: "Could not load registrations" },
       { status: 500 },
     );
   }
 
-  const rows = (attendees ?? []) as Array<{
+  const rows = (registrations ?? []) as Array<{
     full_name: string;
     reference_number: string;
     track_code: string;
@@ -69,10 +69,7 @@ export async function GET(request: NextRequest) {
   // ~22-byte empty archive. Surface a clear message instead.
   if (rows.length === 0) {
     return NextResponse.json(
-      {
-        ok: false,
-        error: "No attended registrations yet. Mark attendance first.",
-      },
+      { ok: false, error: "No registrations yet." },
       { status: 404 },
     );
   }
