@@ -34,7 +34,8 @@ const RIBBON_DEEP = "#021A4D";
 const SEAL_SHADOW = "#D5DAE7";
 
 const EVENT_DATES = "June 12 – 14, 2026";
-const VENUE = "Cement Missionary Headquarters, Lagos";
+const VENUE =
+  "Foursquare Gospel Church, Cement Missionary District Headquarters";
 
 export async function buildCertificate({
   fullName,
@@ -144,7 +145,7 @@ export async function buildCertificate({
   doc.setTextColor(MUTED);
   const body =
     "In recognition of three days of hands-on practical training at SkillUp 1.0, " +
-    "hosted by Foursquare Gospel Church, Cement Missionary Headquarters.";
+    "hosted by Foursquare Gospel Church, Cement Missionary District Headquarters.";
   const wrapped = doc.splitTextToSize(body, 170) as string[];
   doc.text(wrapped, CX, 119, { align: "center", lineHeightFactor: 1.5 });
 

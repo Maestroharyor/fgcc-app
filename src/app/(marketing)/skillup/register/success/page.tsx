@@ -93,7 +93,10 @@ async function IndividualSuccess({ refNumber }: { refNumber: string }) {
             <Row label="Track" value={track?.name ?? "-"} />
             <Row label="Facilitator" value={track?.facilitator ?? "TBA"} />
             <Row label="Dates" value="June 12 – 14, 2026" />
-            <Row label="Venue" value="Cement Missionary HQ, Lagos" />
+            <Row
+              label="Venue"
+              value="Cement Missionary District Headquarters, Lagos"
+            />
           </dl>
         </div>
 

@@ -6,7 +6,7 @@ export interface FaqItem {
 export const FAQS: FaqItem[] = [
   {
     q: "Is SkillUp 1.0 free to attend?",
-    a: "Yes. SkillUp 1.0 is fully sponsored by Foursquare Gospel Church, Cement Missionary HQ. Registration is free for everyone, members and non-members alike.",
+    a: "Yes. SkillUp 1.0 is fully sponsored by Foursquare Gospel Church, Cement Missionary District Headquarters. Registration is free for everyone, members and non-members alike.",
   },
   {
     q: "Who can register?",

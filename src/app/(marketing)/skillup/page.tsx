@@ -18,7 +18,7 @@ import { env } from "@/lib/utils/env";
 export const revalidate = 60;
 
 const PAGE_TITLE = "SkillUp 1.0 - From Skills to Income";
-const PAGE_DESCRIPTION = `Three days of hands-on training across ${TRACKS.length} skill tracks. Free youth empowerment programme by Foursquare Gospel Church, Cement Missionary HQ. June 12–14, 2026.`;
+const PAGE_DESCRIPTION = `Three days of hands-on training across ${TRACKS.length} skill tracks. Free youth empowerment programme by Foursquare Gospel Church, Cement Missionary District Headquarters. June 12–14, 2026.`;
 
 export const metadata: Metadata = {
   title: PAGE_TITLE,
@@ -62,7 +62,7 @@ const eventJsonLd = {
   },
   organizer: {
     "@type": "Organization",
-    name: "Foursquare Gospel Church, Cement Missionary HQ",
+    name: "Foursquare Gospel Church, Cement Missionary District Headquarters",
     url: env.NEXT_PUBLIC_SITE_URL,
   },
   offers: {

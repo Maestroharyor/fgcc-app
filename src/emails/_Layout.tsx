@@ -113,7 +113,8 @@ export function EmailLayout({ preview, children }: Props) {
                 textAlign: "center",
               }}
             >
-              Foursquare Gospel Church · Cement Missionary HQ · Lagos
+              Foursquare Gospel Church · Cement Missionary District Headquarters
+              · Lagos
             </Text>
             <Text
               style={{

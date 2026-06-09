@@ -34,7 +34,7 @@ const serif = Playfair_Display({
 
 const SITE_NAME = "SkillUp 1.0";
 const DEFAULT_TITLE = "SkillUp 1.0 - From Skills to Income";
-const DEFAULT_DESCRIPTION = `Three-day youth empowerment programme by Foursquare Gospel Church, Cement Missionary HQ. ${TRACKS.length} hands-on skill tracks across digital, creative, and vocational disciplines. Free to attend · June 12 - 14, 2026.`;
+const DEFAULT_DESCRIPTION = `Three-day youth empowerment programme by Foursquare Gospel Church, Cement Missionary District Headquarters. ${TRACKS.length} hands-on skill tracks across digital, creative, and vocational disciplines. Free to attend · June 12 - 14, 2026.`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   keywords: [
     "SkillUp 1.0",
     "Foursquare Gospel Church",
-    "Cement Missionary HQ",
+    "Cement Missionary District Headquarters",
     "youth empowerment",
     "skill acquisition",
     "Lagos",
@@ -62,12 +62,13 @@ export const metadata: Metadata = {
   ],
   authors: [
     {
-      name: "Foursquare Gospel Church, Cement Missionary HQ",
+      name: "Foursquare Gospel Church, Cement Missionary District Headquarters",
       url: env.NEXT_PUBLIC_SITE_URL,
     },
   ],
-  creator: "Foursquare Gospel Church, Cement Missionary HQ",
-  publisher: "Foursquare Gospel Church, Cement Missionary HQ",
+  creator: "Foursquare Gospel Church, Cement Missionary District Headquarters",
+  publisher:
+    "Foursquare Gospel Church, Cement Missionary District Headquarters",
   category: "education",
   formatDetection: {
     telephone: false,

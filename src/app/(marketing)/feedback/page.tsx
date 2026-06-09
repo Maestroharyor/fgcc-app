@@ -28,7 +28,7 @@ const contactPageJsonLd = {
   url: `${env.NEXT_PUBLIC_SITE_URL}/feedback`,
   about: {
     "@type": "Organization",
-    name: "Foursquare Gospel Church, Cement Missionary HQ",
+    name: "Foursquare Gospel Church, Cement Missionary District Headquarters",
     email: "skillup@fgccement.org",
     address: {
       "@type": "PostalAddress",

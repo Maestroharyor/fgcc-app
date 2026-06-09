@@ -33,8 +33,8 @@ export default function Reminder3DayEmail({
           marginTop: 12,
         }}
       >
-        SkillUp 1.0 kicks off in three days at Cement Missionary HQ, Lagos. Here
-        is everything to know before Friday.
+        SkillUp 1.0 kicks off in three days at Cement Missionary District
+        Headquarters, Lagos. Here is everything to know before Friday.
       </Text>
 
       <Section
@@ -48,7 +48,10 @@ export default function Reminder3DayEmail({
         <Row label="Track" value={trackName} />
         <Row label="Facilitator" value={facilitatorName ?? "TBA"} />
         <Row label="Day 1 start" value="Friday, June 12 · 9:00 AM" />
-        <Row label="Venue" value="Cement Missionary HQ, Lagos" />
+        <Row
+          label="Venue"
+          value="Cement Missionary District Headquarters, Lagos"
+        />
       </Section>
 
       <Text style={{ fontSize: 13, color: palette.navy, marginTop: 16 }}>

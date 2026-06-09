@@ -108,6 +108,33 @@ describe("GET /api/admin/certificates/download", () => {
     expect(buf[1]).toBe(0x4b);
   });
 
+  it("returns 404 (not an empty zip) when no one has attended", async () => {
+    supabase = createSupabaseMock({
+      from: { registrations: { data: [], error: null } },
+    });
+    hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
+    const res = await GET(
+      new NextRequest("http://localhost:3000/api/admin/certificates/download"),
+    );
+    expect(res.status).toBe(404);
+    const body = (await res.json()) as { ok: boolean; error: string };
+    expect(body.ok).toBe(false);
+    expect(body.error).toMatch(/attendance/i);
+  });
+
+  it("returns 500 when the attendees query errors", async () => {
+    supabase = createSupabaseMock({
+      from: {
+        registrations: { data: null, error: { message: "boom" } },
+      },
+    });
+    hoisted.createSupabaseServerClient.mockResolvedValue(supabase);
+    const res = await GET(
+      new NextRequest("http://localhost:3000/api/admin/certificates/download"),
+    );
+    expect(res.status).toBe(500);
+  });
+
   it("gates the regular download behind admin", async () => {
     supabase = createSupabaseMock({
       from: { registrations: { data: null, error: null } },

@@ -1,5 +1,5 @@
 export const VENUE = {
-  name: "Foursquare Gospel Church, Cement Missionary HQ",
+  name: "Foursquare Gospel Church, Cement Missionary District Headquarters",
   street: "38, Lagos–Abeokuta Expressway",
   landmark: "Cement Bus-Stop",
   area: "Dopemu, Lagos",

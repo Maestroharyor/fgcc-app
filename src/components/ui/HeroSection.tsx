@@ -35,9 +35,9 @@ export function HeroSection() {
 
           <p className="max-w-xl text-lg sm:text-xl leading-relaxed text-navy/75">
             SkillUp 1.0 is a three-day youth empowerment programme by Foursquare
-            Gospel Church, Cement Missionary HQ - {trackCount} hands-on skill
-            tracks across digital, creative, and vocational disciplines. Free to
-            attend.
+            Gospel Church, Cement Missionary District Headquarters -{" "}
+            {trackCount} hands-on skill tracks across digital, creative, and
+            vocational disciplines. Free to attend.
           </p>
 
           <CountdownTimer

@@ -7,12 +7,12 @@ import { TRACKS } from "@/content/tracks";
 import { env } from "@/lib/utils/env";
 
 export const metadata: Metadata = {
-  title: "Foursquare Gospel Church · Cement Missionary HQ",
+  title: "Foursquare Gospel Church · Cement Missionary District Headquarters",
   description:
     "Our website is on the way. In the meantime - SkillUp 1.0 is our first big public programme. June 12–14, 2026. Free to attend.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Foursquare Gospel Church · Cement Missionary HQ",
+    title: "Foursquare Gospel Church · Cement Missionary District Headquarters",
     description:
       "Our church website is on the way. SkillUp 1.0 - our first public programme - is open for registration.",
     url: "/",
@@ -23,12 +23,12 @@ export const metadata: Metadata = {
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "Foursquare Gospel Church, Cement Missionary HQ",
+  name: "Foursquare Gospel Church, Cement Missionary District Headquarters",
   alternateName: "FGC Cement HQ",
   url: env.NEXT_PUBLIC_SITE_URL,
   logo: `${env.NEXT_PUBLIC_SITE_URL}/icon.png`,
   description:
-    "Foursquare Gospel Church, Cement Missionary HQ - the headquarters of the Cement District, Lagos.",
+    "Foursquare Gospel Church, Cement Missionary District Headquarters - the headquarters of the Cement District, Lagos.",
   address: {
     "@type": "PostalAddress",
     streetAddress: "38, Lagos-Abeokuta Expressway",
@@ -56,7 +56,7 @@ export default function ComingSoonPage() {
               Foursquare Gospel Church
             </span>
             <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
-              Cement Missionary HQ · Lagos
+              Cement Missionary District Headquarters · Lagos
             </span>
           </div>
         </div>
@@ -72,7 +72,9 @@ export default function ComingSoonPage() {
           <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-semibold tracking-tight text-navy leading-[1.05]">
             Foursquare Gospel Church
             <br />
-            <span className="text-primary">Cement Missionary HQ</span>
+            <span className="text-primary">
+              Cement Missionary District Headquarters
+            </span>
           </h1>
 
           <p className="max-w-2xl text-lg sm:text-xl leading-relaxed text-navy/75">
@@ -134,7 +136,7 @@ export default function ComingSoonPage() {
               <span className="hidden sm:block h-1 w-1 rounded-full bg-current opacity-30" />
               <span className="inline-flex items-center gap-1.5">
                 <MapPin className="h-3 w-3" aria-hidden />
-                Cement Missionary HQ
+                Cement Missionary District Headquarters
               </span>
             </div>
           </div>
@@ -143,7 +145,10 @@ export default function ComingSoonPage() {
 
       <footer className="px-6 sm:px-10 pb-8 pt-4">
         <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-2 font-sans text-[11px] uppercase tracking-[0.18em] text-navy/40">
-          <span>© 2026 Foursquare Gospel Church · Cement Missionary HQ</span>
+          <span>
+            © 2026 Foursquare Gospel Church · Cement Missionary District
+            Headquarters
+          </span>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <Link
               href="/feedback"

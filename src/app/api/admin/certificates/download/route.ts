@@ -47,18 +47,39 @@ export async function GET(request: NextRequest) {
   }
 
   // ZIP everyone attended
-  const { data: attendees } = await supabase
+  const { data: attendees, error } = await supabase
     .from("registrations")
     .select("full_name, reference_number, attended, track_code")
     .eq("attended", true);
 
-  const signatory = await loadCertificateSignatory();
-  const zip = new JSZip();
-  for (const r of (attendees ?? []) as Array<{
+  if (error) {
+    return NextResponse.json(
+      { ok: false, error: "Could not load attendees" },
+      { status: 500 },
+    );
+  }
+
+  const rows = (attendees ?? []) as Array<{
     full_name: string;
     reference_number: string;
     track_code: string;
-  }>) {
+  }>;
+
+  // Without this guard an empty result silently produces a valid-but-useless
+  // ~22-byte empty archive. Surface a clear message instead.
+  if (rows.length === 0) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "No attended registrations yet. Mark attendance first.",
+      },
+      { status: 404 },
+    );
+  }
+
+  const signatory = await loadCertificateSignatory();
+  const zip = new JSZip();
+  for (const r of rows) {
     const pdf = await buildCertificate({
       fullName: r.full_name,
       referenceNumber: r.reference_number,

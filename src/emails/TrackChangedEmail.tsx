@@ -81,7 +81,10 @@ export default function TrackChangedEmail({
         <RowLabel label="Track" value={trackName} />
         <RowLabel label="Facilitator" value={facilitatorName ?? "TBA"} />
         <RowLabel label="Dates" value="June 12 – 14, 2026" />
-        <RowLabel label="Venue" value="Cement Missionary HQ, Lagos" />
+        <RowLabel
+          label="Venue"
+          value="Cement Missionary District Headquarters, Lagos"
+        />
       </Section>
 
       <Section style={{ marginTop: 24, textAlign: "center" }}>

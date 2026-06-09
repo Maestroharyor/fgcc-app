@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { TRACKS } from "@/content/tracks";
 
 export const alt =
-  "SkillUp 1.0 - From Skills to Income · Foursquare Gospel Church, Cement Missionary HQ · June 12 - 14, 2026";
+  "SkillUp 1.0 - From Skills to Income · Foursquare Gospel Church, Cement Missionary District Headquarters · June 12 - 14, 2026";
 
 export const size = { width: 1200, height: 630 } as const;
 
@@ -62,7 +62,7 @@ export default function OpenGraphImage(): ImageResponse {
               marginTop: 4,
             }}
           >
-            Cement Missionary HQ · Lagos
+            Cement Missionary District Headquarters · Lagos
           </div>
         </div>
       </div>

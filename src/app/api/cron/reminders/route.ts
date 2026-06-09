@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
       emailSent++;
       smsRecipients.push({
         to: r.phone,
-        message: `SkillUp 1.0 starts tomorrow 9AM at Cement Missionary HQ. Bring this ref: ${r.reference_number}. See you there!`,
+        message: `SkillUp 1.0 starts tomorrow 9AM at Cement Missionary District Headquarters. Bring this ref: ${r.reference_number}. See you there!`,
       });
     } else if (kind === "feedback") {
       await sendFeedbackRequestEmail(r.email, {
