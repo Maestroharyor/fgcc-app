@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { RegistrationForm } from "@/components/forms/RegistrationForm";
 import { CountdownTimer } from "@/components/ui/CountdownTimer";
+import { RegistrationStatus } from "@/components/ui/RegistrationStatus";
 import { TRACKS } from "@/content/tracks";
 import { withCapacity } from "@/lib/db/tracks";
+import { registrationPhase } from "@/lib/utils/date";
 import { env } from "@/lib/utils/env";
 
 // `force-dynamic`: the form reads `useSearchParams()` to pre-fill `?track=`,
@@ -24,6 +26,20 @@ export const metadata: Metadata = {
 };
 
 export default function RegisterPage() {
+  // `force-dynamic` above means the phase is evaluated fresh on every request,
+  // so the form swaps to a status panel the moment the gate closes.
+  const phase = registrationPhase();
+
+  if (phase !== "open") {
+    return (
+      <div className="px-6 sm:px-10 py-12 sm:py-16">
+        <div className="mx-auto max-w-3xl">
+          <RegistrationStatus phase={phase} />
+        </div>
+      </div>
+    );
+  }
+
   // Optimistic seed: every track shows full capacity. The form's useEffect
   // fetches `/api/register/tracks` and replaces this on mount.
   const initialTracks = withCapacity({}, TRACKS);

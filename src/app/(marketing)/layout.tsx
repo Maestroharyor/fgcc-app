@@ -3,20 +3,29 @@ import type { ReactNode } from "react";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { TRACKS } from "@/content/tracks";
 import { VENUE } from "@/content/venue";
+import { type RegistrationPhase, registrationPhase } from "@/lib/utils/date";
+
+// Short label for the muted header pill once registration is no longer open.
+const CLOSED_LABEL: Record<Exclude<RegistrationPhase, "open">, string> = {
+  "pre-start": "Registration closed",
+  ongoing: "Happening now",
+  over: "Event ended",
+};
 
 export default function MarketingLayout({ children }: { children: ReactNode }) {
+  const phase = registrationPhase();
   return (
     <>
-      <SiteHeader />
+      <SiteHeader phase={phase} />
       <main id="main" className="flex-1">
         {children}
       </main>
-      <SiteFooter />
+      <SiteFooter phase={phase} />
     </>
   );
 }
 
-function SiteHeader() {
+function SiteHeader({ phase }: { phase: RegistrationPhase }) {
   return (
     <header className="sticky top-0 z-30 border-b border-navy/8 bg-cream/85 backdrop-blur supports-[backdrop-filter]:bg-cream/70">
       <div className="mx-auto max-w-6xl px-6 sm:px-10 py-4 flex items-center justify-between gap-4">
@@ -55,18 +64,24 @@ function SiteHeader() {
             FAQ
           </a>
         </nav>
-        <Link
-          href="/skillup/register"
-          className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 font-display text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
-        >
-          Register
-        </Link>
+        {phase === "open" ? (
+          <Link
+            href="/skillup/register"
+            className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 font-display text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
+          >
+            Register
+          </Link>
+        ) : (
+          <span className="inline-flex h-10 items-center justify-center rounded-full border border-navy/15 bg-navy/5 px-5 font-display text-sm font-semibold text-navy/60">
+            {CLOSED_LABEL[phase]}
+          </span>
+        )}
       </div>
     </header>
   );
 }
 
-function SiteFooter() {
+function SiteFooter({ phase }: { phase: RegistrationPhase }) {
   return (
     <footer className="mt-12 border-t border-navy/8 bg-white">
       <div className="mx-auto max-w-6xl px-6 sm:px-10 py-12">
@@ -113,14 +128,16 @@ function SiteFooter() {
                   Schedule
                 </a>
               </li>
-              <li>
-                <Link
-                  href="/skillup/register"
-                  className="text-navy/75 hover:text-navy"
-                >
-                  Register
-                </Link>
-              </li>
+              {phase === "open" ? (
+                <li>
+                  <Link
+                    href="/skillup/register"
+                    className="text-navy/75 hover:text-navy"
+                  >
+                    Register
+                  </Link>
+                </li>
+              ) : null}
             </ul>
           </div>
           <div>

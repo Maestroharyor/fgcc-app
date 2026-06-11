@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BrandMark } from "@/components/ui/BrandMark";
+import { isRegistrationOpen } from "@/lib/utils/date";
 
 export const metadata: Metadata = {
   title: "Page not found",
@@ -8,6 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default function NotFound() {
+  const registrationOpen = isRegistrationOpen();
   return (
     <main className="min-h-dvh hero-mesh flex flex-col">
       <div className="px-6 sm:px-10 pt-8">
@@ -43,12 +45,14 @@ export default function NotFound() {
             >
               Back to SkillUp
             </Link>
-            <Link
-              href="/skillup/register"
-              className="inline-flex h-11 items-center justify-center rounded-full border border-navy/12 bg-white px-6 font-display text-sm font-semibold text-navy transition hover:border-navy/25 hover:bg-cream-100"
-            >
-              Register for SkillUp 1.0
-            </Link>
+            {registrationOpen ? (
+              <Link
+                href="/skillup/register"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-navy/12 bg-white px-6 font-display text-sm font-semibold text-navy transition hover:border-navy/25 hover:bg-cream-100"
+              >
+                Register for SkillUp 1.0
+              </Link>
+            ) : null}
           </div>
         </div>
       </div>

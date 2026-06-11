@@ -9,6 +9,32 @@ export function eventStartDate(): Date {
   return new Date(env.NEXT_PUBLIC_EVENT_START_ISO);
 }
 
+/**
+ * The registration lifecycle, derived purely from the clock:
+ *  - `open`       registration form is live (before the close instant)
+ *  - `pre-start`  registration closed, event not yet started (countdown to 9am)
+ *  - `ongoing`    event is running (start → end)
+ *  - `over`       event has ended
+ *
+ * Comparisons are on absolute instants and the env ISO strings carry `+01:00`,
+ * so no timezone math is needed here — only display formatting uses `lagos`.
+ */
+export type RegistrationPhase = "open" | "pre-start" | "ongoing" | "over";
+
+export function registrationPhase(now: Date = new Date()): RegistrationPhase {
+  const close = new Date(env.NEXT_PUBLIC_REGISTRATION_CLOSE_ISO);
+  const start = new Date(env.NEXT_PUBLIC_EVENT_START_ISO);
+  const end = new Date(env.NEXT_PUBLIC_EVENT_END_ISO);
+  if (now >= end) return "over";
+  if (now >= start) return "ongoing";
+  if (now >= close) return "pre-start";
+  return "open";
+}
+
+export function isRegistrationOpen(now: Date = new Date()): boolean {
+  return registrationPhase(now) === "open";
+}
+
 export interface CountdownParts {
   days: number;
   hours: number;

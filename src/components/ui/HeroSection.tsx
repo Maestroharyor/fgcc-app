@@ -1,11 +1,19 @@
 import { ArrowRight, CalendarDays, GraduationCap, MapPin } from "lucide-react";
 import Link from "next/link";
 import { TRACKS } from "@/content/tracks";
+import type { RegistrationPhase } from "@/lib/utils/date";
 import { env } from "@/lib/utils/env";
 import { CountdownTimer } from "./CountdownTimer";
 
-export function HeroSection() {
+const HERO_STATUS: Record<Exclude<RegistrationPhase, "open">, string> = {
+  "pre-start": "Registration has closed. SkillUp 1.0 starts 9:00am, June 12.",
+  ongoing: "SkillUp 1.0 is happening now, June 12 – 14, at Cement HQ.",
+  over: "SkillUp 1.0 has ended. Thank you for joining us.",
+};
+
+export function HeroSection({ phase = "open" }: { phase?: RegistrationPhase }) {
   const trackCount = TRACKS.length;
+  const isOpen = phase === "open";
 
   return (
     <section className="hero-sky relative px-6 sm:px-10 pt-12 sm:pt-16 pb-24 overflow-hidden">
@@ -40,22 +48,30 @@ export function HeroSection() {
             vocational disciplines. Free to attend.
           </p>
 
-          <CountdownTimer
-            target={env.NEXT_PUBLIC_EVENT_START_ISO}
-            variant="compact"
-          />
+          {isOpen ? (
+            <CountdownTimer
+              target={env.NEXT_PUBLIC_EVENT_START_ISO}
+              variant="compact"
+            />
+          ) : (
+            <p className="font-display text-lg font-semibold text-primary">
+              {HERO_STATUS[phase]}
+            </p>
+          )}
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-            <Link
-              href="/skillup/register"
-              className="group inline-flex h-14 items-center justify-center gap-2 rounded-full bg-primary px-8 font-display font-semibold text-white shadow-lift transition hover:bg-primary-700"
-            >
-              Register your spot
-              <ArrowRight
-                className="h-4 w-4 transition group-hover:translate-x-0.5"
-                aria-hidden
-              />
-            </Link>
+            {isOpen ? (
+              <Link
+                href="/skillup/register"
+                className="group inline-flex h-14 items-center justify-center gap-2 rounded-full bg-primary px-8 font-display font-semibold text-white shadow-lift transition hover:bg-primary-700"
+              >
+                Register your spot
+                <ArrowRight
+                  className="h-4 w-4 transition group-hover:translate-x-0.5"
+                  aria-hidden
+                />
+              </Link>
+            ) : null}
             {/* Plain <a>: hash-only navigation through next/link double-stacks. */}
             <a
               href="#tracks"

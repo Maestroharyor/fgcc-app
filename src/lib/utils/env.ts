@@ -8,6 +8,13 @@ const PublicEnvSchema = z.object({
     .url()
     .default("https://register.fgccement.org"),
   NEXT_PUBLIC_EVENT_START_ISO: z.string().default("2026-06-12T09:00:00+01:00"),
+  // Registration closes at the start of the event day (00:00 Jun 12). Event end
+  // (end of Jun 14 → 00:00 Jun 15) flips the site to its "over" state. Both are
+  // env-driven so the lifecycle can be retimed without a code change.
+  NEXT_PUBLIC_REGISTRATION_CLOSE_ISO: z
+    .string()
+    .default("2026-06-12T00:00:00+01:00"),
+  NEXT_PUBLIC_EVENT_END_ISO: z.string().default("2026-06-15T00:00:00+01:00"),
 });
 
 const ServerEnvSchema = z.object({
@@ -28,6 +35,9 @@ const publicResult = PublicEnvSchema.safeParse({
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   NEXT_PUBLIC_EVENT_START_ISO: process.env.NEXT_PUBLIC_EVENT_START_ISO,
+  NEXT_PUBLIC_REGISTRATION_CLOSE_ISO:
+    process.env.NEXT_PUBLIC_REGISTRATION_CLOSE_ISO,
+  NEXT_PUBLIC_EVENT_END_ISO: process.env.NEXT_PUBLIC_EVENT_END_ISO,
 });
 
 if (!publicResult.success) {
