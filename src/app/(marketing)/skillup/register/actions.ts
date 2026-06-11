@@ -12,6 +12,7 @@ import {
   sendWaitlistConfirmEmail,
 } from "@/lib/email/send";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { registrationPhase } from "@/lib/utils/date";
 import { env } from "@/lib/utils/env";
 import {
   type RegisterOthersInput,
@@ -34,7 +35,12 @@ function friendlyZodMessage(
 
 export interface ActionResult {
   ok: boolean;
-  error?: "duplicate" | "track-not-found" | "waitlisted" | "unknown";
+  error?:
+    | "duplicate"
+    | "track-not-found"
+    | "waitlisted"
+    | "registration-closed"
+    | "unknown";
   referenceNumber?: string;
   batchId?: string;
   message?: string;
@@ -42,6 +48,20 @@ export interface ActionResult {
 
 function firstName(full: string) {
   return full.trim().split(/\s+/)[0] ?? full;
+}
+
+/**
+ * Security boundary for the time-based gate: once the event window opens,
+ * no new registrations are accepted regardless of what the client renders.
+ * Returns a terminal `ActionResult` when closed, or `null` when still open.
+ */
+function registrationClosedResult(): ActionResult | null {
+  if (registrationPhase() === "open") return null;
+  return {
+    ok: false,
+    error: "registration-closed",
+    message: "Registration for SkillUp 1.0 has closed.",
+  };
 }
 
 /**
@@ -73,6 +93,12 @@ export async function registerSelfAction(
 ): Promise<ActionResult> {
   const t0 = Date.now();
   console.log("[register:self] ▶ start");
+
+  const closed = registrationClosedResult();
+  if (closed) {
+    console.log("[register:self] ⤵ registration closed");
+    return closed;
+  }
 
   let parsed: RegistrationInput;
   try {
@@ -264,6 +290,12 @@ export async function registerOthersAction(
       ? payload.registrants.length
       : null,
   });
+
+  const closed = registrationClosedResult();
+  if (closed) {
+    console.log("[register:others] ⤵ registration closed");
+    return closed;
+  }
 
   let parsed: RegisterOthersInput;
   try {

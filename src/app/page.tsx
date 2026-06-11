@@ -4,7 +4,18 @@ import Link from "next/link";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { CountdownTimer } from "@/components/ui/CountdownTimer";
 import { TRACKS } from "@/content/tracks";
+import { type RegistrationPhase, registrationPhase } from "@/lib/utils/date";
 import { env } from "@/lib/utils/env";
+
+const TEASER_STATUS: Record<Exclude<RegistrationPhase, "open">, string> = {
+  "pre-start": "Registration has closed. SkillUp 1.0 starts 9:00am, June 12.",
+  ongoing: "SkillUp 1.0 is happening now, June 12 – 14, at Cement HQ.",
+  over: "SkillUp 1.0 has ended. Thank you to everyone who joined.",
+};
+
+// ISR so the registration phase (computed server-side below) re-evaluates as
+// time passes without a redeploy. The countdown itself is client-side.
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Foursquare Gospel Church · Cement Missionary District Headquarters",
@@ -41,6 +52,8 @@ const organizationJsonLd = {
 };
 
 export default function ComingSoonPage() {
+  const phase = registrationPhase();
+  const isOpen = phase === "open";
   return (
     <main id="main" className="hero-mesh relative min-h-dvh flex flex-col">
       <script
@@ -103,26 +116,36 @@ export default function ComingSoonPage() {
             </p>
 
             <div className="mt-6">
-              <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55 mb-2">
-                Time to event
-              </div>
-              <CountdownTimer
-                target={env.NEXT_PUBLIC_EVENT_START_ISO}
-                variant="compact"
-              />
+              {isOpen ? (
+                <>
+                  <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55 mb-2">
+                    Time to event
+                  </div>
+                  <CountdownTimer
+                    target={env.NEXT_PUBLIC_EVENT_START_ISO}
+                    variant="compact"
+                  />
+                </>
+              ) : (
+                <p className="font-display text-lg font-semibold text-primary">
+                  {TEASER_STATUS[phase]}
+                </p>
+              )}
             </div>
 
             <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <Link
-                href="/skillup/register"
-                className="group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-7 font-display font-semibold text-white shadow-card transition hover:bg-primary-700"
-              >
-                Register for SkillUp 1.0
-                <ArrowRight
-                  className="h-4 w-4 transition group-hover:translate-x-0.5"
-                  aria-hidden
-                />
-              </Link>
+              {isOpen ? (
+                <Link
+                  href="/skillup/register"
+                  className="group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-7 font-display font-semibold text-white shadow-card transition hover:bg-primary-700"
+                >
+                  Register for SkillUp 1.0
+                  <ArrowRight
+                    className="h-4 w-4 transition group-hover:translate-x-0.5"
+                    aria-hidden
+                  />
+                </Link>
+              ) : null}
               <Link
                 href="/skillup"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-navy/15 bg-white px-6 font-display font-medium text-navy hover:bg-cream-100"

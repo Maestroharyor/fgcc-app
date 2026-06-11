@@ -9,6 +9,8 @@ interface Props {
   track: Track;
   remaining?: number;
   capacity?: number;
+  /** When false (event started/ended), the CTA stops linking to the form. */
+  registrationOpen?: boolean;
 }
 
 const categoryAccent: Record<Track["category"], string> = {
@@ -23,7 +25,12 @@ const iconTint: Record<Track["category"], string> = {
   vocational: "text-gold-600",
 };
 
-export function TrackCard({ track, remaining, capacity }: Props) {
+export function TrackCard({
+  track,
+  remaining,
+  capacity,
+  registrationOpen = true,
+}: Props) {
   const isFull = remaining !== undefined && remaining <= 0;
   const isFilling = !isFull && remaining !== undefined && remaining <= 5;
 
@@ -73,23 +80,29 @@ export function TrackCard({ track, remaining, capacity }: Props) {
         />
       </div>
 
-      <Link
-        href={`/skillup/register?track=${track.code}`}
-        className={cn(
-          "mt-5 inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-2.5 font-display text-sm font-semibold transition",
-          isFull
-            ? "bg-navy/5 text-navy/55 hover:bg-navy/10"
-            : "bg-primary text-white hover:bg-primary-700",
-        )}
-        aria-label={
-          isFull
-            ? `Join waitlist for ${track.name}`
-            : `Register for ${track.name}`
-        }
-      >
-        {isFull ? "Join waitlist" : "Register"}
-        <ArrowUpRight className="h-4 w-4" aria-hidden />
-      </Link>
+      {registrationOpen ? (
+        <Link
+          href={`/skillup/register?track=${track.code}`}
+          className={cn(
+            "mt-5 inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-2.5 font-display text-sm font-semibold transition",
+            isFull
+              ? "bg-navy/5 text-navy/55 hover:bg-navy/10"
+              : "bg-primary text-white hover:bg-primary-700",
+          )}
+          aria-label={
+            isFull
+              ? `Join waitlist for ${track.name}`
+              : `Register for ${track.name}`
+          }
+        >
+          {isFull ? "Join waitlist" : "Register"}
+          <ArrowUpRight className="h-4 w-4" aria-hidden />
+        </Link>
+      ) : (
+        <span className="mt-5 inline-flex items-center justify-center rounded-full bg-navy/5 px-5 py-2.5 font-display text-sm font-semibold text-navy/55">
+          Registration closed
+        </span>
+      )}
     </article>
   );
 }

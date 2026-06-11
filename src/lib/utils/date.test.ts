@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { countdownTo, formatDate } from "./date";
+import {
+  countdownTo,
+  formatDate,
+  isRegistrationOpen,
+  registrationPhase,
+} from "./date";
 
 describe("countdownTo", () => {
   it("computes days/hours/minutes/seconds for a future target", () => {
@@ -41,6 +46,55 @@ describe("countdownTo", () => {
     const parts = countdownTo(moment, moment);
     expect(parts.hasStarted).toBe(true);
     expect(parts.totalSeconds).toBe(0);
+  });
+});
+
+describe("registrationPhase", () => {
+  // Default env boundaries: close 2026-06-12T00:00+01:00,
+  // start 2026-06-12T09:00+01:00, end 2026-06-15T00:00+01:00.
+  it("is open before the close instant", () => {
+    expect(registrationPhase(new Date("2026-06-11T23:59:59+01:00"))).toBe(
+      "open",
+    );
+  });
+
+  it("flips to pre-start at the close instant", () => {
+    expect(registrationPhase(new Date("2026-06-12T00:00:00+01:00"))).toBe(
+      "pre-start",
+    );
+  });
+
+  it("stays pre-start just before the event start", () => {
+    expect(registrationPhase(new Date("2026-06-12T08:59:59+01:00"))).toBe(
+      "pre-start",
+    );
+  });
+
+  it("flips to ongoing at the event start", () => {
+    expect(registrationPhase(new Date("2026-06-12T09:00:00+01:00"))).toBe(
+      "ongoing",
+    );
+  });
+
+  it("stays ongoing through June 14", () => {
+    expect(registrationPhase(new Date("2026-06-14T23:59:59+01:00"))).toBe(
+      "ongoing",
+    );
+  });
+
+  it("flips to over at the end instant", () => {
+    expect(registrationPhase(new Date("2026-06-15T00:00:00+01:00"))).toBe(
+      "over",
+    );
+  });
+
+  it("isRegistrationOpen mirrors the open phase only", () => {
+    expect(isRegistrationOpen(new Date("2026-06-11T23:59:59+01:00"))).toBe(
+      true,
+    );
+    expect(isRegistrationOpen(new Date("2026-06-12T00:00:00+01:00"))).toBe(
+      false,
+    );
   });
 });
 

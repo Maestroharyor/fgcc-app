@@ -13,6 +13,7 @@ import { TRACKS, type Track, type TrackCategory } from "@/content/tracks";
 import { VENUE } from "@/content/venue";
 import { getTrackCounts, withCapacity } from "@/lib/db/tracks";
 import type { TrackWithCapacity } from "@/lib/db/types";
+import { type RegistrationPhase, registrationPhase } from "@/lib/utils/date";
 import { env } from "@/lib/utils/env";
 
 export const revalidate = 60;
@@ -138,6 +139,7 @@ const TRACK_GROUPS: Array<{ category: TrackCategory; tracks: Track[] }> = [
 ];
 
 export default function SkillupLandingPage() {
+  const phase = registrationPhase();
   return (
     <>
       <script
@@ -155,15 +157,17 @@ export default function SkillupLandingPage() {
         // biome-ignore lint/security/noDangerouslySetInnerHtml: stringified JSON-LD for SEO.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      <HeroSection />
+      <HeroSection phase={phase} />
       <AboutSection />
-      <Suspense fallback={<TracksSectionSkeleton />}>
-        <TracksSectionAsync />
+      <Suspense
+        fallback={<TracksSectionSkeleton registrationOpen={phase === "open"} />}
+      >
+        <TracksSectionAsync registrationOpen={phase === "open"} />
       </Suspense>
       <FacilitatorsSection />
       <ScheduleSection />
       <FAQSection />
-      <FinalCTA />
+      <FinalCTA phase={phase} />
     </>
   );
 }
@@ -213,16 +217,27 @@ function Stat({
   );
 }
 
-async function TracksSectionAsync() {
+async function TracksSectionAsync({
+  registrationOpen,
+}: {
+  registrationOpen: boolean;
+}) {
   const capacityRows = withCapacity(await getTrackCounts());
   const capacityByCode = new Map(capacityRows.map((r) => [r.code, r]));
-  return <TracksSection capacityByCode={capacityByCode} />;
+  return (
+    <TracksSection
+      capacityByCode={capacityByCode}
+      registrationOpen={registrationOpen}
+    />
+  );
 }
 
 function TracksSection({
   capacityByCode,
+  registrationOpen,
 }: {
   capacityByCode: Map<string, TrackWithCapacity>;
+  registrationOpen: boolean;
 }) {
   return (
     <Section
@@ -257,6 +272,7 @@ function TracksSection({
                     track={track}
                     remaining={cap?.remaining}
                     capacity={cap?.capacity ?? track.capacity}
+                    registrationOpen={registrationOpen}
                   />
                 );
               })}
@@ -268,7 +284,11 @@ function TracksSection({
   );
 }
 
-function TracksSectionSkeleton() {
+function TracksSectionSkeleton({
+  registrationOpen,
+}: {
+  registrationOpen: boolean;
+}) {
   // Render the section chrome and the same per-category headers immediately so
   // the layout doesn't jump when live counts arrive - only the per-card
   // capacity badges differ.
@@ -302,6 +322,7 @@ function TracksSectionSkeleton() {
                   key={track.code}
                   track={track}
                   capacity={track.capacity}
+                  registrationOpen={registrationOpen}
                 />
               ))}
             </div>
@@ -424,7 +445,29 @@ function FAQSection() {
   );
 }
 
-function FinalCTA() {
+const FINAL_CTA: Record<
+  Exclude<RegistrationPhase, "open">,
+  { eyebrow: string; title: string; body: string }
+> = {
+  "pre-start": {
+    eyebrow: "Registration closed",
+    title: "Registration has closed.",
+    body: "SkillUp 1.0 starts 9:00am on Friday, June 12. Registered already? Your reference code and QR pass are in your inbox.",
+  },
+  ongoing: {
+    eyebrow: "Happening now",
+    title: "SkillUp 1.0 is happening now.",
+    body: "Three days of training, June 12 – 14, at the Church Auditorium, Cement HQ. Walk-ins are welcome to come learn.",
+  },
+  over: {
+    eyebrow: "Event ended",
+    title: "SkillUp 1.0 has ended.",
+    body: "Thank you for joining us. We'd love to hear how it went - your feedback shapes the next edition.",
+  },
+};
+
+function FinalCTA({ phase }: { phase: RegistrationPhase }) {
+  const closed = phase === "open" ? null : FINAL_CTA[phase];
   return (
     <section className="px-6 sm:px-10 py-20">
       <div className="mx-auto max-w-6xl">
@@ -448,22 +491,35 @@ function FinalCTA() {
         </div>
         <div className="rounded-3xl bg-primary p-10 sm:p-16 text-center text-white shadow-lift">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-sans text-[10px] uppercase tracking-[0.2em] text-white/80">
-            Free admission
+            {closed ? closed.eyebrow : "Free admission"}
           </span>
           <h2 className="mt-4 font-display text-3xl sm:text-5xl font-semibold tracking-tight">
-            Your seat at SkillUp 1.0 is waiting.
+            {closed ? closed.title : "Your seat at SkillUp 1.0 is waiting."}
           </h2>
           <p className="mt-3 max-w-xl mx-auto text-white/80">
-            Register in under two minutes. You will receive your reference code,
-            QR check-in pass, and track group link by email.
+            {closed
+              ? closed.body
+              : "Register in under two minutes. You will receive your reference code, QR check-in pass, and track group link by email."}
           </p>
-          <Link
-            href="/skillup/register"
-            className="mt-8 inline-flex h-14 items-center justify-center gap-2 rounded-full bg-gold px-8 font-display font-semibold text-white shadow-lift transition hover:bg-gold-600"
-          >
-            Register your spot
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </Link>
+          {closed ? (
+            phase === "over" ? (
+              <Link
+                href="/skillup/feedback"
+                className="mt-8 inline-flex h-14 items-center justify-center gap-2 rounded-full bg-gold px-8 font-display font-semibold text-white shadow-lift transition hover:bg-gold-600"
+              >
+                Share your feedback
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+            ) : null
+          ) : (
+            <Link
+              href="/skillup/register"
+              className="mt-8 inline-flex h-14 items-center justify-center gap-2 rounded-full bg-gold px-8 font-display font-semibold text-white shadow-lift transition hover:bg-gold-600"
+            >
+              Register your spot
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+          )}
         </div>
       </div>
     </section>

@@ -16,6 +16,11 @@ const hoisted = vi.hoisted(() => ({
   sendWaitlistConfirmEmail: vi.fn(async () => ({ ok: true })),
   sendSubmitterSummaryEmail: vi.fn(async () => ({ ok: true })),
   nextWaitlistPosition: vi.fn(async () => 1),
+  // Pin the time-based gate to "open" so date-independent tests are stable
+  // regardless of the wall clock; the closed-gate tests override it.
+  registrationPhase: vi.fn<() => "open" | "pre-start" | "ongoing" | "over">(
+    () => "open",
+  ),
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
@@ -39,11 +44,17 @@ vi.mock("@/lib/db/waitlist", () => ({
   nextWaitlistPosition: hoisted.nextWaitlistPosition,
 }));
 
+vi.mock("@/lib/utils/date", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/utils/date")>()),
+  registrationPhase: hoisted.registrationPhase,
+}));
+
 import { revalidatePath } from "next/cache";
 import { registerOthersAction, registerSelfAction } from "./actions";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  hoisted.registrationPhase.mockReturnValue("open");
   hoisted.nextWaitlistPosition.mockResolvedValue(1);
   hoisted.sendConfirmationEmail.mockResolvedValue({ ok: true });
   hoisted.sendAdminNotificationEmail.mockResolvedValue({ ok: true });
@@ -100,6 +111,15 @@ const validSelf = {
 };
 
 describe("registerSelfAction", () => {
+  it("rejects with registration-closed once the gate has closed", async () => {
+    hoisted.registrationPhase.mockReturnValue("ongoing");
+    const result = await registerSelfAction(fd(validSelf));
+    expect(result.ok).toBe(false);
+    expect(result.error).toBe("registration-closed");
+    // Closed before any DB work runs.
+    expect(hoisted.createSupabaseAdminClient).not.toHaveBeenCalled();
+  });
+
   it("returns unknown error on validation failure", async () => {
     const result = await registerSelfAction(fd({ email: "not-an-email" }));
     expect(result.ok).toBe(false);
@@ -227,6 +247,14 @@ const validOthersPayload = {
 };
 
 describe("registerOthersAction", () => {
+  it("rejects with registration-closed once the gate has closed", async () => {
+    hoisted.registrationPhase.mockReturnValue("over");
+    const result = await registerOthersAction(validOthersPayload);
+    expect(result.ok).toBe(false);
+    expect(result.error).toBe("registration-closed");
+    expect(hoisted.createSupabaseAdminClient).not.toHaveBeenCalled();
+  });
+
   it("returns unknown on validation failure", async () => {
     const result = await registerOthersAction({
       submitter: { ...validOthersPayload.submitter, submitter_email: "" },
