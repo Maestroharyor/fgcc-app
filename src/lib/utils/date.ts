@@ -1,5 +1,5 @@
 import { tz } from "@date-fns/tz";
-import { differenceInSeconds, format } from "date-fns";
+import { addDays, differenceInSeconds, format } from "date-fns";
 import { env } from "./env";
 
 export const LAGOS_TZ = "Africa/Lagos";
@@ -81,4 +81,37 @@ export function countdownTo(
  */
 export function formatDate(date: Date, pattern: string): string {
   return format(date, pattern, { in: lagos });
+}
+
+/**
+ * Canonical per-day key (Lagos calendar day, `yyyy-MM-dd`) used to bucket
+ * attendance. The check-in API and the attendance board both decide "same day"
+ * on this exact key, so a registrant checked in once per Lagos day is matched
+ * regardless of where the server runs.
+ */
+export function attendanceDayKey(date: Date = new Date()): string {
+  return formatDate(date, "yyyy-MM-dd");
+}
+
+export interface EventDay {
+  /** Human label, e.g. "Day 1". */
+  label: string;
+  /** Lagos calendar day, `yyyy-MM-dd` — matches `attendanceDayKey`. */
+  key: string;
+}
+
+/**
+ * The selectable event days, derived from `NEXT_PUBLIC_EVENT_START_ISO`.
+ * Day N is the start instant plus (N-1) days, pinned to Lagos so the key lands
+ * on the right calendar day even across the UTC/Lagos midnight boundary.
+ * Defaults to two days (Day 1 + Day 2).
+ */
+export function eventDays(
+  count = 2,
+  start: Date = eventStartDate(),
+): EventDay[] {
+  return Array.from({ length: count }, (_, i) => ({
+    label: `Day ${i + 1}`,
+    key: attendanceDayKey(addDays(start, i)),
+  }));
 }

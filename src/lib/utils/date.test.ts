@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  attendanceDayKey,
   countdownTo,
+  eventDays,
   formatDate,
   isRegistrationOpen,
   registrationPhase,
@@ -102,5 +104,31 @@ describe("formatDate", () => {
   it("formats a date using the Africa/Lagos timezone", () => {
     const date = new Date("2026-06-12T08:00:00Z"); // 09:00 in Lagos (UTC+1)
     expect(formatDate(date, "yyyy-MM-dd HH:mm")).toBe("2026-06-12 09:00");
+  });
+});
+
+describe("attendanceDayKey", () => {
+  it("keys to the Lagos calendar day", () => {
+    // 23:30 UTC on Jun 12 is 00:30 Jun 13 in Lagos.
+    expect(attendanceDayKey(new Date("2026-06-12T23:30:00Z"))).toBe(
+      "2026-06-13",
+    );
+  });
+});
+
+describe("eventDays", () => {
+  it("derives Day 1/Day 2 keys from the start instant", () => {
+    const start = new Date("2026-06-12T09:00:00+01:00");
+    expect(eventDays(2, start)).toEqual([
+      { label: "Day 1", key: "2026-06-12" },
+      { label: "Day 2", key: "2026-06-13" },
+    ]);
+  });
+
+  it("honours a custom day count", () => {
+    const start = new Date("2026-06-12T09:00:00+01:00");
+    const days = eventDays(3, start);
+    expect(days).toHaveLength(3);
+    expect(days.at(-1)).toEqual({ label: "Day 3", key: "2026-06-14" });
   });
 });

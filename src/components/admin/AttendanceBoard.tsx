@@ -7,7 +7,7 @@ import { useMemo, useState, useTransition } from "react";
 import { TrackSelect } from "@/components/forms/TrackSelect";
 import { TRACKS, trackByCode } from "@/content/tracks";
 import type { AttendanceEntry } from "@/lib/db/registrations";
-import { formatDate } from "@/lib/utils/date";
+import { attendanceDayKey, type EventDay, formatDate } from "@/lib/utils/date";
 import {
   TrackAttendanceBars,
   type TrackAttendanceRow,
@@ -16,30 +16,66 @@ import {
 type View = "present" | "absent";
 
 /**
+ * The Lagos days a registrant checked in. Pre-005 rows have no `attendance_log`,
+ * so their single `attended_at` stands in for it — mirrors the check-in API.
+ */
+function attendanceLog(entry: AttendanceEntry): string[] {
+  if (Array.isArray(entry.attendance_log)) return entry.attendance_log;
+  return entry.attended_at ? [entry.attended_at] : [];
+}
+
+/** The ISO timestamp this registrant checked in on `dayKey`, or null. */
+function checkinOn(entry: AttendanceEntry, dayKey: string): string | null {
+  return (
+    attendanceLog(entry).find(
+      (d) => attendanceDayKey(new Date(d)) === dayKey,
+    ) ?? null
+  );
+}
+
+/**
  * Event-day attendance board. Lists present vs absent registrants with a
  * per-track breakdown, one-tap check-in / undo, and live refresh. Local state
  * only (toggle, track filter, search); `router.refresh()` re-runs the server
  * query after each action and React preserves this state across the soft
  * refresh, so staff don't lose their place.
  */
-export function AttendanceBoard({ entries }: { entries: AttendanceEntry[] }) {
+export function AttendanceBoard({
+  entries,
+  days,
+  today,
+}: {
+  entries: AttendanceEntry[];
+  days: EventDay[];
+  today: string;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [view, setView] = useState<View>("present");
   const [track, setTrack] = useState("");
   const [query, setQuery] = useState("");
+  // Default to today if it's an event day, else the latest day (e.g. opening
+  // the board before/after the window).
+  const [day, setDay] = useState(
+    () => days.find((d) => d.key === today)?.key ?? days.at(-1)?.key ?? today,
+  );
 
-  const presentCount = entries.filter((e) => e.attended).length;
+  // Check-in mutations only ever touch the current Lagos day, so the board is
+  // read-only when reviewing any day other than today.
+  const isToday = day === today;
+  const dayLabel = days.find((d) => d.key === day)?.label ?? "today";
+
+  const presentCount = entries.filter((e) => checkinOn(e, day)).length;
   const absentCount = entries.length - presentCount;
 
-  // Per-track present + registered, busiest classes first.
+  // Per-track present + registered for the selected day, busiest classes first.
   const trackRows: TrackAttendanceRow[] = useMemo(() => {
     const byCode = new Map<string, { present: number; registered: number }>();
     for (const e of entries) {
       const agg = byCode.get(e.track_code) ?? { present: 0, registered: 0 };
       agg.registered += 1;
-      if (e.attended) agg.present += 1;
+      if (checkinOn(e, day)) agg.present += 1;
       byCode.set(e.track_code, agg);
     }
     return TRACKS.map((t) => ({
@@ -55,12 +91,13 @@ export function AttendanceBoard({ entries }: { entries: AttendanceEntry[] }) {
           b.present / b.registered - a.present / a.registered ||
           a.name.localeCompare(b.name),
       );
-  }, [entries]);
+  }, [entries, day]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     return entries.filter((e) => {
-      if (view === "present" ? !e.attended : e.attended) return false;
+      const present = checkinOn(e, day) !== null;
+      if (view === "present" ? !present : present) return false;
       if (track && e.track_code !== track) return false;
       if (
         q &&
@@ -70,7 +107,7 @@ export function AttendanceBoard({ entries }: { entries: AttendanceEntry[] }) {
         return false;
       return true;
     });
-  }, [entries, view, track, query]);
+  }, [entries, view, track, query, day]);
 
   const act = (entry: AttendanceEntry, method: "POST" | "DELETE") => {
     setBusyId(entry.id);
@@ -87,14 +124,38 @@ export function AttendanceBoard({ entries }: { entries: AttendanceEntry[] }) {
 
   return (
     <section className="rounded-3xl border border-navy/8 bg-white p-6 shadow-card">
-      <div className="flex flex-col gap-1">
-        <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
-          Attendance
-        </span>
-        <h2 className="font-display text-xl font-semibold text-navy">
-          Who's in the room
-        </h2>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
+            Attendance
+          </span>
+          <h2 className="font-display text-xl font-semibold text-navy">
+            Who's in the room
+          </h2>
+        </div>
+        {/* Day selector — each day's present/absent is independent. */}
+        {days.length > 1 && (
+          <div className="inline-flex rounded-full border border-navy/12 bg-cream/50 p-1">
+            {days.map((d) => (
+              <ToggleButton
+                key={d.key}
+                active={day === d.key}
+                onClick={() => setDay(d.key)}
+              >
+                {d.label}
+                {d.key === today && (
+                  <span className="ml-1 text-[10px] text-primary">· today</span>
+                )}
+              </ToggleButton>
+            ))}
+          </div>
+        )}
       </div>
+      {!isToday && (
+        <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          Viewing {dayLabel} — read-only. Check-in and undo apply to today only.
+        </p>
+      )}
 
       <div className="mt-5 grid grid-cols-1 lg:grid-cols-[300px_1fr] lg:h-[38rem] gap-6">
         {/* Per-track breakdown — click a track to filter the list. */}
@@ -189,35 +250,40 @@ export function AttendanceBoard({ entries }: { entries: AttendanceEntry[] }) {
                       <span className="truncate">
                         {trackByCode(e.track_code)?.name ?? e.track_code}
                       </span>
-                      {view === "present" && e.attended_at && (
+                      {view === "present" && checkinOn(e, day) && (
                         <span className="whitespace-nowrap">
-                          · {formatDate(new Date(e.attended_at), "h:mm a")}
+                          ·{" "}
+                          {formatDate(
+                            new Date(checkinOn(e, day) as string),
+                            "h:mm a",
+                          )}
                         </span>
                       )}
                     </span>
                   </span>
                 </Link>
-                {view === "absent" ? (
-                  <button
-                    type="button"
-                    onClick={() => act(e, "POST")}
-                    disabled={pending && busyId === e.id}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 font-display text-xs font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
-                  >
-                    <Check className="h-3.5 w-3.5" aria-hidden />
-                    {busyId === e.id ? "…" : "Mark present"}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => act(e, "DELETE")}
-                    disabled={pending && busyId === e.id}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-navy/15 bg-white px-3 py-1.5 font-display text-xs font-semibold text-navy/70 hover:bg-cream-100 disabled:opacity-60"
-                  >
-                    <Undo2 className="h-3.5 w-3.5" aria-hidden />
-                    {busyId === e.id ? "…" : "Undo"}
-                  </button>
-                )}
+                {isToday &&
+                  (view === "absent" ? (
+                    <button
+                      type="button"
+                      onClick={() => act(e, "POST")}
+                      disabled={pending && busyId === e.id}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 font-display text-xs font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+                    >
+                      <Check className="h-3.5 w-3.5" aria-hidden />
+                      {busyId === e.id ? "…" : "Mark present"}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => act(e, "DELETE")}
+                      disabled={pending && busyId === e.id}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-navy/15 bg-white px-3 py-1.5 font-display text-xs font-semibold text-navy/70 hover:bg-cream-100 disabled:opacity-60"
+                    >
+                      <Undo2 className="h-3.5 w-3.5" aria-hidden />
+                      {busyId === e.id ? "…" : "Undo"}
+                    </button>
+                  ))}
               </div>
             ))}
           </div>

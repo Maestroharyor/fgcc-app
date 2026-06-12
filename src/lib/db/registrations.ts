@@ -127,6 +127,8 @@ export interface AttendanceEntry {
   track_code: string;
   attended: boolean;
   attended_at: string | null;
+  /** One ISO timestamp per Lagos day checked in. Null on pre-005 rows. */
+  attendance_log: string[] | null;
 }
 
 /**
@@ -141,7 +143,7 @@ export const getAttendanceBoard = cache(
     const { data, error } = await supabase
       .from("registrations")
       .select(
-        "id, reference_number, full_name, track_code, attended, attended_at",
+        "id, reference_number, full_name, track_code, attended, attended_at, attendance_log",
       )
       .order("full_name", { ascending: true });
     if (error) {

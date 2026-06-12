@@ -4,7 +4,7 @@ import { AttendanceBoard } from "@/components/admin/AttendanceBoard";
 import { CheckinForm } from "@/components/admin/CheckinForm";
 import { requireRole } from "@/lib/auth/require-role";
 import { getAttendanceBoard } from "@/lib/db/registrations";
-import { formatDate } from "@/lib/utils/date";
+import { attendanceDayKey, eventDays } from "@/lib/utils/date";
 
 export const dynamic = "force-dynamic";
 
@@ -47,13 +47,11 @@ export default async function CheckinPage() {
 
 async function TallyAside() {
   const entries = await getAttendanceBoard();
-  const today = formatDate(new Date(), "yyyy-MM-dd");
+  const today = attendanceDayKey();
   const total = entries.length;
   const cumulative = entries.filter((e) => e.attended).length;
   const presentToday = entries.filter(
-    (e) =>
-      e.attended_at &&
-      formatDate(new Date(e.attended_at), "yyyy-MM-dd") === today,
+    (e) => e.attended_at && attendanceDayKey(new Date(e.attended_at)) === today,
   ).length;
   return (
     <aside className="rounded-3xl border border-navy/8 bg-white p-6 shadow-card">
@@ -76,7 +74,13 @@ async function TallyAside() {
 
 async function AttendanceSection() {
   const entries = await getAttendanceBoard();
-  return <AttendanceBoard entries={entries} />;
+  return (
+    <AttendanceBoard
+      entries={entries}
+      days={eventDays(2)}
+      today={attendanceDayKey()}
+    />
+  );
 }
 
 function TallySkeleton() {
