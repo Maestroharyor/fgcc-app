@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -50,13 +50,14 @@ export function CheckinButton({ reference, attended }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col items-start gap-3">
       <button
         type="button"
         onClick={checkIn}
         disabled={pending}
-        className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 font-display text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+        className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 font-display text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 disabled:opacity-60"
       >
+        {pending && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
         {pending
           ? "Checking in…"
           : attended
@@ -66,7 +67,7 @@ export function CheckinButton({ reference, attended }: Props) {
 
       {result && (
         <div
-          className={`rounded-2xl border p-4 ${
+          className={`w-full max-w-md rounded-2xl border p-4 ${
             result.ok
               ? "border-emerald-200 bg-emerald-50 text-emerald-800"
               : result.alreadyChecked

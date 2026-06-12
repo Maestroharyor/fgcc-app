@@ -210,41 +210,43 @@ async function RegistrantProfileSection({
         </div>
       )}
 
-      <div className="mt-8 flex flex-wrap gap-3">
+      <div className="mt-8 flex flex-col gap-5 border-t border-navy/8 pt-6">
         <CheckinButton
           reference={registration.reference_number}
           attended={registration.attended}
         />
-        {role === "superadmin" && (
-          <Link
-            href={`/admin/certificates?q=${registration.reference_number}`}
-            className="inline-flex items-center gap-2 rounded-full border border-navy/15 bg-white px-4 py-2 font-display text-sm font-semibold text-navy hover:bg-cream-100"
-          >
-            <Award className="h-4 w-4" aria-hidden /> View certificate
-          </Link>
-        )}
-        <EditRegistrationButton
-          id={registration.id}
-          fullName={registration.full_name}
-          email={registration.email}
-          phone={registration.phone}
-          gender={registration.gender}
-          ageGroup={registration.age_group}
-          church={registration.church}
-        />
-        <ChangeTrackButton
-          id={registration.id}
-          currentTrackCode={registration.track_code}
-          tracks={trackOptions}
-        />
-        <ResendWhatsAppButton id={registration.id} />
-        {role === "superadmin" && (
-          <DeleteRegistrationButton
+        <div className="flex flex-wrap items-center gap-3">
+          {role === "superadmin" && (
+            <Link
+              href={`/admin/certificates?q=${registration.reference_number}`}
+              className="inline-flex items-center gap-2 rounded-full border border-navy/15 bg-white px-4 py-2 font-display text-sm font-semibold text-navy hover:bg-cream-100"
+            >
+              <Award className="h-4 w-4" aria-hidden /> View certificate
+            </Link>
+          )}
+          <EditRegistrationButton
             id={registration.id}
             fullName={registration.full_name}
-            reference={registration.reference_number}
+            email={registration.email}
+            phone={registration.phone}
+            gender={registration.gender}
+            ageGroup={registration.age_group}
+            church={registration.church}
           />
-        )}
+          <ChangeTrackButton
+            id={registration.id}
+            currentTrackCode={registration.track_code}
+            tracks={trackOptions}
+          />
+          <ResendWhatsAppButton id={registration.id} />
+          {role === "superadmin" && (
+            <DeleteRegistrationButton
+              id={registration.id}
+              fullName={registration.full_name}
+              reference={registration.reference_number}
+            />
+          )}
+        </div>
       </div>
     </section>
   );
