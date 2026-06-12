@@ -34,11 +34,11 @@ export function TrackAttendanceBars({
         const selected = selectedCode === r.code;
         const body = (
           <>
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-display font-medium text-navy">
+            <div className="flex items-start justify-between gap-3 text-sm">
+              <span className="min-w-0 font-display font-medium text-navy">
                 {r.name}
               </span>
-              <span className="font-sans text-xs text-navy/60">
+              <span className="shrink-0 whitespace-nowrap font-sans text-xs tabular-nums text-navy/60">
                 {r.present} / {r.registered}
               </span>
             </div>
