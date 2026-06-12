@@ -6,32 +6,15 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { TrackSelect } from "@/components/forms/TrackSelect";
 import { TRACKS, trackByCode } from "@/content/tracks";
+import { checkinOn } from "@/lib/attendance/day";
 import type { AttendanceEntry } from "@/lib/db/registrations";
-import { attendanceDayKey, type EventDay, formatDate } from "@/lib/utils/date";
+import { type EventDay, formatDate } from "@/lib/utils/date";
 import {
   TrackAttendanceBars,
   type TrackAttendanceRow,
 } from "./TrackAttendanceBars";
 
 type View = "present" | "absent";
-
-/**
- * The Lagos days a registrant checked in. Pre-005 rows have no `attendance_log`,
- * so their single `attended_at` stands in for it — mirrors the check-in API.
- */
-function attendanceLog(entry: AttendanceEntry): string[] {
-  if (Array.isArray(entry.attendance_log)) return entry.attendance_log;
-  return entry.attended_at ? [entry.attended_at] : [];
-}
-
-/** The ISO timestamp this registrant checked in on `dayKey`, or null. */
-function checkinOn(entry: AttendanceEntry, dayKey: string): string | null {
-  return (
-    attendanceLog(entry).find(
-      (d) => attendanceDayKey(new Date(d)) === dayKey,
-    ) ?? null
-  );
-}
 
 /**
  * Event-day attendance board. Lists present vs absent registrants with a

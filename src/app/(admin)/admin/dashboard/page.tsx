@@ -9,14 +9,13 @@ import {
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { TrackAttendanceBars } from "@/components/admin/TrackAttendanceBars";
-import { TRACKS } from "@/content/tracks";
+import { AttendanceByTrackCard } from "@/components/admin/AttendanceByTrackCard";
 import { requireRole } from "@/lib/auth/require-role";
 import { getAttendanceBoard } from "@/lib/db/registrations";
 import { getTrackCounts, withCapacity } from "@/lib/db/tracks";
 import type { DBRegistration } from "@/lib/db/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { formatDate } from "@/lib/utils/date";
+import { attendanceDayKey, eventDays, formatDate } from "@/lib/utils/date";
 
 export const dynamic = "force-dynamic";
 
@@ -266,24 +265,13 @@ async function RecentRegistrationsPanel() {
 
 async function AttendanceByTrackPanel() {
   const entries = await getAttendanceBoard();
-  const byCode = new Map<string, { present: number; registered: number }>();
-  for (const e of entries) {
-    const agg = byCode.get(e.track_code) ?? { present: 0, registered: 0 };
-    agg.registered += 1;
-    if (e.attended) agg.present += 1;
-    byCode.set(e.track_code, agg);
-  }
-  const rows = TRACKS.map((t) => ({
-    code: t.code,
-    name: t.name,
-    present: byCode.get(t.code)?.present ?? 0,
-    registered: byCode.get(t.code)?.registered ?? 0,
-  }))
-    .filter((r) => r.registered > 0)
-    .sort((a, b) => b.present - a.present);
   return (
     <Panel title="Attendance by track" subtitle="Checked in vs registered">
-      <TrackAttendanceBars rows={rows} />
+      <AttendanceByTrackCard
+        entries={entries}
+        days={eventDays(2)}
+        today={attendanceDayKey()}
+      />
     </Panel>
   );
 }
