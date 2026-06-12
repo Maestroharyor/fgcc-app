@@ -102,7 +102,7 @@ export function AttendanceBoard({ entries }: { entries: AttendanceEntry[] }) {
           <div className="mb-3 shrink-0 font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
             By track (present / registered)
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+          <div className="min-h-0 flex-1 overflow-y-auto px-1 py-1">
             <TrackAttendanceBars
               rows={trackRows}
               onSelect={setTrack}
