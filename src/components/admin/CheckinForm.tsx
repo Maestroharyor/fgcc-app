@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle2, ScanLine, XCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 interface CheckinResult {
@@ -17,6 +18,7 @@ interface CheckinResult {
 }
 
 export function CheckinForm() {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [ref, setRef] = useState("");
   const [result, setResult] = useState<CheckinResult | null>(null);
@@ -32,7 +34,12 @@ export function CheckinForm() {
       });
       const data = (await res.json()) as CheckinResult;
       setResult(data);
-      if (data.ok) setRef("");
+      if (data.ok) {
+        setRef("");
+        // Re-run the page's server components so the tally and board reflect
+        // this check-in without a manual reload.
+        router.refresh();
+      }
     });
   };
 

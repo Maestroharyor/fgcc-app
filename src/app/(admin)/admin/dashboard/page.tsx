@@ -9,7 +9,10 @@ import {
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { TrackAttendanceBars } from "@/components/admin/TrackAttendanceBars";
+import { TRACKS } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
+import { getAttendanceBoard } from "@/lib/db/registrations";
 import { getTrackCounts, withCapacity } from "@/lib/db/tracks";
 import type { DBRegistration } from "@/lib/db/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -89,6 +92,12 @@ export default async function AdminDashboardPage() {
         </Suspense>
         <Suspense fallback={<RecentRegistrationsPanelSkeleton />}>
           <RecentRegistrationsPanel />
+        </Suspense>
+      </div>
+
+      <div className="mt-6">
+        <Suspense fallback={<AttendanceByTrackPanelSkeleton />}>
+          <AttendanceByTrackPanel />
         </Suspense>
       </div>
     </div>
@@ -255,6 +264,30 @@ async function RecentRegistrationsPanel() {
   );
 }
 
+async function AttendanceByTrackPanel() {
+  const entries = await getAttendanceBoard();
+  const byCode = new Map<string, { present: number; registered: number }>();
+  for (const e of entries) {
+    const agg = byCode.get(e.track_code) ?? { present: 0, registered: 0 };
+    agg.registered += 1;
+    if (e.attended) agg.present += 1;
+    byCode.set(e.track_code, agg);
+  }
+  const rows = TRACKS.map((t) => ({
+    code: t.code,
+    name: t.name,
+    present: byCode.get(t.code)?.present ?? 0,
+    registered: byCode.get(t.code)?.registered ?? 0,
+  }))
+    .filter((r) => r.registered > 0)
+    .sort((a, b) => b.present - a.present);
+  return (
+    <Panel title="Attendance by track" subtitle="Checked in vs registered">
+      <TrackAttendanceBars rows={rows} />
+    </Panel>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  Presentational helpers + skeletons.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -352,6 +385,30 @@ function ByTrackPanelSkeleton() {
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={`bt-skel-${
+              // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder
+              i
+            }`}
+            className="flex flex-col gap-1.5"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="h-3 w-40 rounded bg-navy/8 animate-pulse" />
+              <span className="h-3 w-12 rounded bg-navy/8 animate-pulse" />
+            </div>
+            <div className="h-1.5 rounded-full bg-navy/8 animate-pulse" />
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+function AttendanceByTrackPanelSkeleton() {
+  return (
+    <Panel title="Attendance by track" subtitle="Checked in vs registered">
+      <div className="flex flex-col gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div
+            key={`at-skel-${
               // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder
               i
             }`}
