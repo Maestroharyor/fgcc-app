@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ChangeTrackButton } from "@/components/admin/ChangeTrackButton";
+import { CheckinButton } from "@/components/admin/CheckinButton";
 import { DeleteRegistrationButton } from "@/components/admin/DeleteRegistrationButton";
 import { EditRegistrationButton } from "@/components/admin/EditRegistrationButton";
 import { REGISTERED_VIA_LABEL } from "@/components/admin/RegistrationsTable";
@@ -210,19 +211,10 @@ async function RegistrantProfileSection({
       )}
 
       <div className="mt-8 flex flex-wrap gap-3">
-        <form action="/api/admin/checkin" method="post">
-          <input
-            type="hidden"
-            name="reference_number"
-            value={registration.reference_number}
-          />
-          <button
-            type="submit"
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 font-display text-sm font-semibold text-white hover:bg-primary-700"
-          >
-            {registration.attended ? "Check in for today" : "Mark attended"}
-          </button>
-        </form>
+        <CheckinButton
+          reference={registration.reference_number}
+          attended={registration.attended}
+        />
         {role === "superadmin" && (
           <Link
             href={`/admin/certificates?q=${registration.reference_number}`}
