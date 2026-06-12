@@ -32,7 +32,7 @@ export function AttendanceBoard({ entries }: { entries: AttendanceEntry[] }) {
   const presentCount = entries.filter((e) => e.attended).length;
   const absentCount = entries.length - presentCount;
 
-  // Per-track present + registered, in catalogue order.
+  // Per-track present + registered, busiest classes first.
   const trackRows: TrackAttendanceRow[] = useMemo(() => {
     const byCode = new Map<string, { present: number; registered: number }>();
     for (const e of entries) {
@@ -46,7 +46,14 @@ export function AttendanceBoard({ entries }: { entries: AttendanceEntry[] }) {
       name: t.name,
       present: byCode.get(t.code)?.present ?? 0,
       registered: byCode.get(t.code)?.registered ?? 0,
-    })).filter((r) => r.registered > 0);
+    }))
+      .filter((r) => r.registered > 0)
+      .sort(
+        (a, b) =>
+          b.present - a.present ||
+          b.present / b.registered - a.present / a.registered ||
+          a.name.localeCompare(b.name),
+      );
   }, [entries]);
 
   const visible = useMemo(() => {
@@ -88,22 +95,24 @@ export function AttendanceBoard({ entries }: { entries: AttendanceEntry[] }) {
         </h2>
       </div>
 
-      <div className="mt-5 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+      <div className="mt-5 grid grid-cols-1 lg:grid-cols-[300px_1fr] lg:h-[38rem] gap-6">
         {/* Per-track breakdown — click a track to filter the list. */}
-        <div className="rounded-2xl border border-navy/8 bg-cream/40 p-4">
-          <div className="mb-3 font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
+        <div className="flex flex-col rounded-2xl border border-navy/8 bg-cream/40 p-4">
+          <div className="mb-3 shrink-0 font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
             By track (present / registered)
           </div>
-          <TrackAttendanceBars
-            rows={trackRows}
-            onSelect={setTrack}
-            selectedCode={track}
-          />
+          <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+            <TrackAttendanceBars
+              rows={trackRows}
+              onSelect={setTrack}
+              selectedCode={track}
+            />
+          </div>
         </div>
 
         {/* List with toggle + filters. */}
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col gap-4 lg:min-h-0">
+          <div className="flex shrink-0 flex-wrap items-center gap-3">
             <div className="inline-flex rounded-full border border-navy/12 bg-cream/50 p-1">
               <ToggleButton
                 active={view === "present"}
@@ -147,7 +156,7 @@ export function AttendanceBoard({ entries }: { entries: AttendanceEntry[] }) {
             </div>
           </div>
 
-          <div className="max-h-[28rem] divide-y divide-navy/6 overflow-y-auto rounded-2xl border border-navy/8">
+          <div className="max-h-[24rem] divide-y divide-navy/6 overflow-y-auto rounded-2xl border border-navy/8 lg:max-h-none lg:min-h-0 lg:flex-1">
             {visible.length === 0 && (
               <p className="px-4 py-10 text-center text-sm text-navy/55">
                 {view === "present"
@@ -162,22 +171,34 @@ export function AttendanceBoard({ entries }: { entries: AttendanceEntry[] }) {
               >
                 <Link
                   href={`/admin/registrations/${e.id}`}
-                  className="min-w-0 flex-1"
+                  className="flex min-w-0 flex-1 items-center gap-3"
                 >
-                  <div className="truncate font-display text-sm font-medium text-navy">
-                    {e.full_name}
-                  </div>
-                  <div className="flex items-center gap-2 font-sans text-[11px] text-navy/55">
-                    <span className="text-primary">{e.reference_number}</span>
-                    <span className="truncate">
-                      {trackByCode(e.track_code)?.name ?? e.track_code}
+                  <span
+                    className={`grid h-9 w-9 shrink-0 place-items-center rounded-full font-display text-xs font-semibold ${
+                      view === "present"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-navy/8 text-navy/55"
+                    }`}
+                    aria-hidden
+                  >
+                    {initials(e.full_name)}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate font-display text-sm font-medium text-navy">
+                      {e.full_name}
                     </span>
-                    {view === "present" && e.attended_at && (
-                      <span>
-                        · {formatDate(new Date(e.attended_at), "h:mm a")}
+                    <span className="flex items-center gap-2 font-sans text-[11px] text-navy/55">
+                      <span className="text-primary">{e.reference_number}</span>
+                      <span className="truncate">
+                        {trackByCode(e.track_code)?.name ?? e.track_code}
                       </span>
-                    )}
-                  </div>
+                      {view === "present" && e.attended_at && (
+                        <span className="whitespace-nowrap">
+                          · {formatDate(new Date(e.attended_at), "h:mm a")}
+                        </span>
+                      )}
+                    </span>
+                  </span>
                 </Link>
                 {view === "absent" ? (
                   <button
@@ -207,6 +228,14 @@ export function AttendanceBoard({ entries }: { entries: AttendanceEntry[] }) {
       </div>
     </section>
   );
+}
+
+/** First + last initial, for the row avatar. */
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? "";
+  const last = parts.length > 1 ? (parts.at(-1)?.[0] ?? "") : "";
+  return (first + last).toUpperCase() || "?";
 }
 
 function ToggleButton({
