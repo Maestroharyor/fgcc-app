@@ -172,6 +172,45 @@ describe("listRegistrations", () => {
   });
 });
 
+describe("getAttendanceBoard", () => {
+  it("returns the mapped rows", async () => {
+    vi.resetModules();
+    supabase = createSupabaseMock({
+      from: {
+        registrations: {
+          data: [
+            {
+              id: "r1",
+              reference_number: "SKU-UXD-001",
+              full_name: "Ada",
+              track_code: "UXD",
+              attended: true,
+              attended_at: "2026-06-12T08:00:00.000Z",
+            },
+          ],
+          error: null,
+        },
+      },
+    });
+    createSupabaseServerClient.mockImplementation(async () => supabase);
+    const { getAttendanceBoard } = await import("./registrations");
+    const rows = await getAttendanceBoard();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].reference_number).toBe("SKU-UXD-001");
+    expect(rows[0].attended).toBe(true);
+  });
+
+  it("returns [] on error", async () => {
+    vi.resetModules();
+    supabase = createSupabaseMock({
+      from: { registrations: { data: null, error: { message: "boom" } } },
+    });
+    createSupabaseServerClient.mockImplementation(async () => supabase);
+    const { getAttendanceBoard } = await import("./registrations");
+    expect(await getAttendanceBoard()).toEqual([]);
+  });
+});
+
 describe("countAttended", () => {
   it("returns the count from Supabase", async () => {
     supabase = createSupabaseMock({

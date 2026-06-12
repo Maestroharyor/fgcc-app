@@ -119,6 +119,39 @@ export async function listRegistrations(
   };
 }
 
+/** Minimal registrant shape for the event-day attendance board. */
+export interface AttendanceEntry {
+  id: string;
+  reference_number: string;
+  full_name: string;
+  track_code: string;
+  attended: boolean;
+  attended_at: string | null;
+}
+
+/**
+ * Every registrant with just the columns the attendance board needs, sorted by
+ * name. `cache()`-wrapped so the check-in page's tally and board (two Suspense
+ * children in one request) share a single round-trip. All counts (present vs
+ * absent, per-track, today vs cumulative) are derived from this array in JS.
+ */
+export const getAttendanceBoard = cache(
+  async (): Promise<AttendanceEntry[]> => {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("registrations")
+      .select(
+        "id, reference_number, full_name, track_code, attended, attended_at",
+      )
+      .order("full_name", { ascending: true });
+    if (error) {
+      console.warn("[db.registrations] getAttendanceBoard:", error.message);
+      return [];
+    }
+    return (data ?? []) as AttendanceEntry[];
+  },
+);
+
 export async function countAttended(): Promise<number> {
   const supabase = await createSupabaseServerClient();
   const { count } = await supabase

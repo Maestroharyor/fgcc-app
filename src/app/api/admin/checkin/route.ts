@@ -108,3 +108,93 @@ export async function POST(request: NextRequest) {
     registrant,
   });
 }
+
+/**
+ * Undo a mistaken check-in: removes *today's* entries from the attendance log,
+ * mirroring the per-Lagos-day boundary used by POST. If no earlier day remains
+ * the registrant flips back to not-attended.
+ */
+export async function DELETE(request: NextRequest) {
+  await requireRole("admin");
+
+  const payload = await request.json().catch(() => ({}));
+  let parsed: { reference_number: string };
+  try {
+    parsed = CheckinSchema.parse(payload);
+  } catch (e) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: e instanceof Error ? e.message : "Invalid reference",
+      },
+      { status: 400 },
+    );
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("registrations")
+    .select("*")
+    .eq("reference_number", parsed.reference_number)
+    .maybeSingle();
+  const row = data as DBRegistration | null;
+
+  if (error || !row) {
+    return NextResponse.json(
+      { ok: false, error: "Reference not found" },
+      { status: 404 },
+    );
+  }
+
+  const trackName = TRACKS.find((t) => t.code === row.track_code)?.name ?? "";
+  const registrant = {
+    referenceNumber: row.reference_number,
+    fullName: row.full_name,
+    trackName,
+  };
+
+  const log: string[] = Array.isArray(row.attendance_log)
+    ? row.attendance_log
+    : row.attended_at
+      ? [row.attended_at]
+      : [];
+  const today = formatDate(new Date(), "yyyy-MM-dd");
+  const newLog = log.filter(
+    (d) => formatDate(new Date(d), "yyyy-MM-dd") !== today,
+  );
+
+  const update = newLog.length
+    ? { attended: true, attended_at: newLog.at(-1), attendance_log: newLog }
+    : { attended: false, attended_at: null, attendance_log: [] };
+
+  let { error: updErr } = await supabase
+    .from("registrations")
+    .update(update)
+    .eq("id", row.id);
+
+  if (updErr) {
+    // attendance_log column may not exist yet (migration 005 unapplied) — fall
+    // back to clearing the legacy single-day fields.
+    ({ error: updErr } = await supabase
+      .from("registrations")
+      .update({
+        attended: newLog.length > 0,
+        attended_at: newLog.at(-1) ?? null,
+      })
+      .eq("id", row.id));
+  }
+
+  if (updErr) {
+    return NextResponse.json(
+      { ok: false, error: updErr.message },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({
+    ok: true,
+    attended: newLog.length > 0,
+    daysAttended: newLog.length,
+    registrant,
+  });
+}
