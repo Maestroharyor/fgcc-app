@@ -164,7 +164,7 @@ export const AdminBatchRegistrationSchema = z.object({
   registrants: z
     .array(AdminRegistrantSchema)
     .min(1, "Add at least one person")
-    .max(20, "Add up to 20 people at a time"),
+    .max(25, "Add up to 25 people at a time"),
 });
 
 export type AdminBatchRegistrationInput = z.infer<

@@ -58,7 +58,7 @@ interface CreateResult {
   error?: string;
 }
 
-const MAX_ROWS = 20;
+const MAX_ROWS = 25;
 
 // Fresh empty row per call: omit the enum/track fields so the controlled selects
 // render their placeholder (no pre-selected gender). Cast mirrors the public
@@ -355,10 +355,14 @@ function ConfirmModal({
   onConfirm: () => void;
 }) {
   const headingId = useId();
+  const ackId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
-  const fullRows = rows.filter((r) =>
-    tracks.find((t) => t.code === r.track_code && t.is_full),
-  );
+  // Admins may add to full tracks on purpose, but must opt in first.
+  const [ack, setAck] = useState(false);
+  const isFull = (code?: string) =>
+    Boolean(tracks.find((t) => t.code === code && t.is_full));
+  const fullRows = rows.filter((r) => isFull(r.track_code));
+  const blocked = pending || (fullRows.length > 0 && !ack);
 
   // Escape-to-close + body scroll-lock while open.
   useOverlayDismiss(true, onCancel);
@@ -397,6 +401,7 @@ function ConfirmModal({
         <ul className="mt-4 flex flex-col gap-2">
           {rows.map((r, i) => {
             const track = tracks.find((t) => t.code === r.track_code);
+            const full = isFull(r.track_code);
             return (
               <li
                 key={`${r.full_name}-${i}`}
@@ -405,8 +410,13 @@ function ConfirmModal({
                 <span className="truncate font-display text-sm font-medium text-navy">
                   {r.full_name || "(no name)"}
                 </span>
-                <span className="shrink-0 text-xs text-navy/60">
+                <span className="flex shrink-0 items-center gap-1.5 text-xs text-navy/60">
                   {track?.name ?? r.track_code}
+                  {full && (
+                    <span className="rounded-full border border-gold/30 bg-gold/8 px-1.5 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-[0.1em] text-gold-600">
+                      Full
+                    </span>
+                  )}
                 </span>
               </li>
             );
@@ -414,16 +424,36 @@ function ConfirmModal({
         </ul>
 
         {fullRows.length > 0 && (
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-gold/30 bg-gold/8 p-3">
-            <AlertTriangle
-              className="mt-0.5 h-4 w-4 shrink-0 text-gold-600"
-              aria-hidden
-            />
-            <p className="font-sans text-sm text-navy/75">
-              {fullRows.length}{" "}
-              {fullRows.length === 1 ? "person is" : "people are"} on a full
-              track. They'll be added anyway.
-            </p>
+          <div className="mt-4 rounded-xl border border-gold/30 bg-gold/8 p-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle
+                className="mt-0.5 h-4 w-4 shrink-0 text-gold-600"
+                aria-hidden
+              />
+              <p className="font-sans text-sm text-navy/75">
+                {fullRows.length}{" "}
+                {fullRows.length === 1 ? "person is" : "people are"} on a track
+                that's already full. Adding them exceeds the track's capacity.
+              </p>
+            </div>
+            <label
+              htmlFor={ackId}
+              className="mt-3 flex cursor-pointer items-start gap-2 border-t border-gold/20 pt-3 text-sm font-medium text-navy"
+            >
+              <input
+                id={ackId}
+                type="checkbox"
+                checked={ack}
+                onChange={(e) => setAck(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0"
+              />
+              <span>
+                I understand{" "}
+                {fullRows.length === 1 ? "this person is" : "these people are"}{" "}
+                on a full track — add{" "}
+                {fullRows.length === 1 ? "them" : "them all"} anyway.
+              </span>
+            </label>
           </div>
         )}
 
@@ -439,7 +469,7 @@ function ConfirmModal({
           <button
             type="button"
             onClick={onConfirm}
-            disabled={pending}
+            disabled={blocked}
             className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-6 font-display text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
           >
             {pending ? "Saving…" : "Confirm & save"}
