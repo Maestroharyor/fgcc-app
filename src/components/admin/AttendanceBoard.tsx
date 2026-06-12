@@ -4,6 +4,7 @@ import { Check, Search, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
+import { TrackSelect } from "@/components/forms/TrackSelect";
 import { TRACKS, trackByCode } from "@/content/tracks";
 import type { AttendanceEntry } from "@/lib/db/registrations";
 import { formatDate } from "@/lib/utils/date";
@@ -97,7 +98,7 @@ export function AttendanceBoard({ entries }: { entries: AttendanceEntry[] }) {
 
       <div className="mt-5 grid grid-cols-1 lg:grid-cols-[300px_1fr] lg:h-[38rem] gap-6">
         {/* Per-track breakdown — click a track to filter the list. */}
-        <div className="flex flex-col rounded-2xl border border-navy/8 bg-cream/40 p-4">
+        <div className="flex flex-col rounded-2xl border border-navy/8 bg-cream/40 p-4 lg:min-h-0 lg:overflow-hidden">
           <div className="mb-3 shrink-0 font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
             By track (present / registered)
           </div>
@@ -127,19 +128,15 @@ export function AttendanceBoard({ entries }: { entries: AttendanceEntry[] }) {
                 Absent · {absentCount}
               </ToggleButton>
             </div>
-            <select
-              value={track}
-              onChange={(e) => setTrack(e.target.value)}
-              aria-label="Filter by track"
-              className="form-input h-10 w-auto py-1"
-            >
-              <option value="">All tracks</option>
-              {TRACKS.map((t) => (
-                <option key={t.code} value={t.code}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
+            <div className="w-full sm:w-56">
+              <TrackSelect
+                aria-label="Filter by track"
+                allLabel="All tracks"
+                value={track}
+                onChange={setTrack}
+                options={TRACKS.map((t) => ({ code: t.code, name: t.name }))}
+              />
+            </div>
             <div className="relative flex-1 min-w-[160px]">
               <Search
                 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-navy/40"
@@ -151,7 +148,7 @@ export function AttendanceBoard({ entries }: { entries: AttendanceEntry[] }) {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Name or reference"
                 aria-label="Search attendance by name or reference"
-                className="form-input h-10 w-full pl-9 py-1"
+                className="form-input h-11 w-full pl-9 py-1"
               />
             </div>
           </div>
