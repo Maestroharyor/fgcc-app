@@ -67,15 +67,28 @@ async function SchedulePanels() {
   ]);
   const tracks = TRACKS.map((t) => ({ code: t.code, name: t.name }));
 
+  const totalAttended =
+    counts.none +
+    counts.scheduled +
+    counts.sent +
+    counts.failed +
+    counts.noEmail;
+
   return (
     <div className="mt-6 space-y-6">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <StatCard label="Attended" value={totalAttended} tone="primary" lead />
         <StatCard label="Awaiting" value={counts.none} tone="navy" />
-        <StatCard label="Scheduled" value={counts.scheduled} tone="primary" />
+        <StatCard label="Scheduled" value={counts.scheduled} tone="navy" />
         <StatCard label="Sent" value={counts.sent} tone="emerald" />
         <StatCard label="Failed" value={counts.failed} tone="red" />
         <StatCard label="No email" value={counts.noEmail} tone="amber" />
       </div>
+      <p className="-mt-3 text-xs text-navy/55">
+        {totalAttended} attended in total ={" "}
+        {counts.none + counts.scheduled + counts.sent + counts.failed} with an
+        email + {counts.noEmail} with none.
+      </p>
       <NoEmailList attendees={noEmailAttendees} />
       <CertificateScheduler
         tracks={tracks}
@@ -157,13 +170,20 @@ function StatCard({
   label,
   value,
   tone,
+  lead = false,
 }: {
   label: string;
   value: number;
   tone: keyof typeof STAT_TONE;
+  /** The total card - given a tinted background so it reads as the headline. */
+  lead?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-navy/8 bg-white p-4 shadow-card">
+    <div
+      className={`rounded-2xl border p-4 shadow-card ${
+        lead ? "border-primary/20 bg-primary/5" : "border-navy/8 bg-white"
+      }`}
+    >
       <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
         {label}
       </span>
