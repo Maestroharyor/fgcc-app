@@ -14,6 +14,9 @@ import EnquiryAckEmail, {
 import EnquiryNotificationEmail, {
   type EnquiryNotificationEmailProps,
 } from "@/emails/EnquiryNotificationEmail";
+import FeedbackNotificationEmail, {
+  type FeedbackNotificationEmailProps,
+} from "@/emails/FeedbackNotificationEmail";
 import FeedbackRequestEmail, {
   type FeedbackRequestEmailProps,
 } from "@/emails/FeedbackRequestEmail";
@@ -223,6 +226,27 @@ export function sendEnquiryNotificationEmail(
     to: recipients,
     subject: `New enquiry: ${props.fullName} · ${props.subject}`,
     Component: EnquiryNotificationEmail,
+    props,
+    replyTo: props.email,
+  });
+}
+
+/**
+ * Notify the SkillUp inbox(es) when a participant submits event feedback.
+ * Mirrors the enquiry notification: falls back to a hard-coded support address
+ * if ADMIN_NOTIFICATION_EMAILS is empty, and sets reply-to to the participant.
+ */
+export function sendFeedbackNotificationEmail(
+  props: FeedbackNotificationEmailProps,
+) {
+  const recipients =
+    adminNotificationEmails.length > 0
+      ? adminNotificationEmails
+      : ["skillup@fgccement.org"];
+  return dispatch({
+    to: recipients,
+    subject: `New feedback: ${props.fullName} · ${props.overallRating}★ · ${props.trackName}`,
+    Component: FeedbackNotificationEmail,
     props,
     replyTo: props.email,
   });

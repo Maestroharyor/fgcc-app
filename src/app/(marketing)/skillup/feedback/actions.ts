@@ -1,6 +1,8 @@
 "use server";
 
 import { ZodError, type z } from "zod";
+import { TRACKS } from "@/content/tracks";
+import { sendFeedbackNotificationEmail } from "@/lib/email/send";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { type FeedbackInput, FeedbackSchema } from "@/lib/validation/schemas";
 
@@ -46,24 +48,33 @@ export async function submitFeedbackAction(
   // otherwise be blocked for anon. Server-action is a trusted boundary.
   const supabase = createSupabaseAdminClient();
 
+  // Resolve the registration by whichever identifier the participant used.
+  const byEmail = parsed.lookup === "email";
   console.log("[feedback] → lookup registration", {
+    lookup: parsed.lookup,
     reference_number: parsed.reference_number,
+    email: parsed.email,
   });
-  const { data: reg, error: regError } = await supabase
+  const lookupQuery = supabase
     .from("registrations")
-    .select("id")
-    .eq("reference_number", parsed.reference_number)
-    .maybeSingle();
+    .select("id, full_name, email, track_code, reference_number");
+  const { data: reg, error: regError } = await (byEmail
+    ? lookupQuery.eq("email", parsed.email ?? "")
+    : lookupQuery.eq("reference_number", parsed.reference_number ?? "")
+  ).maybeSingle();
 
+  const notFoundMessage = byEmail
+    ? "We couldn't find a registration for that email."
+    : "Reference not found.";
   if (regError) {
     console.error("[feedback] ✗ registration lookup failed:", regError);
-    return { ok: false, message: "Reference not found." };
+    return { ok: false, message: notFoundMessage };
   }
   if (!reg) {
-    console.warn("[feedback] ✗ reference not found", {
-      reference_number: parsed.reference_number,
+    console.warn("[feedback] ✗ registration not found", {
+      lookup: parsed.lookup,
     });
-    return { ok: false, message: "Reference not found." };
+    return { ok: false, message: notFoundMessage };
   }
   console.log("[feedback] ✓ registration found", { id: reg.id });
 
@@ -89,6 +100,28 @@ export async function submitFeedbackAction(
     });
     return { ok: false, message: error.message };
   }
+
+  // Notify admins out-of-band. Wrapped so a comms hiccup never blocks the
+  // participant (per AGENTS.md §8) - we've already persisted the feedback.
+  const trackName =
+    TRACKS.find((t) => t.code === reg.track_code)?.name ?? "SkillUp track";
+  await Promise.allSettled([
+    sendFeedbackNotificationEmail({
+      fullName: reg.full_name,
+      email: reg.email,
+      referenceNumber: reg.reference_number,
+      trackName,
+      overallRating: parsed.overall_rating,
+      trackRating: parsed.track_rating,
+      facilitatorRating: parsed.facilitator_rating,
+      enjoyedMost: parsed.enjoyed_most ?? null,
+      improvements: parsed.improvements ?? null,
+      attendNext: parsed.attend_next ?? null,
+      testimony: parsed.testimony ?? null,
+      shareAsTestimonial: parsed.share_as_testimonial,
+      submittedAtIso: new Date().toISOString(),
+    }),
+  ]);
 
   console.log("[feedback] ⤵ success", { duration_ms: Date.now() - t0 });
   return { ok: true };

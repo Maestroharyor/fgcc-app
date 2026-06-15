@@ -1,8 +1,10 @@
-import { ArrowLeft, Award, Mail, Phone } from "lucide-react";
+import { ArrowLeft, Mail, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { CertificateActions } from "@/components/admin/CertificateActions";
+import { CertificateStatusBadge } from "@/components/admin/CertificateStatusBadge";
 import { ChangeTrackButton } from "@/components/admin/ChangeTrackButton";
 import { CheckinButton } from "@/components/admin/CheckinButton";
 import { DeleteRegistrationButton } from "@/components/admin/DeleteRegistrationButton";
@@ -175,6 +177,29 @@ async function RegistrantProfileSection({
             </span>
           )}
         </Row>
+        <Row label="Certificate">
+          <CertificateStatusBadge
+            status={registration.certificate_status}
+            scheduledFor={registration.certificate_scheduled_for}
+            error={registration.certificate_error}
+          />
+        </Row>
+        <Row label="Certificate sent at">
+          {registration.certificate_sent_at
+            ? formatDate(
+                new Date(registration.certificate_sent_at),
+                "EEE, MMM d 'at' h:mm a",
+              )
+            : "-"}
+        </Row>
+        {registration.certificate_status === "failed" &&
+          registration.certificate_error && (
+            <Row label="Certificate error">
+              <span className="text-red-700">
+                {registration.certificate_error}
+              </span>
+            </Row>
+          )}
       </dl>
 
       {batch && (
@@ -217,12 +242,11 @@ async function RegistrantProfileSection({
         />
         <div className="flex flex-wrap items-center gap-3">
           {role === "superadmin" && (
-            <Link
-              href={`/admin/certificates?q=${registration.reference_number}`}
-              className="inline-flex items-center gap-2 rounded-full border border-navy/15 bg-white px-4 py-2 font-display text-sm font-semibold text-navy hover:bg-cream-100"
-            >
-              <Award className="h-4 w-4" aria-hidden /> View certificate
-            </Link>
+            <CertificateActions
+              reference={registration.reference_number}
+              attended={registration.attended}
+              status={registration.certificate_status}
+            />
           )}
           <EditRegistrationButton
             id={registration.id}

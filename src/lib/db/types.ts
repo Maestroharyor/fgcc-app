@@ -20,6 +20,7 @@ export type Relationship =
 export type RegistrationVia = "self" | "others" | "offline";
 export type Role = "admin" | "superadmin";
 export type AttendNext = "yes" | "no" | "maybe";
+export type CertificateStatus = "none" | "scheduled" | "sent" | "failed";
 
 export interface DBBatch {
   id: string;
@@ -55,6 +56,13 @@ export interface DBRegistration {
   reminder_1day_sent_at: string | null;
   feedback_request_sent_at: string | null;
   certificate_sent_at: string | null;
+  /** Where this registrant sits in the scheduled-send pipeline. */
+  certificate_status: CertificateStatus;
+  /** Lagos day (`yyyy-MM-dd`) the certificate is slated to send. */
+  certificate_scheduled_for: string | null;
+  /** Last send error, when `certificate_status === "failed"`. */
+  certificate_error: string | null;
+  certificate_attempts: number;
   created_at: string;
 }
 

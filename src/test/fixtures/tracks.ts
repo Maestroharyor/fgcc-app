@@ -41,6 +41,10 @@ export const fixtureRegistration: DBRegistration = {
   reminder_1day_sent_at: null,
   feedback_request_sent_at: null,
   certificate_sent_at: null,
+  certificate_status: "none",
+  certificate_scheduled_for: null,
+  certificate_error: null,
+  certificate_attempts: 0,
   created_at: "2026-05-11T10:00:00Z",
 };
 

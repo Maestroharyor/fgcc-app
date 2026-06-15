@@ -205,40 +205,85 @@ export type TrackChangeRequestInput = z.infer<typeof TrackChangeRequestSchema>;
 
 export type RegisterOthersInput = z.infer<typeof RegisterOthersSchema>;
 
-export const FeedbackSchema = z.object({
-  reference_number: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(
-      /^SKU-[A-Z]{2,4}-\d{1,5}$/,
-      "Enter a valid reference like SKU-UXD-001",
+// Treat a blank string from the unused lookup tab as "not provided".
+const blankToUndefined = (v: unknown) =>
+  typeof v === "string" && v.trim() === "" ? undefined : v;
+
+export const FeedbackSchema = z
+  .object({
+    // Which identifier the participant used to find their registration.
+    lookup: z.enum(["reference", "email"]).default("reference"),
+    reference_number: z.preprocess(
+      blankToUndefined,
+      z
+        .string()
+        .trim()
+        .toUpperCase()
+        .regex(
+          /^SKU-[A-Z]{2,4}-\d{1,5}$/,
+          "Enter a valid reference like SKU-UXD-001",
+        )
+        .optional(),
     ),
-  overall_rating: z
-    .number({ message: "Give us a rating from 1 to 5" })
-    .int()
-    .min(1, "Rating must be between 1 and 5")
-    .max(5, "Rating must be between 1 and 5"),
-  track_rating: z
-    .number({ message: "Rate your track from 1 to 5" })
-    .int()
-    .min(1, "Rating must be between 1 and 5")
-    .max(5, "Rating must be between 1 and 5"),
-  facilitator_rating: z
-    .number({ message: "Rate your facilitator from 1 to 5" })
-    .int()
-    .min(1, "Rating must be between 1 and 5")
-    .max(5, "Rating must be between 1 and 5"),
-  enjoyed_most: optionalString,
-  improvements: optionalString,
-  attend_next: z
-    .enum(["yes", "no", "maybe"], {
-      message: "Pick yes, no, or maybe",
-    })
-    .optional(),
-  testimony: optionalString,
-  share_as_testimonial: z.boolean().optional().default(false),
-});
+    full_name: z.preprocess(
+      blankToUndefined,
+      z.string().trim().min(2, "Enter your full name").optional(),
+    ),
+    email: z.preprocess(
+      blankToUndefined,
+      z.string().trim().toLowerCase().email("Enter a valid email").optional(),
+    ),
+    overall_rating: z
+      .number({ message: "Give us a rating from 1 to 5" })
+      .int()
+      .min(1, "Rating must be between 1 and 5")
+      .max(5, "Rating must be between 1 and 5"),
+    track_rating: z
+      .number({ message: "Rate your track from 1 to 5" })
+      .int()
+      .min(1, "Rating must be between 1 and 5")
+      .max(5, "Rating must be between 1 and 5"),
+    facilitator_rating: z
+      .number({ message: "Rate your facilitator from 1 to 5" })
+      .int()
+      .min(1, "Rating must be between 1 and 5")
+      .max(5, "Rating must be between 1 and 5"),
+    enjoyed_most: optionalString,
+    improvements: optionalString,
+    attend_next: z
+      .enum(["yes", "no", "maybe"], {
+        message: "Pick yes, no, or maybe",
+      })
+      .optional(),
+    testimony: optionalString,
+    share_as_testimonial: z.boolean().optional().default(false),
+  })
+  .superRefine((val, ctx) => {
+    // Require whichever identifier matches the chosen tab so the action can
+    // resolve the registration. Name is mandatory on the email tab.
+    if (val.lookup === "email") {
+      if (!val.full_name) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["full_name"],
+          message: "Enter your full name",
+        });
+      }
+      if (!val.email) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["email"],
+          message: "Enter your email",
+        });
+      }
+    } else if (!val.reference_number) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["reference_number"],
+        message: "Enter your reference number",
+      });
+    }
+  });
 
 export type FeedbackInput = z.infer<typeof FeedbackSchema>;
 
@@ -278,6 +323,35 @@ export const BroadcastSmsSchema = z.object({
 });
 
 export type BroadcastSmsInput = z.infer<typeof BroadcastSmsSchema>;
+
+/**
+ * Certificate scheduling request. `dayKeys` are Lagos calendar days
+ * (`yyyy-MM-dd`); a recipient qualifies if they attended any of them. `perDay`
+ * stays under Resend's free-plan 100/day ceiling. `startDate` must be today or
+ * later so we never schedule a batch into the past.
+ */
+export const CertificateScheduleSchema = z.object({
+  dayKeys: z
+    .array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid day"))
+    .min(1, "Pick at least one day"),
+  trackCode: z
+    .string()
+    .trim()
+    .min(2)
+    .max(8)
+    .transform((s) => s.toUpperCase())
+    .optional(),
+  perDay: z
+    .number({ message: "Set how many to send per day" })
+    .int()
+    .min(1, "Send at least 1 per day")
+    .max(95, "Keep it at or below 95 (Resend free-plan cap is 100/day)"),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a start date"),
+});
+
+export type CertificateScheduleInput = z.infer<
+  typeof CertificateScheduleSchema
+>;
 
 /**
  * Topics on the `/feedback` general-enquiry form. Mirrors the radio/select

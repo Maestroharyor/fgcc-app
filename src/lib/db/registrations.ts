@@ -1,6 +1,8 @@
 import { cache } from "react";
+import { eligibleForCertificate } from "@/lib/certificates/schedule";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { DBRegistration } from "./types";
+import type { CertificateStatus, DBRegistration } from "./types";
 
 export async function getRegistrationByReference(
   ref: string,
@@ -54,6 +56,8 @@ export interface RegistrationsFilter {
   attended?: boolean;
   /** true = certificate_sent_at set, false = still null. */
   certificateSent?: boolean;
+  /** Narrow to a single point in the scheduled-send pipeline. */
+  certificateStatus?: CertificateStatus;
   page?: number;
   pageSize?: number;
   sortBy?: "created_at" | "full_name" | "reference_number";
@@ -76,6 +80,7 @@ export async function listRegistrations(
     type,
     attended,
     certificateSent,
+    certificateStatus,
     page = 1,
     pageSize = 50,
     sortBy = "created_at",
@@ -101,6 +106,7 @@ export async function listRegistrations(
       ? q.not("certificate_sent_at", "is", null)
       : q.is("certificate_sent_at", null);
   }
+  if (certificateStatus) q = q.eq("certificate_status", certificateStatus);
 
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
@@ -161,4 +167,161 @@ export async function countAttended(): Promise<number> {
     .select("*", { count: "exact", head: true })
     .eq("attended", true);
   return count ?? 0;
+}
+
+// ── Certificate scheduling ────────────────────────────────────────────────
+
+/** A recipient shown in the scheduler preview and the certificate table. */
+export interface CertificateRecipient {
+  id: string;
+  reference_number: string;
+  full_name: string;
+  email: string;
+  track_code: string;
+  certificate_status: CertificateStatus;
+  certificate_scheduled_for: string | null;
+  certificate_sent_at: string | null;
+  certificate_error: string | null;
+  attendance_log: string[] | null;
+  attended_at: string | null;
+}
+
+const RECIPIENT_COLS =
+  "id, reference_number, full_name, email, track_code, attendance_log, attended_at, certificate_status, certificate_scheduled_for, certificate_sent_at, certificate_error";
+
+/**
+ * Attendees who would receive a certificate for the chosen days/track, minus
+ * placeholder emails and already-sent rows. Day filtering uses the Lagos
+ * `attendance_log` so it can't be expressed in SQL - we fetch attendees and
+ * filter in JS via `eligibleForCertificate`.
+ */
+export async function listCertificateRecipients(filter: {
+  dayKeys: string[];
+  trackCode?: string | null;
+}): Promise<CertificateRecipient[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("registrations")
+    .select(RECIPIENT_COLS)
+    .eq("attended", true)
+    .order("created_at", { ascending: true });
+  if (error) {
+    console.warn(
+      "[db.registrations] listCertificateRecipients:",
+      error.message,
+    );
+    return [];
+  }
+  return eligibleForCertificate((data ?? []) as CertificateRecipient[], filter);
+}
+
+export interface CertificateScheduleDay {
+  dateKey: string;
+  scheduled: number;
+  sent: number;
+  failed: number;
+  total: number;
+}
+
+/** Scheduled rows bucketed by send day, with per-status counts for the board. */
+export async function getCertificateSchedule(): Promise<
+  CertificateScheduleDay[]
+> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("registrations")
+    .select("certificate_scheduled_for, certificate_status")
+    .not("certificate_scheduled_for", "is", null)
+    .order("certificate_scheduled_for", { ascending: true });
+  if (error) {
+    console.warn("[db.registrations] getCertificateSchedule:", error.message);
+    return [];
+  }
+  const byDay = new Map<string, CertificateScheduleDay>();
+  for (const row of (data ?? []) as Array<{
+    certificate_scheduled_for: string;
+    certificate_status: CertificateStatus;
+  }>) {
+    const key = row.certificate_scheduled_for;
+    let day = byDay.get(key);
+    if (!day) {
+      day = { dateKey: key, scheduled: 0, sent: 0, failed: 0, total: 0 };
+      byDay.set(key, day);
+    }
+    day.total += 1;
+    if (row.certificate_status === "sent") day.sent += 1;
+    else if (row.certificate_status === "failed") day.failed += 1;
+    else if (row.certificate_status === "scheduled") day.scheduled += 1;
+  }
+  return [...byDay.values()];
+}
+
+export interface CertificateStatusCounts {
+  none: number;
+  scheduled: number;
+  sent: number;
+  failed: number;
+}
+
+/** Totals per certificate status across all attendees (for summary cards). */
+export async function countCertificateStatuses(): Promise<CertificateStatusCounts> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("registrations")
+    .select("certificate_status")
+    .eq("attended", true);
+  const counts: CertificateStatusCounts = {
+    none: 0,
+    scheduled: 0,
+    sent: 0,
+    failed: 0,
+  };
+  if (error) {
+    console.warn("[db.registrations] countCertificateStatuses:", error.message);
+    return counts;
+  }
+  for (const row of (data ?? []) as Array<{
+    certificate_status: CertificateStatus;
+  }>) {
+    counts[row.certificate_status] += 1;
+  }
+  return counts;
+}
+
+/** Row shape consumed by the batch sender. */
+export interface DueCertificate {
+  id: string;
+  full_name: string;
+  email: string;
+  reference_number: string;
+  track_code: string;
+  certificate_attempts: number;
+}
+
+/**
+ * Rows owed a certificate on or before `dateKey`: scheduled-or-failed, never
+ * sent. Uses the service-role client so the daily cron (no user session) can
+ * read them. Capped at `limit` to respect the daily send budget.
+ */
+export async function dueCertificates(
+  dateKey: string,
+  limit: number,
+): Promise<DueCertificate[]> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("registrations")
+    .select(
+      "id, full_name, email, reference_number, track_code, certificate_attempts",
+    )
+    .lte("certificate_scheduled_for", dateKey)
+    .in("certificate_status", ["scheduled", "failed"])
+    .is("certificate_sent_at", null)
+    .order("certificate_scheduled_for", { ascending: true })
+    .order("created_at", { ascending: true })
+    .limit(limit);
+  if (error) {
+    console.warn("[db.registrations] dueCertificates:", error.message);
+    return [];
+  }
+  return (data ?? []) as DueCertificate[];
 }

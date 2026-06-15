@@ -1,90 +1,72 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { TRACKS } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
+import {
+  type CertificateSendRow,
+  sendCertificateBatch,
+} from "@/lib/certificates/send-batch";
 import { loadCertificateSignatory } from "@/lib/db/signatories";
-import { sendCertificateEmail } from "@/lib/email/send";
-import { buildCertificate } from "@/lib/pdf/certificate";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-function trackMeta(code: string | null | undefined) {
-  return { name: TRACKS.find((x) => x.code === code)?.name ?? "SkillUp track" };
-}
+export const maxDuration = 60;
 
 interface SendBody {
   reference_number?: string;
-  all?: boolean;
 }
 
-function firstName(full: string) {
-  return full.trim().split(/\s+/)[0] ?? full;
-}
-
+/**
+ * Send (or resend) a single certificate by reference number. Bulk sending is
+ * handled by the scheduler + daily cron so we never blow Resend's 100/day cap;
+ * this endpoint is the one-off + retry path. Routes through the shared batch
+ * sender so status/error columns stay consistent with scheduled sends.
+ */
 export async function POST(request: NextRequest) {
   await requireRole("superadmin");
   const body = (await request.json().catch(() => ({}))) as SendBody;
 
+  if (!body.reference_number) {
+    return NextResponse.json(
+      { ok: false, error: "reference_number is required" },
+      { status: 400 },
+    );
+  }
+
   const supabase = await createSupabaseServerClient();
-  let query = supabase
+  const { data, error } = await supabase
     .from("registrations")
     .select(
-      "id, full_name, email, reference_number, attended, certificate_sent_at, track_code",
+      "id, full_name, email, reference_number, track_code, certificate_attempts",
     )
-    .eq("attended", true);
-  if (body.reference_number && !body.all) {
-    query = query.eq("reference_number", body.reference_number);
-  }
-  const { data: attendees, error } = await query;
-  if (error)
+    .eq("reference_number", body.reference_number)
+    .maybeSingle();
+
+  if (error) {
     return NextResponse.json(
       { ok: false, error: error.message },
       { status: 500 },
     );
-  if (!attendees || attendees.length === 0) {
+  }
+  if (!data) {
     return NextResponse.json(
-      { ok: false, error: "No matching attendees" },
+      { ok: false, error: "Registration not found" },
       { status: 404 },
     );
   }
 
   const signatory = await loadCertificateSignatory();
-  let sent = 0;
-  let skipped = 0;
-  for (const r of attendees as Array<{
-    id: string;
-    full_name: string;
-    email: string;
-    reference_number: string;
-    track_code: string;
-  }>) {
-    if (r.email.endsWith("@placeholder.skillup")) {
-      skipped++;
-      continue;
-    }
-    const track = trackMeta(r.track_code);
-    const pdf = await buildCertificate({
-      fullName: r.full_name,
-      referenceNumber: r.reference_number,
-      trackName: track.name,
-      signatory,
-    });
-    const result = await sendCertificateEmail(
-      r.email,
-      {
-        firstName: firstName(r.full_name),
-        trackName: track.name,
-      },
-      pdf,
+  const result = await sendCertificateBatch(
+    [data as CertificateSendRow],
+    signatory,
+    {
+      throttleMs: 0,
+    },
+  );
+
+  if (result.skipped > 0) {
+    return NextResponse.json(
+      { ok: false, error: "Recipient has no deliverable email address" },
+      { status: 422 },
     );
-    if (result.ok) {
-      sent++;
-      await supabase
-        .from("registrations")
-        .update({ certificate_sent_at: new Date().toISOString() })
-        .eq("id", r.id);
-    } else {
-      skipped++;
-    }
   }
 
-  return NextResponse.json({ ok: true, sent, skipped });
+  return NextResponse.json({ ok: result.failed === 0, ...result });
 }

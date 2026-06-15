@@ -34,6 +34,7 @@ import {
   sendConfirmationEmail,
   sendEnquiryAckEmail,
   sendEnquiryNotificationEmail,
+  sendFeedbackNotificationEmail,
   sendFeedbackRequestEmail,
   sendRegistrationUpdatedEmail,
   sendReminder1DayEmail,
@@ -95,6 +96,32 @@ describe("send helpers - happy paths", () => {
     };
     expect(call.to).toEqual(["admin@x.com"]);
     expect(call.subject).toContain("Ada Lovelace");
+    expect(call.replyTo).toBe("ada@example.com");
+  });
+
+  it("sendFeedbackNotificationEmail routes to admins with reply-to set to the participant", async () => {
+    await sendFeedbackNotificationEmail({
+      fullName: "Ada Obi",
+      email: "ada@example.com",
+      referenceNumber: "SKU-UXD-001",
+      trackName: "UI/UX Design",
+      overallRating: 5,
+      trackRating: 4,
+      facilitatorRating: 5,
+      enjoyedMost: "The hands-on labs",
+      improvements: null,
+      attendNext: "yes",
+      testimony: null,
+      shareAsTestimonial: true,
+      submittedAtIso: "2026-06-15T10:00:00.000Z",
+    });
+    const call = sendMock.mock.calls[0]?.[0] as unknown as {
+      to: string | string[];
+      subject: string;
+      replyTo: string;
+    };
+    expect(call.to).toEqual(["admin@x.com"]);
+    expect(call.subject).toContain("Ada Obi");
     expect(call.replyTo).toBe("ada@example.com");
   });
 

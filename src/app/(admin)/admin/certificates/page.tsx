@@ -1,14 +1,23 @@
+import { addDays } from "date-fns";
 import { Download } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { CertificateActions } from "@/components/admin/CertificateActions";
+import { CertificateScheduler } from "@/components/admin/CertificateScheduler";
+import { CertificateScheduleView } from "@/components/admin/CertificateScheduleView";
+import { CertificateStatusBadge } from "@/components/admin/CertificateStatusBadge";
 import { CertificatesFilters } from "@/components/admin/CertificatesFilters";
 import { SignatoryEditor } from "@/components/admin/SignatoryEditor";
-import { TRACKS_BY_CODE } from "@/content/tracks";
+import { TRACKS, TRACKS_BY_CODE } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
-import { listRegistrations } from "@/lib/db/registrations";
+import {
+  countCertificateStatuses,
+  getCertificateSchedule,
+  listRegistrations,
+} from "@/lib/db/registrations";
 import { getSignatory, getSignatureSignedUrl } from "@/lib/db/signatories";
+import { attendanceDayKey, eventDays } from "@/lib/utils/date";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +65,18 @@ export default async function CertificatesPage({ searchParams }: PageProps) {
         <SignatoryPanel />
       </Suspense>
 
-      <div className="mt-10 flex flex-wrap items-center gap-3">
+      <h2 className="mt-10 font-display text-lg font-semibold text-navy">
+        Send certificates
+      </h2>
+      <p className="mt-1 text-sm text-navy/65">
+        Batched across days to stay under Resend&apos;s free-plan cap. Track
+        each recipient&apos;s status below and resend any that fail.
+      </p>
+      <Suspense fallback={<PanelSkeleton />}>
+        <SchedulePanels />
+      </Suspense>
+
+      <div className="mt-8">
         <a
           href="/api/admin/certificates/download"
           download
@@ -64,7 +84,6 @@ export default async function CertificatesPage({ searchParams }: PageProps) {
         >
           <Download className="h-4 w-4" aria-hidden /> Download ALL as ZIP
         </a>
-        <CertificateActions bulk />
       </div>
 
       {/* Live filters drive the URL search params (no Apply, soft navigation).
@@ -106,6 +125,73 @@ function SignatorySkeleton() {
   return (
     <div className="mt-4 max-w-sm">
       <div className="h-72 rounded-2xl border border-navy/8 bg-white shadow-card animate-pulse" />
+    </div>
+  );
+}
+
+async function SchedulePanels() {
+  const todayKey = attendanceDayKey();
+  const tomorrowKey = attendanceDayKey(addDays(new Date(), 1));
+  const [schedule, counts] = await Promise.all([
+    getCertificateSchedule(),
+    countCertificateStatuses(),
+  ]);
+  const tracks = TRACKS.map((t) => ({ code: t.code, name: t.name }));
+
+  return (
+    <div className="mt-5 space-y-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Awaiting" value={counts.none} tone="navy" />
+        <StatCard label="Scheduled" value={counts.scheduled} tone="primary" />
+        <StatCard label="Sent" value={counts.sent} tone="emerald" />
+        <StatCard label="Failed" value={counts.failed} tone="red" />
+      </div>
+      <CertificateScheduler
+        days={eventDays()}
+        tracks={tracks}
+        defaultStartDate={tomorrowKey}
+        minStartDate={todayKey}
+      />
+      <CertificateScheduleView days={schedule} todayKey={todayKey} />
+    </div>
+  );
+}
+
+const STAT_TONE: Record<string, string> = {
+  navy: "text-navy",
+  primary: "text-primary",
+  emerald: "text-emerald-700",
+  red: "text-red-700",
+};
+
+function StatCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: keyof typeof STAT_TONE;
+}) {
+  return (
+    <div className="rounded-2xl border border-navy/8 bg-white p-4 shadow-card">
+      <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
+        {label}
+      </span>
+      <div
+        className={`mt-1 font-display text-2xl font-semibold ${STAT_TONE[tone]}`}
+      >
+        {value.toLocaleString()}
+      </div>
+    </div>
+  );
+}
+
+function PanelSkeleton() {
+  return (
+    <div className="mt-5 space-y-6">
+      <div className="h-20 rounded-2xl border border-navy/8 bg-white shadow-card animate-pulse" />
+      <div className="h-64 rounded-2xl border border-navy/8 bg-white shadow-card animate-pulse" />
     </div>
   );
 }
@@ -180,7 +266,6 @@ async function CertificatesTable({
             {rows.map((r) => {
               const trackName =
                 TRACKS_BY_CODE[r.track_code]?.name ?? r.track_code;
-              const sent = Boolean(r.certificate_sent_at);
               const days = r.attendance_log?.length ?? 0;
               return (
                 <tr
@@ -213,20 +298,17 @@ async function CertificatesTable({
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 font-sans text-[10px] uppercase tracking-[0.16em] ${
-                        sent
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-navy/8 text-navy/60"
-                      }`}
-                    >
-                      {sent ? "Sent" : "Not sent"}
-                    </span>
+                    <CertificateStatusBadge
+                      status={r.certificate_status}
+                      scheduledFor={r.certificate_scheduled_for}
+                      error={r.certificate_error}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <CertificateActions
                       reference={r.reference_number}
                       attended={r.attended}
+                      status={r.certificate_status}
                     />
                   </td>
                 </tr>

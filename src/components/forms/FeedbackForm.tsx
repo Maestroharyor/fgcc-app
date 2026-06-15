@@ -22,6 +22,8 @@ type FeedbackFormValues = z.input<typeof FeedbackSchema>;
 
 const FIELD_LABELS: Record<string, string> = {
   reference_number: "Reference number",
+  full_name: "Full name",
+  email: "Email",
   overall_rating: "Overall rating",
   track_rating: "Track quality",
   facilitator_rating: "Facilitator",
@@ -61,13 +63,20 @@ export function FeedbackForm() {
   } = useForm<FeedbackFormValues>({
     resolver: zodResolver(FeedbackSchema),
     defaultValues: {
+      // Name & email is the default lookup. Any ?ref= from the feedback link is
+      // still prefilled, so switching to the reference tab needs no retyping.
+      lookup: "email",
       reference_number: initialRef,
-      overall_rating: 5,
-      track_rating: 5,
-      facilitator_rating: 5,
+      full_name: "",
+      email: "",
+      overall_rating: undefined,
+      track_rating: undefined,
+      facilitator_rating: undefined,
       share_as_testimonial: false,
     },
   });
+
+  const lookup = watch("lookup") ?? "email";
 
   const onSubmit = handleSubmit(
     (values) => {
@@ -115,38 +124,124 @@ export function FeedbackForm() {
       </p>
       <ErrorSummary errors={errors} summaryRef={summaryRef} />
 
-      <Field
-        label="Your reference number"
-        required
-        error={errors.reference_number?.message}
-        hint="Looks like SKU-UXD-001 — check your confirmation email."
+      <div>
+        <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
+          Find your registration
+        </span>
+        <div className="mt-2 inline-flex rounded-full border border-navy/12 bg-navy/5 p-1">
+          {(
+            [
+              ["reference", "Reference number"],
+              ["email", "Name & email"],
+            ] as const
+          ).map(([value, labelText]) => {
+            const active = lookup === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setValue("lookup", value)}
+                aria-pressed={active}
+                className={`rounded-full px-4 py-1.5 font-display text-sm font-semibold transition ${
+                  active
+                    ? "bg-white text-navy shadow-sm"
+                    : "text-navy/60 hover:text-navy"
+                }`}
+              >
+                {labelText}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Hidden control keeps `lookup` in the form payload. */}
+      <input type="hidden" {...register("lookup")} />
+
+      {lookup === "reference" ? (
+        <Field
+          label="Your reference number"
+          required
+          error={errors.reference_number?.message}
+          hint="Looks like SKU-UXD-001 — check your confirmation email."
+        >
+          <input
+            className="form-input"
+            autoComplete="off"
+            aria-required="true"
+            placeholder="SKU-XXX-000"
+            {...register("reference_number")}
+          />
+        </Field>
+      ) : (
+        <>
+          <Field
+            label="Your full name"
+            required
+            error={errors.full_name?.message}
+          >
+            <input
+              className="form-input"
+              autoComplete="name"
+              aria-required="true"
+              placeholder="Jane Doe"
+              {...register("full_name")}
+            />
+          </Field>
+          <Field
+            label="Your email"
+            required
+            error={errors.email?.message}
+            hint="The email you registered with."
+          >
+            <input
+              className="form-input"
+              type="email"
+              autoComplete="email"
+              aria-required="true"
+              placeholder="you@example.com"
+              {...register("email")}
+            />
+          </Field>
+        </>
+      )}
+
+      <button
+        type="button"
+        onClick={() =>
+          setValue("lookup", lookup === "reference" ? "email" : "reference")
+        }
+        className="-mt-2 self-start text-left text-xs font-medium text-primary hover:underline"
       >
-        <input
-          className="form-input"
-          autoComplete="off"
-          aria-required="true"
-          placeholder="SKU-XXX-000"
-          {...register("reference_number")}
-        />
-      </Field>
+        {lookup === "reference"
+          ? "Don't have it? Use your name & email instead"
+          : "Have your reference number? Use it instead"}
+      </button>
 
       <RatingField
         label="Overall rating"
         required
         value={watch("overall_rating")}
-        onChange={(n) => setValue("overall_rating", n)}
+        error={errors.overall_rating?.message}
+        onChange={(n) =>
+          setValue("overall_rating", n, { shouldValidate: true })
+        }
       />
       <RatingField
         label="Track quality"
         required
         value={watch("track_rating")}
-        onChange={(n) => setValue("track_rating", n)}
+        error={errors.track_rating?.message}
+        onChange={(n) => setValue("track_rating", n, { shouldValidate: true })}
       />
       <RatingField
         label="Facilitator"
         required
         value={watch("facilitator_rating")}
-        onChange={(n) => setValue("facilitator_rating", n)}
+        error={errors.facilitator_rating?.message}
+        onChange={(n) =>
+          setValue("facilitator_rating", n, { shouldValidate: true })
+        }
       />
 
       <Field
@@ -314,11 +409,13 @@ function RatingField({
   label,
   required,
   value,
+  error,
   onChange,
 }: {
   label: string;
   required?: boolean;
-  value: number;
+  value: number | undefined;
+  error?: string;
   onChange: (value: number) => void;
 }) {
   return (
@@ -333,7 +430,7 @@ function RatingField({
       </legend>
       <div className="mt-2 flex items-center gap-1.5">
         {[1, 2, 3, 4, 5].map((n) => {
-          const filled = n <= value;
+          const filled = value !== undefined && n <= value;
           return (
             <button
               key={n}
@@ -356,6 +453,11 @@ function RatingField({
           );
         })}
       </div>
+      {error && (
+        <span role="alert" className="mt-1.5 block text-xs text-coral">
+          {error}
+        </span>
+      )}
     </fieldset>
   );
 }

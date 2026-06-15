@@ -1,21 +1,32 @@
 "use client";
 
 import { Download, Eye, Mail, TriangleAlert } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
+import type { CertificateStatus } from "@/lib/db/types";
 import { useOverlayDismiss } from "@/lib/hooks/use-overlay-dismiss";
 
 interface Props {
-  reference?: string;
-  bulk?: boolean;
+  reference: string;
   /** Download + Send only make sense once the registrant is marked present. */
   attended?: boolean;
+  /** Drives the Send vs Resend label. */
+  status?: CertificateStatus;
 }
 
-export function CertificateActions({ reference, bulk, attended }: Props) {
+/**
+ * Per-registrant certificate actions: preview, download, and a single
+ * send/resend. Bulk sending lives in the scheduler now; this is the one-off
+ * and failure-retry path.
+ */
+export function CertificateActions({ reference, attended, status }: Props) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const isBulk = Boolean(bulk);
+
+  const resend = status === "sent" || status === "failed";
+  const sendLabel = resend ? "Resend" : "Send";
 
   const send = () => {
     setConfirming(false);
@@ -24,52 +35,17 @@ export function CertificateActions({ reference, bulk, attended }: Props) {
       const res = await fetch("/api/admin/certificates/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          isBulk ? { all: true } : { reference_number: reference },
-        ),
+        body: JSON.stringify({ reference_number: reference }),
       });
       const data = (await res.json()) as {
         ok: boolean;
         sent?: number;
-        skipped?: number;
         error?: string;
       };
-      if (data.ok) {
-        setMessage(
-          `Sent ${data.sent ?? 1}${data.skipped ? ` · skipped ${data.skipped}` : ""}`,
-        );
-      } else {
-        setMessage(data.error ?? "Failed");
-      }
+      setMessage(data.ok ? "Sent" : (data.error ?? "Failed"));
+      if (data.ok) router.refresh();
     });
   };
-
-  const modal = confirming && (
-    <ConfirmSendModal
-      bulk={isBulk}
-      reference={reference}
-      onConfirm={send}
-      onClose={() => setConfirming(false)}
-    />
-  );
-
-  if (bulk) {
-    return (
-      <>
-        <button
-          type="button"
-          onClick={() => setConfirming(true)}
-          disabled={pending}
-          className="inline-flex items-center gap-2 rounded-full bg-coral px-4 py-2 font-display text-sm font-semibold text-white hover:bg-coral/90 disabled:opacity-60"
-        >
-          <Mail className="h-4 w-4" aria-hidden />
-          {pending ? "Sending…" : "Send to ALL attendees"}
-          {message && <span className="text-xs opacity-90">· {message}</span>}
-        </button>
-        {modal}
-      </>
-    );
-  }
 
   return (
     <div className="flex items-center gap-2">
@@ -94,27 +70,38 @@ export function CertificateActions({ reference, bulk, attended }: Props) {
             type="button"
             onClick={() => setConfirming(true)}
             disabled={pending}
-            className="inline-flex items-center gap-1.5 rounded-full bg-primary/8 px-3 py-1 font-display text-xs font-semibold text-primary hover:bg-primary/15 disabled:opacity-60"
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-display text-xs font-semibold disabled:opacity-60 ${
+              status === "failed"
+                ? "bg-red-100 text-red-700 hover:bg-red-200"
+                : "bg-primary/8 text-primary hover:bg-primary/15"
+            }`}
           >
             <Mail className="h-3.5 w-3.5" aria-hidden />{" "}
-            {pending ? "Sending…" : "Send"}
+            {pending ? "Sending…" : sendLabel}
           </button>
         </>
       )}
       {message && <span className="text-xs text-navy/60">{message}</span>}
-      {modal}
+      {confirming && (
+        <ConfirmSendModal
+          reference={reference}
+          resend={resend}
+          onConfirm={send}
+          onClose={() => setConfirming(false)}
+        />
+      )}
     </div>
   );
 }
 
 function ConfirmSendModal({
-  bulk,
   reference,
+  resend,
   onConfirm,
   onClose,
 }: {
-  bulk: boolean;
-  reference?: string;
+  reference: string;
+  resend: boolean;
   onConfirm: () => void;
   onClose: () => void;
 }) {
@@ -152,12 +139,11 @@ function ConfirmSendModal({
               id={headingId}
               className="font-display text-lg font-semibold text-navy"
             >
-              {bulk ? "Email every attendee?" : `Send to ${reference}?`}
+              {resend ? `Resend to ${reference}?` : `Send to ${reference}?`}
             </h2>
             <p className="mt-1.5 text-sm text-navy/65">
-              {bulk
-                ? "This emails a certificate to every attendee with a valid email address. Sent emails can't be recalled."
-                : "This emails the certificate to the registrant. Sent emails can't be recalled."}
+              This emails the certificate to the registrant. Sent emails
+              can&apos;t be recalled.
             </p>
           </div>
         </div>
@@ -175,7 +161,7 @@ function ConfirmSendModal({
             className="inline-flex items-center gap-2 rounded-full bg-coral px-4 py-2 font-display text-sm font-semibold text-white hover:bg-coral/90"
           >
             <Mail className="h-4 w-4" aria-hidden />
-            {bulk ? "Send to all" : "Send certificate"}
+            {resend ? "Resend certificate" : "Send certificate"}
           </button>
         </div>
       </div>
