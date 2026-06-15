@@ -10,10 +10,13 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 export interface CertificateSendRow {
   id: string;
   full_name: string;
+  /** Resolved delivery address (own email, or the registrar's for no-email rows). */
   email: string;
   reference_number: string;
   track_code: string;
   certificate_attempts?: number | null;
+  /** True when `email` is the registrar's address (the participant had none). */
+  via_registrar?: boolean;
 }
 
 export interface SendBatchResult {
@@ -78,7 +81,13 @@ export async function sendCertificateBatch(
       });
       const result = await sendCertificateEmail(
         r.email,
-        { firstName: firstName(r.full_name), trackName: name },
+        {
+          firstName: firstName(r.full_name),
+          trackName: name,
+          registeredByNote: r.via_registrar
+            ? `You're receiving this because you registered ${r.full_name} for SkillUp 1.0.`
+            : null,
+        },
         pdf,
       );
       if (!result.ok) errorMessage = result.error ?? "Send failed";

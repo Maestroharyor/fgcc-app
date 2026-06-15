@@ -14,6 +14,7 @@ interface PreviewRecipient {
   full_name: string;
   email: string;
   track_code: string;
+  via_registrar?: boolean;
 }
 
 interface Props {
@@ -54,7 +55,9 @@ export function CertificateScheduler({
   const [perDay, setPerDay] = useState(90);
   const [startDate, setStartDate] = useState(defaultStartDate);
 
+  const [includeRegistrar, setIncludeRegistrar] = useState(false);
   const [count, setCount] = useState<number | null>(null);
+  const [viaRegistrar, setViaRegistrar] = useState(0);
   const [noEmail, setNoEmail] = useState(0);
   const [recipients, setRecipients] = useState<PreviewRecipient[]>([]);
   const [showList, setShowList] = useState(false);
@@ -63,12 +66,13 @@ export function CertificateScheduler({
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
 
-  // Refresh the audience preview whenever the track filter changes.
+  // Refresh the audience preview whenever the track filter or registrar toggle changes.
   useEffect(() => {
     const controller = new AbortController();
     setLoadingPreview(true);
     const params = new URLSearchParams();
     if (trackCode) params.set("track", trackCode);
+    if (includeRegistrar) params.set("registrar", "1");
     fetch(`/api/admin/certificates/preview?${params}`, {
       signal: controller.signal,
     })
@@ -76,10 +80,12 @@ export function CertificateScheduler({
       .then(
         (data: {
           count: number;
+          viaRegistrar: number;
           noEmail: number;
           recipients: PreviewRecipient[];
         }) => {
           setCount(data.count);
+          setViaRegistrar(data.viaRegistrar ?? 0);
           setNoEmail(data.noEmail ?? 0);
           setRecipients(data.recipients ?? []);
         },
@@ -87,7 +93,7 @@ export function CertificateScheduler({
       .catch(() => {})
       .finally(() => setLoadingPreview(false));
     return () => controller.abort();
-  }, [trackCode]);
+  }, [trackCode, includeRegistrar]);
 
   const plan = planDays(count ?? 0, perDay, startDate);
 
@@ -101,6 +107,7 @@ export function CertificateScheduler({
           trackCode: trackCode || undefined,
           perDay,
           startDate,
+          includeRegistrar,
         }),
       });
       const data = (await res.json()) as {
@@ -183,6 +190,23 @@ export function CertificateScheduler({
         </label>
       </div>
 
+      <label className="mt-4 flex items-start gap-2.5 text-sm text-navy/80">
+        <input
+          type="checkbox"
+          checked={includeRegistrar}
+          onChange={(e) => setIncludeRegistrar(e.target.checked)}
+          className="mt-0.5 h-4 w-4"
+        />
+        <span>
+          Send no-email participants&apos; certificates to whoever registered
+          them
+          <span className="block text-xs text-navy/55">
+            Routes offline registrants (registered by someone else) to that
+            person&apos;s email. Those without a registrar stay print-only.
+          </span>
+        </span>
+      </label>
+
       <div className="mt-5 rounded-xl border border-navy/8 bg-cream/50 p-4">
         <div className="flex items-center justify-between">
           <span className="inline-flex items-center gap-2 text-sm text-navy">
@@ -195,10 +219,16 @@ export function CertificateScheduler({
             ) : (
               <span>
                 <strong>{count ?? 0}</strong> eligible by email
+                {includeRegistrar && viaRegistrar > 0 && (
+                  <span className="text-navy/55">
+                    {" "}
+                    · {viaRegistrar} via registrar
+                  </span>
+                )}
                 {noEmail > 0 && (
                   <span className="text-navy/55">
                     {" "}
-                    · {noEmail} have no email (use Download ZIP to print)
+                    · {noEmail} still no email (use Download ZIP to print)
                   </span>
                 )}
               </span>
@@ -248,7 +278,14 @@ export function CertificateScheduler({
                       {r.reference_number}
                     </td>
                     <td className="px-3 py-1.5 text-navy">{r.full_name}</td>
-                    <td className="px-3 py-1.5 text-navy/60">{r.email}</td>
+                    <td className="px-3 py-1.5 text-navy/60">
+                      {r.email}
+                      {r.via_registrar && (
+                        <span className="ml-1.5 rounded-full bg-primary/8 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] text-primary">
+                          registrar
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

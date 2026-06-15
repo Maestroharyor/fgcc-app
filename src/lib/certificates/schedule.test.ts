@@ -5,7 +5,10 @@ import {
   dayKeyAfter,
   eligibleForCertificate,
   planSchedule,
+  resolveDeliverEmail,
 } from "./schedule";
+
+const PLACEHOLDER = "noemail+x@placeholder.skillup";
 
 function candidate(over: Partial<CertificateCandidate>): CertificateCandidate {
   return {
@@ -55,11 +58,56 @@ describe("assignScheduleDays", () => {
   });
 });
 
+describe("resolveDeliverEmail", () => {
+  it("uses the own email when it's real", () => {
+    expect(
+      resolveDeliverEmail({ email: "a@x.com", submitter_email: null }),
+    ).toBe("a@x.com");
+  });
+
+  it("returns null for a placeholder with no registrar", () => {
+    expect(
+      resolveDeliverEmail({ email: PLACEHOLDER, submitter_email: null }, true),
+    ).toBeNull();
+  });
+
+  it("routes a placeholder to the registrar only when opted in", () => {
+    const c = { email: PLACEHOLDER, submitter_email: "reg@x.com" };
+    expect(resolveDeliverEmail(c, false)).toBeNull();
+    expect(resolveDeliverEmail(c, true)).toBe("reg@x.com");
+  });
+
+  it("ignores a placeholder registrar email", () => {
+    expect(
+      resolveDeliverEmail(
+        { email: PLACEHOLDER, submitter_email: PLACEHOLDER },
+        true,
+      ),
+    ).toBeNull();
+  });
+});
+
 describe("eligibleForCertificate", () => {
   it("keeps all attendees by default", () => {
     const rows = [candidate({ id: "c1" }), candidate({ id: "c2" })];
     const out = eligibleForCertificate(rows);
     expect(out.map((r) => r.id)).toEqual(["c1", "c2"]);
+  });
+
+  it("includes no-email registrants via registrar only when opted in", () => {
+    const rows = [
+      candidate({ id: "own", email: "own@x.com" }),
+      candidate({
+        id: "registrar",
+        email: PLACEHOLDER,
+        submitter_email: "reg@x.com",
+      }),
+      candidate({ id: "offline", email: PLACEHOLDER, submitter_email: null }),
+    ];
+    expect(eligibleForCertificate(rows).map((r) => r.id)).toEqual(["own"]);
+    expect(
+      eligibleForCertificate(rows, { includeRegistrar: true }).map((r) => r.id),
+    ).toEqual(["own", "registrar"]);
   });
 
   it("matches an optional track filter", () => {

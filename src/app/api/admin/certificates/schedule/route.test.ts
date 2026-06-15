@@ -83,4 +83,14 @@ describe("POST /api/admin/certificates/schedule", () => {
     );
     expect(updates).toHaveLength(2);
   });
+
+  it("forwards includeRegistrar to the audience query", async () => {
+    hoisted.getCertificateAudience.mockResolvedValue(audience([{ id: "a" }]));
+    await POST(
+      makeReq({ perDay: 50, startDate: "2999-01-01", includeRegistrar: true }),
+    );
+    expect(hoisted.getCertificateAudience).toHaveBeenCalledWith(
+      expect.objectContaining({ includeRegistrar: true }),
+    );
+  });
 });

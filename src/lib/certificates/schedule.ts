@@ -6,6 +6,14 @@ import { attendanceDayKey } from "@/lib/utils/date";
 export const DEFAULT_PER_DAY = 90;
 export const MAX_PER_DAY = 95;
 
+const PLACEHOLDER_DOMAIN = "@placeholder.skillup";
+
+/** Offline walk-ins with no address get a synthesised `@placeholder.skillup` email. */
+export const isPlaceholderEmail = (email: string | null | undefined): boolean =>
+  Boolean(email?.endsWith(PLACEHOLDER_DOMAIN));
+
+const isPlaceholder = isPlaceholderEmail;
+
 /** Minimal registrant shape needed to decide certificate eligibility. */
 export interface CertificateCandidate {
   id: string;
@@ -13,29 +21,52 @@ export interface CertificateCandidate {
   track_code: string;
   certificate_status?: CertificateStatus | null;
   certificate_sent_at?: string | null;
+  /** Registrar's email (from the batch), if this person was registered by someone else. */
+  submitter_email?: string | null;
 }
 
 export interface EligibilityFilter {
   /** Optional 3-letter track code to narrow the audience. */
   trackCode?: string | null;
+  /** Route no-email participants to whoever registered them (the batch submitter). */
+  includeRegistrar?: boolean;
 }
 
 /**
- * Anyone who attended (the caller already filters `attended = true`) and can
- * actually be emailed - i.e. has a real email and hasn't been sent one yet.
- * Optionally narrowed to a track. Placeholder emails (offline walk-ins with no
- * address) and already-sent rows are dropped so re-running never double-queues.
+ * Where this person's certificate can actually be emailed, or `null` if nowhere:
+ *  - their own real email, when present;
+ *  - else, when `includeRegistrar`, the registrar's real email (batch submitter);
+ *  - else null (offline walk-in with no address and no registrar).
+ */
+export function resolveDeliverEmail(
+  c: Pick<CertificateCandidate, "email" | "submitter_email">,
+  includeRegistrar = false,
+): string | null {
+  if (!isPlaceholder(c.email)) return c.email;
+  if (
+    includeRegistrar &&
+    c.submitter_email &&
+    !isPlaceholder(c.submitter_email)
+  )
+    return c.submitter_email;
+  return null;
+}
+
+/**
+ * Anyone who attended (the caller already filters `attended = true`), can be
+ * emailed (own address, or the registrar's when `includeRegistrar`), and hasn't
+ * been sent one yet. Optionally narrowed to a track. Re-running never
+ * double-queues since already-sent rows are dropped.
  */
 export function eligibleForCertificate<T extends CertificateCandidate>(
   rows: T[],
-  { trackCode }: EligibilityFilter = {},
+  { trackCode, includeRegistrar }: EligibilityFilter = {},
 ): T[] {
   const code = trackCode?.toUpperCase();
   return rows.filter((r) => {
-    if (r.email.endsWith("@placeholder.skillup")) return false;
     if (r.certificate_status === "sent" || r.certificate_sent_at) return false;
     if (code && r.track_code.toUpperCase() !== code) return false;
-    return true;
+    return resolveDeliverEmail(r, includeRegistrar) !== null;
   });
 }
 

@@ -344,6 +344,8 @@ export const CertificateScheduleSchema = z.object({
     .min(1, "Send at least 1 per day")
     .max(95, "Keep it at or below 95 (Resend free-plan cap is 100/day)"),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a start date"),
+  /** Route no-email participants to whoever registered them (batch submitter). */
+  includeRegistrar: z.boolean().optional().default(false),
 });
 
 export type CertificateScheduleInput = z.infer<
