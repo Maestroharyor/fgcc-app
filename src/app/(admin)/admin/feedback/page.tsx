@@ -1,10 +1,36 @@
 import { Star } from "lucide-react";
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { cache, Suspense } from "react";
 import { TRACKS_BY_CODE } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
 import { listFeedback } from "@/lib/db/feedback";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+interface RegContext {
+  id: string;
+  full_name: string;
+  reference_number: string;
+  track_code: string;
+}
+
+/**
+ * The registrant context for every feedback row, keyed by registration_id.
+ * `cache()`-wrapped so the summary, per-track breakdown, and detail list share
+ * one registrations lookup per request.
+ */
+const feedbackContext = cache(async (): Promise<Map<string, RegContext>> => {
+  const feedback = await listFeedback();
+  if (feedback.length === 0) return new Map();
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("registrations")
+    .select("id, full_name, reference_number, track_code")
+    .in(
+      "id",
+      feedback.map((f) => f.registration_id),
+    );
+  return new Map(((data ?? []) as RegContext[]).map((r) => [r.id, r]));
+});
 
 export const dynamic = "force-dynamic";
 
@@ -31,11 +57,15 @@ export default async function AdminFeedbackPage() {
         Feedback
       </h1>
 
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Suspense fallback={<RatingCardsSkeleton />}>
           <RatingCardsRow />
         </Suspense>
       </div>
+
+      <Suspense fallback={null}>
+        <TrackRatingsSection />
+      </Suspense>
 
       <div className="mt-8 flex flex-col gap-4">
         <Suspense fallback={<FeedbackListSkeleton />}>
@@ -56,10 +86,86 @@ async function RatingCardsRow() {
   const totals = aggregateRatings(feedback);
   return (
     <>
+      <Avg label="Responses" value={feedback.length} suffix="" />
       <Avg label="Overall" value={totals.overall} />
       <Avg label="Track" value={totals.track} />
       <Avg label="Facilitator" value={totals.facilitator} />
     </>
+  );
+}
+
+async function TrackRatingsSection() {
+  const [feedback, ctx] = await Promise.all([
+    listFeedback(),
+    feedbackContext(),
+  ]);
+  if (feedback.length === 0) return null;
+
+  // Group every response by its registrant's track, then average each rating.
+  const byTrack = new Map<
+    string,
+    { count: number; overall: number; track: number; facilitator: number }
+  >();
+  for (const f of feedback) {
+    const code = ctx.get(f.registration_id)?.track_code;
+    if (!code) continue;
+    const row = byTrack.get(code) ?? {
+      count: 0,
+      overall: 0,
+      track: 0,
+      facilitator: 0,
+    };
+    row.count += 1;
+    row.overall += f.overall_rating;
+    row.track += f.track_rating;
+    row.facilitator += f.facilitator_rating;
+    byTrack.set(code, row);
+  }
+  const rows = [...byTrack.entries()]
+    .map(([code, r]) => ({
+      code,
+      name: TRACKS_BY_CODE[code]?.name ?? code,
+      count: r.count,
+      overall: round(r.overall / r.count),
+      track: round(r.track / r.count),
+      facilitator: round(r.facilitator / r.count),
+    }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+  if (rows.length === 0) return null;
+
+  return (
+    <section className="mt-8">
+      <h2 className="font-display text-lg font-semibold text-navy">
+        Ratings by track
+      </h2>
+      <div className="mt-3 overflow-hidden rounded-2xl border border-navy/8 bg-white shadow-card">
+        <table className="min-w-full text-sm">
+          <thead className="bg-cream-100">
+            <tr className="text-left font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
+              <th className="px-4 py-3">Track</th>
+              <th className="px-4 py-3">Responses</th>
+              <th className="px-4 py-3">Overall</th>
+              <th className="px-4 py-3">Track</th>
+              <th className="px-4 py-3">Facilitator</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.code} className="border-t border-navy/6">
+                <td className="px-4 py-3 font-display font-medium text-navy">
+                  {r.name}
+                </td>
+                <td className="px-4 py-3 text-navy/70">{r.count}</td>
+                <td className="px-4 py-3 text-navy">{r.overall} / 5</td>
+                <td className="px-4 py-3 text-navy">{r.track} / 5</td>
+                <td className="px-4 py-3 text-navy">{r.facilitator} / 5</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -73,23 +179,7 @@ async function FeedbackList() {
     );
   }
 
-  // Pull associated registrants for context.
-  const supabase = await createSupabaseServerClient();
-  const regIds = feedback.map((f) => f.registration_id);
-  const { data: regs } = await supabase
-    .from("registrations")
-    .select("id, full_name, reference_number, track_code")
-    .in("id", regIds);
-  const regsById = new Map(
-    (
-      (regs ?? []) as Array<{
-        id: string;
-        full_name: string;
-        reference_number: string;
-        track_code: string;
-      }>
-    ).map((r) => [r.id, r]),
-  );
+  const regsById = await feedbackContext();
 
   return (
     <>
@@ -166,17 +256,19 @@ async function FeedbackList() {
 function RatingCardsSkeleton() {
   return (
     <>
-      {(["Overall", "Track", "Facilitator"] as const).map((label) => (
-        <div
-          key={label}
-          className="rounded-2xl border border-navy/8 bg-white p-5 shadow-card"
-        >
-          <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
-            {label}
+      {(["Responses", "Overall", "Track", "Facilitator"] as const).map(
+        (label) => (
+          <div
+            key={label}
+            className="rounded-2xl border border-navy/8 bg-white p-5 shadow-card"
+          >
+            <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
+              {label}
+            </div>
+            <div className="mt-2 h-9 w-20 rounded-md bg-navy/8 animate-pulse" />
           </div>
-          <div className="mt-2 h-9 w-20 rounded-md bg-navy/8 animate-pulse" />
-        </div>
-      ))}
+        ),
+      )}
     </>
   );
 }
@@ -248,7 +340,15 @@ function RatingPill({ label, value }: { label: string; value: number }) {
   );
 }
 
-function Avg({ label, value }: { label: string; value: number }) {
+function Avg({
+  label,
+  value,
+  suffix = " / 5",
+}: {
+  label: string;
+  value: number;
+  suffix?: string;
+}) {
   return (
     <div className="rounded-2xl border border-navy/8 bg-white p-5 shadow-card">
       <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
@@ -256,7 +356,7 @@ function Avg({ label, value }: { label: string; value: number }) {
       </div>
       <div className="mt-2 font-display text-3xl font-semibold text-navy">
         {value}
-        <span className="text-base text-navy/45"> / 5</span>
+        {suffix && <span className="text-base text-navy/45">{suffix}</span>}
       </div>
     </div>
   );
