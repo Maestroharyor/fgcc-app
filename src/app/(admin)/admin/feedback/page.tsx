@@ -1,5 +1,6 @@
 import { Star } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { cache, Suspense } from "react";
 import { TRACKS_BY_CODE } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
@@ -193,9 +194,18 @@ async function FeedbackList() {
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="font-display font-semibold text-navy">
-                  {reg?.full_name ?? "Anonymous"}
-                </div>
+                {reg ? (
+                  <Link
+                    href={`/admin/registrations/${reg.id}`}
+                    className="font-display font-semibold text-navy hover:text-primary hover:underline"
+                  >
+                    {reg.full_name}
+                  </Link>
+                ) : (
+                  <div className="font-display font-semibold text-navy">
+                    Anonymous
+                  </div>
+                )}
                 <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
                   {reg?.reference_number} · {trackName ?? "-"}
                 </div>
