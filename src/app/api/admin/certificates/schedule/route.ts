@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     );
   }
-  const { trackCode, perDay, startDate } = parsed.data;
+  const { trackCode, perDay, startDate, includeRegistrar } = parsed.data;
 
   if (startDate < attendanceDayKey()) {
     return NextResponse.json(
@@ -35,7 +35,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { recipients } = await getCertificateAudience({ trackCode });
+  const { recipients } = await getCertificateAudience({
+    trackCode,
+    includeRegistrar,
+  });
   if (recipients.length === 0) {
     return NextResponse.json(
       { ok: false, error: "No eligible recipients for that selection" },

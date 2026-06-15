@@ -1,16 +1,21 @@
-import { Button, Heading, Text } from "@react-email/components";
+import { Button, Heading, Link, Text } from "@react-email/components";
 import { EmailLayout, palette } from "./_Layout";
+
+const FACEBOOK_URL = "https://www.facebook.com/cment.fy";
 
 export interface CertificateEmailProps {
   firstName: string;
   trackName: string;
   feedbackUrl: string;
+  /** Shown when the email is routed to whoever registered the participant. */
+  registeredByNote?: string | null;
 }
 
 export default function CertificateEmail({
   firstName = "friend",
   trackName = "your track",
   feedbackUrl = "#",
+  registeredByNote = null,
 }: CertificateEmailProps) {
   return (
     <EmailLayout preview="Your SkillUp 1.0 certificate of participation">
@@ -25,6 +30,18 @@ export default function CertificateEmail({
       >
         Your certificate is attached, {firstName}.
       </Heading>
+      {registeredByNote && (
+        <Text
+          style={{
+            fontSize: 13,
+            lineHeight: 1.6,
+            color: palette.muted,
+            marginTop: 8,
+          }}
+        >
+          {registeredByNote}
+        </Text>
+      )}
       <Text
         style={{
           fontSize: 15,
@@ -38,8 +55,11 @@ export default function CertificateEmail({
         and put it to work.
       </Text>
       <Text style={{ marginTop: 16, fontSize: 13, color: palette.muted }}>
-        Tag <strong>@cementfoursquare</strong> when you share online - we love
-        to see what you’re building.
+        Tag <strong>@cementfoursquare</strong> on Instagram and follow us on{" "}
+        <Link href={FACEBOOK_URL} style={{ color: palette.blue }}>
+          Facebook
+        </Link>{" "}
+        when you share online - we love to see what you’re building.
       </Text>
       <Text
         style={{

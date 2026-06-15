@@ -11,20 +11,24 @@ export async function GET(request: NextRequest) {
   await requireRole("superadmin");
 
   const track = request.nextUrl.searchParams.get("track") ?? undefined;
-  const { recipients, eligibleCount, noEmail, alreadySent } =
-    await getCertificateAudience({ trackCode: track });
+  const includeRegistrar =
+    request.nextUrl.searchParams.get("registrar") === "1";
+  const { recipients, eligibleCount, viaRegistrar, noEmail, alreadySent } =
+    await getCertificateAudience({ trackCode: track, includeRegistrar });
 
   return NextResponse.json({
     ok: true,
     count: eligibleCount,
+    viaRegistrar,
     noEmail,
     alreadySent,
     recipients: recipients.map((r) => ({
       reference_number: r.reference_number,
       full_name: r.full_name,
-      email: r.email,
+      email: r.deliver_email ?? r.email,
       track_code: r.track_code,
       certificate_status: r.certificate_status,
+      via_registrar: r.via_registrar,
     })),
   });
 }
