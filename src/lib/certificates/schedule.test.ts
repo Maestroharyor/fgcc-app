@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   assignScheduleDays,
   type CertificateCandidate,
-  dayKeyAfter,
   eligibleForCertificate,
   planSchedule,
   resolveDeliverEmail,
+  sendAtAfter,
 } from "./schedule";
+
+// 09:00 Lagos = 08:00 UTC.
+const START = "2026-06-16T08:00:00.000Z";
 
 const PLACEHOLDER = "noemail+x@placeholder.skillup";
 
@@ -21,39 +24,41 @@ function candidate(over: Partial<CertificateCandidate>): CertificateCandidate {
   };
 }
 
-describe("dayKeyAfter", () => {
-  it("advances Lagos calendar days", () => {
-    expect(dayKeyAfter("2026-06-16", 0)).toBe("2026-06-16");
-    expect(dayKeyAfter("2026-06-16", 1)).toBe("2026-06-17");
-    expect(dayKeyAfter("2026-06-30", 1)).toBe("2026-07-01");
+describe("sendAtAfter", () => {
+  it("advances whole days keeping the same instant", () => {
+    expect(sendAtAfter(START, 0)).toBe("2026-06-16T08:00:00.000Z");
+    expect(sendAtAfter(START, 1)).toBe("2026-06-17T08:00:00.000Z");
+    expect(sendAtAfter("2026-06-30T08:00:00.000Z", 1)).toBe(
+      "2026-07-01T08:00:00.000Z",
+    );
   });
 });
 
 describe("planSchedule", () => {
-  it("splits a count into per-day batches", () => {
-    expect(planSchedule(120, 50, "2026-06-16")).toEqual([
-      { dateKey: "2026-06-16", count: 50 },
-      { dateKey: "2026-06-17", count: 50 },
-      { dateKey: "2026-06-18", count: 20 },
+  it("splits a count into per-day batches at the same time", () => {
+    expect(planSchedule(120, 50, START)).toEqual([
+      { sendAt: "2026-06-16T08:00:00.000Z", count: 50 },
+      { sendAt: "2026-06-17T08:00:00.000Z", count: 50 },
+      { sendAt: "2026-06-18T08:00:00.000Z", count: 20 },
     ]);
   });
 
   it("returns a single day when everything fits", () => {
-    expect(planSchedule(30, 50, "2026-06-16")).toEqual([
-      { dateKey: "2026-06-16", count: 30 },
+    expect(planSchedule(30, 50, START)).toEqual([
+      { sendAt: "2026-06-16T08:00:00.000Z", count: 30 },
     ]);
   });
 
   it("returns nothing for an empty audience", () => {
-    expect(planSchedule(0, 50, "2026-06-16")).toEqual([]);
+    expect(planSchedule(0, 50, START)).toEqual([]);
   });
 });
 
 describe("assignScheduleDays", () => {
   it("maps ordered ids onto consecutive days", () => {
-    expect(assignScheduleDays(["a", "b", "c"], 2, "2026-06-16")).toEqual([
-      { dateKey: "2026-06-16", ids: ["a", "b"] },
-      { dateKey: "2026-06-17", ids: ["c"] },
+    expect(assignScheduleDays(["a", "b", "c"], 2, START)).toEqual([
+      { sendAt: "2026-06-16T08:00:00.000Z", ids: ["a", "b"] },
+      { sendAt: "2026-06-17T08:00:00.000Z", ids: ["c"] },
     ]);
   });
 });

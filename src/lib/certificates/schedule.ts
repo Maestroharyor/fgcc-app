@@ -1,6 +1,5 @@
 import { addDays } from "date-fns";
 import type { CertificateStatus } from "@/lib/db/types";
-import { attendanceDayKey } from "@/lib/utils/date";
 
 /** Resend's free-plan ceiling is 100 emails/day; default below it for headroom. */
 export const DEFAULT_PER_DAY = 90;
@@ -70,26 +69,27 @@ export function eligibleForCertificate<T extends CertificateCandidate>(
   });
 }
 
-/** The Lagos day key `offset` days after `startDateKey`. */
-export function dayKeyAfter(startDateKey: string, offset: number): string {
-  // Anchor at Lagos noon so adding whole days never trips the midnight boundary.
-  const anchor = new Date(`${startDateKey}T12:00:00+01:00`);
-  return attendanceDayKey(addDays(anchor, offset));
+/**
+ * The send instant (ISO) `offset` days after `startAtIso`, keeping the same
+ * wall-clock time. Lagos has no DST, so adding whole days is exact.
+ */
+export function sendAtAfter(startAtIso: string, offset: number): string {
+  return addDays(new Date(startAtIso), offset).toISOString();
 }
 
 export interface DayPlan {
-  dateKey: string;
+  sendAt: string;
   count: number;
 }
 
 /**
- * How `count` recipients split into per-day batches starting `startDateKey`.
- * Pure - used for the UI preview ("50 on Jun 16, 23 on Jun 17").
+ * How `count` recipients split into per-day batches starting at `startAtIso`.
+ * Pure - used for the UI preview ("50 on Jun 16 9:00, 23 on Jun 17 9:00").
  */
 export function planSchedule(
   count: number,
   perDay: number,
-  startDateKey: string,
+  startAtIso: string,
 ): DayPlan[] {
   if (count <= 0 || perDay <= 0) return [];
   const days: DayPlan[] = [];
@@ -97,7 +97,7 @@ export function planSchedule(
   let offset = 0;
   while (remaining > 0) {
     const take = Math.min(perDay, remaining);
-    days.push({ dateKey: dayKeyAfter(startDateKey, offset), count: take });
+    days.push({ sendAt: sendAtAfter(startAtIso, offset), count: take });
     remaining -= take;
     offset += 1;
   }
@@ -105,25 +105,25 @@ export function planSchedule(
 }
 
 export interface DayAssignment {
-  dateKey: string;
+  sendAt: string;
   ids: string[];
 }
 
 /**
- * Map ordered recipient ids onto consecutive send days. The route applies one
- * bulk update per returned group. Order in = order scheduled, so the result is
- * deterministic for a given input.
+ * Map ordered recipient ids onto consecutive send days (same clock time each
+ * day). The route applies one bulk update per returned group. Order in = order
+ * scheduled, so the result is deterministic for a given input.
  */
 export function assignScheduleDays(
   ids: string[],
   perDay: number,
-  startDateKey: string,
+  startAtIso: string,
 ): DayAssignment[] {
   if (ids.length === 0 || perDay <= 0) return [];
   const groups: DayAssignment[] = [];
   for (let i = 0, offset = 0; i < ids.length; i += perDay, offset += 1) {
     groups.push({
-      dateKey: dayKeyAfter(startDateKey, offset),
+      sendAt: sendAtAfter(startAtIso, offset),
       ids: ids.slice(i, i + perDay),
     });
   }

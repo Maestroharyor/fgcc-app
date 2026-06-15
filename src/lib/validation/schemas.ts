@@ -327,8 +327,8 @@ export type BroadcastSmsInput = z.infer<typeof BroadcastSmsSchema>;
 /**
  * Certificate scheduling request. Eligibility is "attended + has a real email"
  * (resolved server-side), optionally narrowed to a track. `perDay` stays under
- * Resend's free-plan 100/day ceiling. `startDate` must be today or later so we
- * never schedule a batch into the past.
+ * Resend's free-plan 100/day ceiling. `startAt` is a Lagos datetime-local value
+ * (`YYYY-MM-DDTHH:mm`); the route rejects instants in the past.
  */
 export const CertificateScheduleSchema = z.object({
   trackCode: z
@@ -343,7 +343,9 @@ export const CertificateScheduleSchema = z.object({
     .int()
     .min(1, "Send at least 1 per day")
     .max(95, "Keep it at or below 95 (Resend free-plan cap is 100/day)"),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a start date"),
+  startAt: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "Pick a start date and time"),
   /** Route no-email participants to whoever registered them (batch submitter). */
   includeRegistrar: z.boolean().optional().default(false),
 });
