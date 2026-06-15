@@ -308,6 +308,65 @@ export async function getCertificateAudience(
   };
 }
 
+/** An attendee with no email of their own, for the "No email" review list. */
+export interface NoEmailAttendee {
+  reference_number: string;
+  full_name: string;
+  track_code: string;
+  /** The registrar (batch submitter) who could receive their certificate, if any. */
+  submitter_name: string | null;
+  submitter_email: string | null;
+}
+
+type NoEmailRow = {
+  reference_number: string;
+  full_name: string;
+  track_code: string;
+  email: string;
+  batches:
+    | { submitter_name: string | null; submitter_email: string | null }
+    | { submitter_name: string | null; submitter_email: string | null }[]
+    | null;
+};
+
+/**
+ * Attendees who have no email of their own (placeholder address), so the admin
+ * can see exactly who needs a printed certificate or a registrar to route to.
+ */
+export async function listNoEmailAttendees(
+  trackCode?: string | null,
+): Promise<NoEmailAttendee[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("registrations")
+    .select(
+      "reference_number, full_name, track_code, email, batches(submitter_name, submitter_email)",
+    )
+    .eq("attended", true)
+    .order("full_name", { ascending: true });
+  if (error) {
+    console.warn("[db.registrations] listNoEmailAttendees:", error.message);
+    return [];
+  }
+  const code = trackCode?.toUpperCase();
+  return ((data ?? []) as unknown as NoEmailRow[])
+    .filter(
+      (r) =>
+        isPlaceholderEmail(r.email) &&
+        (!code || r.track_code.toUpperCase() === code),
+    )
+    .map((r) => {
+      const batch = Array.isArray(r.batches) ? r.batches[0] : r.batches;
+      return {
+        reference_number: r.reference_number,
+        full_name: r.full_name,
+        track_code: r.track_code,
+        submitter_name: batch?.submitter_name ?? null,
+        submitter_email: batch?.submitter_email ?? null,
+      };
+    });
+}
+
 export interface CertificateScheduleDay {
   dateKey: string;
   scheduled: number;

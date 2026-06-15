@@ -6,11 +6,12 @@ import { Suspense } from "react";
 import { CertificateScheduler } from "@/components/admin/CertificateScheduler";
 import { CertificateScheduleView } from "@/components/admin/CertificateScheduleView";
 import { CertificateTestEmail } from "@/components/admin/CertificateTestEmail";
-import { TRACKS } from "@/content/tracks";
+import { TRACKS, TRACKS_BY_CODE } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
 import {
   countCertificateStatuses,
   getCertificateSchedule,
+  listNoEmailAttendees,
 } from "@/lib/db/registrations";
 import { attendanceDayKey } from "@/lib/utils/date";
 
@@ -59,9 +60,10 @@ export default async function CertificatesSendPage() {
 async function SchedulePanels() {
   const todayKey = attendanceDayKey();
   const tomorrowKey = attendanceDayKey(addDays(new Date(), 1));
-  const [schedule, counts] = await Promise.all([
+  const [schedule, counts, noEmailAttendees] = await Promise.all([
     getCertificateSchedule(),
     countCertificateStatuses(),
+    listNoEmailAttendees(),
   ]);
   const tracks = TRACKS.map((t) => ({ code: t.code, name: t.name }));
 
@@ -74,6 +76,7 @@ async function SchedulePanels() {
         <StatCard label="Failed" value={counts.failed} tone="red" />
         <StatCard label="No email" value={counts.noEmail} tone="amber" />
       </div>
+      <NoEmailList attendees={noEmailAttendees} />
       <CertificateScheduler
         tracks={tracks}
         defaultStartDate={tomorrowKey}
@@ -81,6 +84,64 @@ async function SchedulePanels() {
       />
       <CertificateScheduleView days={schedule} todayKey={todayKey} />
     </div>
+  );
+}
+
+function NoEmailList({
+  attendees,
+}: {
+  attendees: Awaited<ReturnType<typeof listNoEmailAttendees>>;
+}) {
+  if (attendees.length === 0) return null;
+  const withRegistrar = attendees.filter((a) => a.submitter_email).length;
+  return (
+    <details className="rounded-2xl border border-navy/8 bg-white shadow-card">
+      <summary className="cursor-pointer list-none px-5 py-4 font-display text-sm font-semibold text-navy">
+        <span className="text-amber-700">{attendees.length}</span> attendees
+        with no email{" "}
+        <span className="font-sans text-xs font-normal text-navy/55">
+          ({withRegistrar} reachable via registrar ·{" "}
+          {attendees.length - withRegistrar} print-only)
+        </span>
+      </summary>
+      <div className="max-h-80 overflow-y-auto border-t border-navy/8">
+        <table className="min-w-full text-sm">
+          <thead className="sticky top-0 bg-cream-100">
+            <tr className="text-left font-sans text-[10px] uppercase tracking-[0.16em] text-navy/55">
+              <th className="px-4 py-2.5">Name</th>
+              <th className="px-4 py-2.5">Ref</th>
+              <th className="px-4 py-2.5">Track</th>
+              <th className="px-4 py-2.5">Registrar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {attendees.map((a) => (
+              <tr key={a.reference_number} className="border-t border-navy/6">
+                <td className="px-4 py-2 font-display font-medium text-navy">
+                  {a.full_name}
+                </td>
+                <td className="px-4 py-2 font-sans text-[12px] text-primary">
+                  {a.reference_number}
+                </td>
+                <td className="px-4 py-2 text-navy/70">
+                  {TRACKS_BY_CODE[a.track_code]?.name ?? a.track_code}
+                </td>
+                <td className="px-4 py-2 text-navy/70">
+                  {a.submitter_email ? (
+                    <span>
+                      {a.submitter_name ?? "—"}{" "}
+                      <span className="text-navy/45">{a.submitter_email}</span>
+                    </span>
+                  ) : (
+                    <span className="text-amber-700">Print only</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
   );
 }
 
