@@ -8,6 +8,12 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
+const ATTEND_LABEL: Record<"yes" | "no" | "maybe", string> = {
+  yes: "Yes",
+  maybe: "Maybe",
+  no: "No",
+};
+
 export const metadata: Metadata = {
   title: "Feedback · SkillUp Admin",
   robots: { index: false, follow: false },
@@ -104,9 +110,10 @@ async function FeedbackList() {
                   {reg?.reference_number} · {trackName ?? "-"}
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-gold-600">
-                <Star className="h-3.5 w-3.5" fill="currentColor" />
-                <span className="font-sans text-sm">{f.overall_rating}/5</span>
+              <div className="flex flex-wrap justify-end gap-1.5">
+                <RatingPill label="Overall" value={f.overall_rating} />
+                <RatingPill label="Track" value={f.track_rating} />
+                <RatingPill label="Facilitator" value={f.facilitator_rating} />
               </div>
             </div>
             {f.enjoyed_most && (
@@ -125,6 +132,26 @@ async function FeedbackList() {
                 “{f.testimony}”
               </p>
             )}
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-navy/6 pt-3">
+              {f.attend_next && (
+                <span className="inline-flex rounded-full bg-navy/6 px-2.5 py-0.5 font-sans text-[10px] uppercase tracking-[0.16em] text-navy/65">
+                  SkillUp 2.0: {ATTEND_LABEL[f.attend_next]}
+                </span>
+              )}
+              {f.testimony && (
+                <span
+                  className={`inline-flex rounded-full px-2.5 py-0.5 font-sans text-[10px] uppercase tracking-[0.16em] ${
+                    f.share_as_testimonial
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-amber-100 text-amber-700"
+                  }`}
+                >
+                  {f.share_as_testimonial
+                    ? "OK to share publicly"
+                    : "Not for public use"}
+                </span>
+              )}
+            </div>
           </article>
         );
       })}
@@ -208,6 +235,17 @@ function aggregateRatings(
 
 function round(n: number) {
   return Math.round(n * 10) / 10;
+}
+
+function RatingPill({ label, value }: { label: string; value: number }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-gold/10 px-2.5 py-0.5 text-gold-600">
+      <Star className="h-3 w-3" fill="currentColor" aria-hidden />
+      <span className="font-sans text-[11px]">
+        <span className="text-navy/55">{label}</span> {value}/5
+      </span>
+    </span>
+  );
 }
 
 function Avg({ label, value }: { label: string; value: number }) {
