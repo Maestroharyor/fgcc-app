@@ -38,7 +38,7 @@ export default function CertificateEmail({
         and put it to work.
       </Text>
       <Text style={{ marginTop: 16, fontSize: 13, color: palette.muted }}>
-        Tag <strong>@foursquarecement</strong> when you share online - we love
+        Tag <strong>@cementfoursquare</strong> when you share online - we love
         to see what you’re building.
       </Text>
       <Text

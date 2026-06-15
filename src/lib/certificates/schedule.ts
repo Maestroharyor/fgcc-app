@@ -1,5 +1,4 @@
 import { addDays } from "date-fns";
-import { type AttendanceLike, checkinOn } from "@/lib/attendance/day";
 import type { CertificateStatus } from "@/lib/db/types";
 import { attendanceDayKey } from "@/lib/utils/date";
 
@@ -8,7 +7,7 @@ export const DEFAULT_PER_DAY = 90;
 export const MAX_PER_DAY = 95;
 
 /** Minimal registrant shape needed to decide certificate eligibility. */
-export interface CertificateCandidate extends AttendanceLike {
+export interface CertificateCandidate {
   id: string;
   email: string;
   track_code: string;
@@ -17,27 +16,26 @@ export interface CertificateCandidate extends AttendanceLike {
 }
 
 export interface EligibilityFilter {
-  /** Lagos day keys (`yyyy-MM-dd`); a candidate qualifies if they attended ANY. */
-  dayKeys: string[];
   /** Optional 3-letter track code to narrow the audience. */
   trackCode?: string | null;
 }
 
 /**
- * Anyone who attended at least one of the selected days, optionally on a given
- * track. Placeholder emails (offline walk-ins) and already-sent rows are
- * dropped so re-running the scheduler never double-queues a delivered cert.
+ * Anyone who attended (the caller already filters `attended = true`) and can
+ * actually be emailed - i.e. has a real email and hasn't been sent one yet.
+ * Optionally narrowed to a track. Placeholder emails (offline walk-ins with no
+ * address) and already-sent rows are dropped so re-running never double-queues.
  */
 export function eligibleForCertificate<T extends CertificateCandidate>(
   rows: T[],
-  { dayKeys, trackCode }: EligibilityFilter,
+  { trackCode }: EligibilityFilter = {},
 ): T[] {
   const code = trackCode?.toUpperCase();
   return rows.filter((r) => {
     if (r.email.endsWith("@placeholder.skillup")) return false;
     if (r.certificate_status === "sent" || r.certificate_sent_at) return false;
     if (code && r.track_code.toUpperCase() !== code) return false;
-    return dayKeys.some((key) => checkinOn(r, key) !== null);
+    return true;
   });
 }
 

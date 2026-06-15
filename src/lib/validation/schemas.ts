@@ -325,15 +325,12 @@ export const BroadcastSmsSchema = z.object({
 export type BroadcastSmsInput = z.infer<typeof BroadcastSmsSchema>;
 
 /**
- * Certificate scheduling request. `dayKeys` are Lagos calendar days
- * (`yyyy-MM-dd`); a recipient qualifies if they attended any of them. `perDay`
- * stays under Resend's free-plan 100/day ceiling. `startDate` must be today or
- * later so we never schedule a batch into the past.
+ * Certificate scheduling request. Eligibility is "attended + has a real email"
+ * (resolved server-side), optionally narrowed to a track. `perDay` stays under
+ * Resend's free-plan 100/day ceiling. `startDate` must be today or later so we
+ * never schedule a batch into the past.
  */
 export const CertificateScheduleSchema = z.object({
-  dayKeys: z
-    .array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid day"))
-    .min(1, "Pick at least one day"),
   trackCode: z
     .string()
     .trim()

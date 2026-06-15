@@ -3,6 +3,7 @@
 import {
   Award,
   BarChart3,
+  CalendarClock,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -39,7 +40,25 @@ const superNav: Array<{ href: string; label: string; Icon: typeof BarChart3 }> =
   [
     { href: "/admin/sms", label: "SMS broadcast", Icon: Send },
     { href: "/admin/certificates", label: "Certificates", Icon: Award },
+    {
+      href: "/admin/certificates/send",
+      label: "Send certificates",
+      Icon: CalendarClock,
+    },
   ];
+
+/**
+ * The single active nav href: the longest one that the path matches exactly or
+ * as a parent segment. Prevents a parent (e.g. /admin/certificates) and its
+ * child (/admin/certificates/send) from both lighting up.
+ */
+function matchActive(pathname: string, hrefs: string[]): string | null {
+  return (
+    hrefs
+      .filter((h) => pathname === h || pathname.startsWith(`${h}/`))
+      .sort((a, b) => b.length - a.length)[0] ?? null
+  );
+}
 
 export function AdminSidebar({ role, email }: Props) {
   const pathname = usePathname();
@@ -197,6 +216,10 @@ function SidebarBody({
   onNavigate?: () => void;
   onSignOut: () => void;
 }) {
+  const activeHref = matchActive(
+    pathname,
+    [...baseNav, ...superNav].map((i) => i.href),
+  );
   return (
     <>
       <nav className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1">
@@ -204,7 +227,7 @@ function SidebarBody({
           <NavLink
             key={item.href}
             {...item}
-            active={pathname.startsWith(item.href)}
+            active={item.href === activeHref}
             onClick={onNavigate}
           />
         ))}
@@ -217,7 +240,7 @@ function SidebarBody({
               <NavLink
                 key={item.href}
                 {...item}
-                active={pathname.startsWith(item.href)}
+                active={item.href === activeHref}
                 onClick={onNavigate}
               />
             ))}

@@ -4,11 +4,6 @@ import { CalendarClock, Loader2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
-interface EventDay {
-  label: string;
-  key: string;
-}
-
 interface TrackOption {
   code: string;
   name: string;
@@ -22,7 +17,6 @@ interface PreviewRecipient {
 }
 
 interface Props {
-  days: EventDay[];
   tracks: TrackOption[];
   /** Lagos `yyyy-MM-dd` defaults: schedule starts tomorrow, never before today. */
   defaultStartDate: string;
@@ -51,20 +45,17 @@ function planDays(count: number, perDay: number, startDate: string): DayPlan[] {
 }
 
 export function CertificateScheduler({
-  days,
   tracks,
   defaultStartDate,
   minStartDate,
 }: Props) {
   const router = useRouter();
-  const [selectedDays, setSelectedDays] = useState<string[]>(
-    days.map((d) => d.key),
-  );
   const [trackCode, setTrackCode] = useState("");
   const [perDay, setPerDay] = useState(90);
   const [startDate, setStartDate] = useState(defaultStartDate);
 
   const [count, setCount] = useState<number | null>(null);
+  const [noEmail, setNoEmail] = useState(0);
   const [recipients, setRecipients] = useState<PreviewRecipient[]>([]);
   const [showList, setShowList] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -72,34 +63,31 @@ export function CertificateScheduler({
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
 
-  // Refresh the eligible-recipient preview whenever the audience changes.
+  // Refresh the audience preview whenever the track filter changes.
   useEffect(() => {
-    if (selectedDays.length === 0) {
-      setCount(0);
-      setRecipients([]);
-      return;
-    }
     const controller = new AbortController();
     setLoadingPreview(true);
-    const params = new URLSearchParams({ days: selectedDays.join(",") });
+    const params = new URLSearchParams();
     if (trackCode) params.set("track", trackCode);
     fetch(`/api/admin/certificates/preview?${params}`, {
       signal: controller.signal,
     })
       .then((r) => r.json())
-      .then((data: { count: number; recipients: PreviewRecipient[] }) => {
-        setCount(data.count);
-        setRecipients(data.recipients ?? []);
-      })
+      .then(
+        (data: {
+          count: number;
+          noEmail: number;
+          recipients: PreviewRecipient[];
+        }) => {
+          setCount(data.count);
+          setNoEmail(data.noEmail ?? 0);
+          setRecipients(data.recipients ?? []);
+        },
+      )
       .catch(() => {})
       .finally(() => setLoadingPreview(false));
     return () => controller.abort();
-  }, [selectedDays, trackCode]);
-
-  const toggleDay = (key: string) =>
-    setSelectedDays((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
-    );
+  }, [trackCode]);
 
   const plan = planDays(count ?? 0, perDay, startDate);
 
@@ -110,7 +98,6 @@ export function CertificateScheduler({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          dayKeys: selectedDays,
           trackCode: trackCode || undefined,
           perDay,
           startDate,
@@ -130,8 +117,7 @@ export function CertificateScheduler({
     });
   };
 
-  const canSchedule =
-    selectedDays.length > 0 && (count ?? 0) > 0 && perDay >= 1 && !pending;
+  const canSchedule = (count ?? 0) > 0 && perDay >= 1 && !pending;
 
   return (
     <div className="rounded-2xl border border-navy/8 bg-white p-6 shadow-card">
@@ -142,37 +128,13 @@ export function CertificateScheduler({
         </h3>
       </div>
       <p className="mt-1 text-sm text-navy/65">
+        Everyone who attended (any day) and has an email is eligible.
         Certificates go out in daily batches to stay under Resend&apos;s 100/day
-        cap. Pick the audience, set a per-day count and a start date, and
-        we&apos;ll split the work across days.
+        cap - set a per-day count and a start date and we&apos;ll split the
+        work.
       </p>
 
       <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <fieldset>
-          <legend className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
-            Attended on
-          </legend>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {days.map((d) => {
-              const on = selectedDays.includes(d.key);
-              return (
-                <button
-                  key={d.key}
-                  type="button"
-                  onClick={() => toggleDay(d.key)}
-                  className={`rounded-full px-3 py-1.5 font-display text-sm font-semibold ${
-                    on
-                      ? "bg-primary text-white"
-                      : "border border-navy/15 bg-white text-navy hover:bg-cream-100"
-                  }`}
-                >
-                  {d.label}
-                </button>
-              );
-            })}
-          </div>
-        </fieldset>
-
         <label className="block">
           <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
             Track
@@ -232,8 +194,13 @@ export function CertificateScheduler({
               </span>
             ) : (
               <span>
-                <strong>{count ?? 0}</strong> eligible recipient
-                {(count ?? 0) === 1 ? "" : "s"}
+                <strong>{count ?? 0}</strong> eligible by email
+                {noEmail > 0 && (
+                  <span className="text-navy/55">
+                    {" "}
+                    · {noEmail} have no email (use Download ZIP to print)
+                  </span>
+                )}
               </span>
             )}
           </span>

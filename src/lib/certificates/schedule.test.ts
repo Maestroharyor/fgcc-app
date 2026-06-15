@@ -7,19 +7,11 @@ import {
   planSchedule,
 } from "./schedule";
 
-// Lagos timestamps so the derived day key is deterministic regardless of host TZ.
-const DAY1 = "2026-06-12";
-const DAY2 = "2026-06-13";
-const day1At = "2026-06-12T09:30:00+01:00";
-const day2At = "2026-06-13T10:00:00+01:00";
-
 function candidate(over: Partial<CertificateCandidate>): CertificateCandidate {
   return {
     id: "c1",
     email: "a@example.com",
     track_code: "UXD",
-    attendance_log: [day1At],
-    attended_at: day1At,
     certificate_status: "none",
     certificate_sent_at: null,
     ...over,
@@ -64,13 +56,10 @@ describe("assignScheduleDays", () => {
 });
 
 describe("eligibleForCertificate", () => {
-  it("keeps attendees of any selected day", () => {
-    const rows = [
-      candidate({ id: "c1", attendance_log: [day1At] }),
-      candidate({ id: "c2", attendance_log: [day2At] }),
-    ];
-    const out = eligibleForCertificate(rows, { dayKeys: [DAY1] });
-    expect(out.map((r) => r.id)).toEqual(["c1"]);
+  it("keeps all attendees by default", () => {
+    const rows = [candidate({ id: "c1" }), candidate({ id: "c2" })];
+    const out = eligibleForCertificate(rows);
+    expect(out.map((r) => r.id)).toEqual(["c1", "c2"]);
   });
 
   it("matches an optional track filter", () => {
@@ -78,10 +67,7 @@ describe("eligibleForCertificate", () => {
       candidate({ id: "c1", track_code: "UXD" }),
       candidate({ id: "c2", track_code: "PHO" }),
     ];
-    const out = eligibleForCertificate(rows, {
-      dayKeys: [DAY1],
-      trackCode: "pho",
-    });
+    const out = eligibleForCertificate(rows, { trackCode: "pho" });
     expect(out.map((r) => r.id)).toEqual(["c2"]);
   });
 
@@ -90,9 +76,9 @@ describe("eligibleForCertificate", () => {
       candidate({ id: "ok" }),
       candidate({ id: "placeholder", email: "x@placeholder.skillup" }),
       candidate({ id: "sent", certificate_status: "sent" }),
-      candidate({ id: "stamped", certificate_sent_at: day2At }),
+      candidate({ id: "stamped", certificate_sent_at: "2026-06-13T10:00:00Z" }),
     ];
-    const out = eligibleForCertificate(rows, { dayKeys: [DAY1, DAY2] });
+    const out = eligibleForCertificate(rows);
     expect(out.map((r) => r.id)).toEqual(["ok"]);
   });
 
@@ -101,7 +87,7 @@ describe("eligibleForCertificate", () => {
       candidate({ id: "scheduled", certificate_status: "scheduled" }),
       candidate({ id: "failed", certificate_status: "failed" }),
     ];
-    const out = eligibleForCertificate(rows, { dayKeys: [DAY1] });
+    const out = eligibleForCertificate(rows);
     expect(out.map((r) => r.id)).toEqual(["scheduled", "failed"]);
   });
 });

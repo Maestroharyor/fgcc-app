@@ -189,16 +189,32 @@ export interface CertificateRecipient {
 const RECIPIENT_COLS =
   "id, reference_number, full_name, email, track_code, attendance_log, attended_at, certificate_status, certificate_scheduled_for, certificate_sent_at, certificate_error";
 
+export interface CertificateAudience {
+  /** Email-eligible attendees: real email, not yet sent. */
+  recipients: CertificateRecipient[];
+  eligibleCount: number;
+  /** Attendees with a placeholder email (offline, no address) - can't be emailed. */
+  noEmail: number;
+  /** Attendees already sent a certificate. */
+  alreadySent: number;
+}
+
 /**
- * Attendees who would receive a certificate for the chosen days/track, minus
- * placeholder emails and already-sent rows. Day filtering uses the Lagos
- * `attendance_log` so it can't be expressed in SQL - we fetch attendees and
- * filter in JS via `eligibleForCertificate`.
+ * The certificate audience for an optional track: everyone who attended (any
+ * day), split into email-eligible recipients vs the no-email and already-sent
+ * tallies. One fetch shared by the preview and schedule routes. Eligibility is
+ * "attended + has a real email", so it doesn't depend on which calendar days
+ * the event ran.
  */
-export async function listCertificateRecipients(filter: {
-  dayKeys: string[];
-  trackCode?: string | null;
-}): Promise<CertificateRecipient[]> {
+export async function getCertificateAudience(
+  filter: { trackCode?: string | null } = {},
+): Promise<CertificateAudience> {
+  const empty: CertificateAudience = {
+    recipients: [],
+    eligibleCount: 0,
+    noEmail: 0,
+    alreadySent: 0,
+  };
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("registrations")
@@ -206,13 +222,30 @@ export async function listCertificateRecipients(filter: {
     .eq("attended", true)
     .order("created_at", { ascending: true });
   if (error) {
-    console.warn(
-      "[db.registrations] listCertificateRecipients:",
-      error.message,
-    );
-    return [];
+    console.warn("[db.registrations] getCertificateAudience:", error.message);
+    return empty;
   }
-  return eligibleForCertificate((data ?? []) as CertificateRecipient[], filter);
+
+  const code = filter.trackCode?.toUpperCase();
+  const attended = ((data ?? []) as CertificateRecipient[]).filter(
+    (r) => !code || r.track_code.toUpperCase() === code,
+  );
+  const recipients = eligibleForCertificate(attended, {
+    trackCode: filter.trackCode,
+  });
+  const noEmail = attended.filter((r) =>
+    r.email.endsWith("@placeholder.skillup"),
+  ).length;
+  const alreadySent = attended.filter(
+    (r) => r.certificate_status === "sent" || r.certificate_sent_at,
+  ).length;
+
+  return {
+    recipients,
+    eligibleCount: recipients.length,
+    noEmail,
+    alreadySent,
+  };
 }
 
 export interface CertificateScheduleDay {
@@ -261,20 +294,27 @@ export interface CertificateStatusCounts {
   scheduled: number;
   sent: number;
   failed: number;
+  /** Attendees with no email (placeholder) - print-only, never in the email pipeline. */
+  noEmail: number;
 }
 
-/** Totals per certificate status across all attendees (for summary cards). */
+/**
+ * Status totals across attendees for the email pipeline. No-email (placeholder)
+ * attendees are tallied separately, not counted under `none/scheduled/...`, so
+ * "Awaiting" reflects deliverable attendees only.
+ */
 export async function countCertificateStatuses(): Promise<CertificateStatusCounts> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("registrations")
-    .select("certificate_status")
+    .select("certificate_status, email")
     .eq("attended", true);
   const counts: CertificateStatusCounts = {
     none: 0,
     scheduled: 0,
     sent: 0,
     failed: 0,
+    noEmail: 0,
   };
   if (error) {
     console.warn("[db.registrations] countCertificateStatuses:", error.message);
@@ -282,7 +322,12 @@ export async function countCertificateStatuses(): Promise<CertificateStatusCount
   }
   for (const row of (data ?? []) as Array<{
     certificate_status: CertificateStatus;
+    email: string;
   }>) {
+    if (row.email.endsWith("@placeholder.skillup")) {
+      counts.noEmail += 1;
+      continue;
+    }
     counts[row.certificate_status] += 1;
   }
   return counts;
