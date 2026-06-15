@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 interface ScheduleDay {
-  dateKey: string;
+  sendAt: string;
   scheduled: number;
   sent: number;
   failed: number;
@@ -14,19 +14,22 @@ interface ScheduleDay {
 
 interface Props {
   days: ScheduleDay[];
-  /** Today's Lagos key - batches on/before it are due to send. */
-  todayKey: string;
+  /** Current instant (ISO) - batches at/before it are due to send. */
+  nowIso: string;
 }
 
-function fmt(dateKey: string): string {
-  return new Date(`${dateKey}T12:00:00+01:00`).toLocaleDateString("en-NG", {
+function fmt(sendAt: string): string {
+  return new Date(sendAt).toLocaleString("en-NG", {
     weekday: "short",
     month: "short",
     day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Africa/Lagos",
   });
 }
 
-export function CertificateScheduleView({ days, todayKey }: Props) {
+export function CertificateScheduleView({ days, nowIso }: Props) {
   const router = useRouter();
   const [running, startRun] = useTransition();
   const [clearing, startClear] = useTransition();
@@ -35,7 +38,7 @@ export function CertificateScheduleView({ days, todayKey }: Props) {
 
   const pendingTotal = days.reduce((n, d) => n + d.scheduled + d.failed, 0);
   const dueNow = days
-    .filter((d) => d.dateKey <= todayKey)
+    .filter((d) => d.sendAt <= nowIso)
     .reduce((n, d) => n + d.scheduled + d.failed, 0);
 
   const runNow = () => {
@@ -129,7 +132,7 @@ export function CertificateScheduleView({ days, todayKey }: Props) {
         <table className="min-w-full text-sm">
           <thead className="bg-cream-100">
             <tr className="text-left font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
-              <th className="px-4 py-2.5">Day</th>
+              <th className="px-4 py-2.5">Send time</th>
               <th className="px-4 py-2.5">Scheduled</th>
               <th className="px-4 py-2.5">Sent</th>
               <th className="px-4 py-2.5">Failed</th>
@@ -138,10 +141,10 @@ export function CertificateScheduleView({ days, todayKey }: Props) {
           </thead>
           <tbody>
             {days.map((d) => (
-              <tr key={d.dateKey} className="border-t border-navy/6">
+              <tr key={d.sendAt} className="border-t border-navy/6">
                 <td className="px-4 py-2.5 font-display font-medium text-navy">
-                  {fmt(d.dateKey)}
-                  {d.dateKey <= todayKey && d.scheduled + d.failed > 0 && (
+                  {fmt(d.sendAt)}
+                  {d.sendAt <= nowIso && d.scheduled + d.failed > 0 && (
                     <span className="ml-2 rounded-full bg-primary/8 px-2 py-0.5 font-sans text-[9px] uppercase tracking-[0.16em] text-primary">
                       Due
                     </span>

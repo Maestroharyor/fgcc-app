@@ -51,18 +51,22 @@ beforeEach(() => {
 
 describe("POST /api/admin/certificates/schedule", () => {
   it("rejects an invalid payload", async () => {
-    const res = await POST(makeReq({ perDay: 0, startDate: "x" }));
+    const res = await POST(makeReq({ perDay: 0, startAt: "x" }));
     expect(res.status).toBe(400);
   });
 
-  it("rejects a start date in the past", async () => {
-    const res = await POST(makeReq({ perDay: 50, startDate: "2000-01-01" }));
+  it("rejects a start time in the past", async () => {
+    const res = await POST(
+      makeReq({ perDay: 50, startAt: "2000-01-01T09:00" }),
+    );
     expect(res.status).toBe(400);
   });
 
   it("returns 404 when no one is eligible", async () => {
     hoisted.getCertificateAudience.mockResolvedValue(audience([]));
-    const res = await POST(makeReq({ perDay: 50, startDate: "2999-01-01" }));
+    const res = await POST(
+      makeReq({ perDay: 50, startAt: "2999-01-01T09:00" }),
+    );
     expect(res.status).toBe(404);
   });
 
@@ -70,7 +74,7 @@ describe("POST /api/admin/certificates/schedule", () => {
     hoisted.getCertificateAudience.mockResolvedValue(
       audience([{ id: "a" }, { id: "b" }, { id: "c" }]),
     );
-    const res = await POST(makeReq({ perDay: 2, startDate: "2999-01-01" }));
+    const res = await POST(makeReq({ perDay: 2, startAt: "2999-01-01T09:00" }));
     const body = await res.json();
     expect(body.ok).toBe(true);
     expect(body.totalRecipients).toBe(3);
@@ -87,7 +91,11 @@ describe("POST /api/admin/certificates/schedule", () => {
   it("forwards includeRegistrar to the audience query", async () => {
     hoisted.getCertificateAudience.mockResolvedValue(audience([{ id: "a" }]));
     await POST(
-      makeReq({ perDay: 50, startDate: "2999-01-01", includeRegistrar: true }),
+      makeReq({
+        perDay: 50,
+        startAt: "2999-01-01T09:00",
+        includeRegistrar: true,
+      }),
     );
     expect(hoisted.getCertificateAudience).toHaveBeenCalledWith(
       expect.objectContaining({ includeRegistrar: true }),

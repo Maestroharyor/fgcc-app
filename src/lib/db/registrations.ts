@@ -368,14 +368,15 @@ export async function listNoEmailAttendees(
 }
 
 export interface CertificateScheduleDay {
-  dateKey: string;
+  /** The send instant (ISO) shared by every row in this batch. */
+  sendAt: string;
   scheduled: number;
   sent: number;
   failed: number;
   total: number;
 }
 
-/** Scheduled rows bucketed by send day, with per-status counts for the board. */
+/** Scheduled rows bucketed by send instant, with per-status counts for the board. */
 export async function getCertificateSchedule(): Promise<
   CertificateScheduleDay[]
 > {
@@ -389,23 +390,24 @@ export async function getCertificateSchedule(): Promise<
     console.warn("[db.registrations] getCertificateSchedule:", error.message);
     return [];
   }
-  const byDay = new Map<string, CertificateScheduleDay>();
+  const byBatch = new Map<string, CertificateScheduleDay>();
   for (const row of (data ?? []) as Array<{
     certificate_scheduled_for: string;
     certificate_status: CertificateStatus;
   }>) {
-    const key = row.certificate_scheduled_for;
-    let day = byDay.get(key);
-    if (!day) {
-      day = { dateKey: key, scheduled: 0, sent: 0, failed: 0, total: 0 };
-      byDay.set(key, day);
+    // Normalise to an ISO instant so rows scheduled together bucket together.
+    const sendAt = new Date(row.certificate_scheduled_for).toISOString();
+    let batch = byBatch.get(sendAt);
+    if (!batch) {
+      batch = { sendAt, scheduled: 0, sent: 0, failed: 0, total: 0 };
+      byBatch.set(sendAt, batch);
     }
-    day.total += 1;
-    if (row.certificate_status === "sent") day.sent += 1;
-    else if (row.certificate_status === "failed") day.failed += 1;
-    else if (row.certificate_status === "scheduled") day.scheduled += 1;
+    batch.total += 1;
+    if (row.certificate_status === "sent") batch.sent += 1;
+    else if (row.certificate_status === "failed") batch.failed += 1;
+    else if (row.certificate_status === "scheduled") batch.scheduled += 1;
   }
-  return [...byDay.values()];
+  return [...byBatch.values()];
 }
 
 export interface CertificateStatusCounts {
@@ -483,15 +485,15 @@ type DueRow = {
 };
 
 /**
- * Rows owed a certificate on or before `dateKey`: scheduled-or-failed, never
- * sent. Uses the service-role client so the daily cron (no user session) can
+ * Rows owed a certificate at or before `nowIso`: scheduled-or-failed, never
+ * sent. Uses the service-role client so the hourly cron (no user session) can
  * read them. Capped at `limit` to respect the daily send budget. Placeholder
  * rows are only ever scheduled when the admin opted into registrar routing, so
  * we resolve their delivery address to the registrar here; if none resolves,
  * the placeholder address falls through and the sender skips it.
  */
 export async function dueCertificates(
-  dateKey: string,
+  nowIso: string,
   limit: number,
 ): Promise<DueCertificate[]> {
   const supabase = createSupabaseAdminClient();
@@ -500,7 +502,7 @@ export async function dueCertificates(
     .select(
       "id, full_name, email, reference_number, track_code, certificate_attempts, batch_id, batches(submitter_email)",
     )
-    .lte("certificate_scheduled_for", dateKey)
+    .lte("certificate_scheduled_for", nowIso)
     .in("certificate_status", ["scheduled", "failed"])
     .is("certificate_sent_at", null)
     .order("certificate_scheduled_for", { ascending: true })

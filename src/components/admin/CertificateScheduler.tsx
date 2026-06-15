@@ -3,6 +3,7 @@
 import { CalendarClock, Loader2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { TrackSelect } from "@/components/forms/TrackSelect";
 
 interface TrackOption {
   code: string;
@@ -19,9 +20,9 @@ interface PreviewRecipient {
 
 interface Props {
   tracks: TrackOption[];
-  /** Lagos `yyyy-MM-dd` defaults: schedule starts tomorrow, never before today. */
-  defaultStartDate: string;
-  minStartDate: string;
+  /** Lagos datetime-local defaults (`yyyy-MM-ddTHH:mm`): tomorrow 09:00, min now. */
+  defaultStartAt: string;
+  minStartAt: string;
 }
 
 interface DayPlan {
@@ -30,13 +31,14 @@ interface DayPlan {
 }
 
 /** Client-side mirror of `planSchedule` for the preview - server is authoritative. */
-function planDays(count: number, perDay: number, startDate: string): DayPlan[] {
+function planDays(count: number, perDay: number, startAt: string): DayPlan[] {
   if (count <= 0 || perDay <= 0) return [];
   const out: DayPlan[] = [];
   let remaining = count;
   let offset = 0;
   while (remaining > 0) {
-    const d = new Date(`${startDate}T12:00:00`);
+    // Interpret the naive datetime-local value as Lagos (+01:00).
+    const d = new Date(`${startAt}:00+01:00`);
     d.setDate(d.getDate() + offset);
     out.push({ date: d, count: Math.min(perDay, remaining) });
     remaining -= Math.min(perDay, remaining);
@@ -47,13 +49,13 @@ function planDays(count: number, perDay: number, startDate: string): DayPlan[] {
 
 export function CertificateScheduler({
   tracks,
-  defaultStartDate,
-  minStartDate,
+  defaultStartAt,
+  minStartAt,
 }: Props) {
   const router = useRouter();
   const [trackCode, setTrackCode] = useState("");
   const [perDay, setPerDay] = useState(90);
-  const [startDate, setStartDate] = useState(defaultStartDate);
+  const [startAt, setStartAt] = useState(defaultStartAt);
 
   const [includeRegistrar, setIncludeRegistrar] = useState(false);
   const [count, setCount] = useState<number | null>(null);
@@ -95,7 +97,7 @@ export function CertificateScheduler({
     return () => controller.abort();
   }, [trackCode, includeRegistrar]);
 
-  const plan = planDays(count ?? 0, perDay, startDate);
+  const plan = planDays(count ?? 0, perDay, startAt);
 
   const schedule = () => {
     setMessage(null);
@@ -106,7 +108,7 @@ export function CertificateScheduler({
         body: JSON.stringify({
           trackCode: trackCode || undefined,
           perDay,
-          startDate,
+          startAt,
           includeRegistrar,
         }),
       });
@@ -137,28 +139,28 @@ export function CertificateScheduler({
       <p className="mt-1 text-sm text-navy/65">
         Everyone who attended (any day) and has an email is eligible.
         Certificates go out in daily batches to stay under Resend&apos;s 100/day
-        cap - set a per-day count and a start date and we&apos;ll split the
-        work.
+        cap - set a per-day count and a start date &amp; time and we&apos;ll
+        split the work, sending at that time each day.
       </p>
 
       <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <label className="block">
-          <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
+        <div className="block">
+          <span
+            id="cert-track-label"
+            className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55"
+          >
             Track
           </span>
-          <select
-            value={trackCode}
-            onChange={(e) => setTrackCode(e.target.value)}
-            className="form-input mt-2"
-          >
-            <option value="">All tracks</option>
-            {tracks.map((t) => (
-              <option key={t.code} value={t.code}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </label>
+          <div className="mt-2">
+            <TrackSelect
+              options={tracks}
+              value={trackCode}
+              onChange={setTrackCode}
+              allLabel="All tracks"
+              aria-labelledby="cert-track-label"
+            />
+          </div>
+        </div>
 
         <label className="block">
           <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
@@ -178,13 +180,13 @@ export function CertificateScheduler({
 
         <label className="block">
           <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
-            Start date
+            Start date &amp; time
           </span>
           <input
-            type="date"
-            min={minStartDate}
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            type="datetime-local"
+            min={minStartAt}
+            value={startAt}
+            onChange={(e) => setStartAt(e.target.value)}
             className="form-input mt-2"
           />
         </label>
@@ -255,10 +257,13 @@ export function CertificateScheduler({
             {plan
               .map(
                 (p) =>
-                  `${p.date.toLocaleDateString("en-NG", {
+                  `${p.date.toLocaleString("en-NG", {
                     weekday: "short",
                     month: "short",
                     day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                    timeZone: "Africa/Lagos",
                   })}: ${p.count}`,
               )
               .join(" · ")}

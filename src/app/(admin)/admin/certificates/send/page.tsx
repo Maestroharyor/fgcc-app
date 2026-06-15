@@ -13,7 +13,7 @@ import {
   getCertificateSchedule,
   listNoEmailAttendees,
 } from "@/lib/db/registrations";
-import { attendanceDayKey } from "@/lib/utils/date";
+import { formatDate } from "@/lib/utils/date";
 
 export const dynamic = "force-dynamic";
 
@@ -58,8 +58,11 @@ export default async function CertificatesSendPage() {
 }
 
 async function SchedulePanels() {
-  const todayKey = attendanceDayKey();
-  const tomorrowKey = attendanceDayKey(addDays(new Date(), 1));
+  const now = new Date();
+  const nowIso = now.toISOString();
+  // datetime-local defaults, in Lagos: now (as the min) and tomorrow 09:00.
+  const minStartAt = formatDate(now, "yyyy-MM-dd'T'HH:mm");
+  const defaultStartAt = `${formatDate(addDays(now, 1), "yyyy-MM-dd")}T09:00`;
   const [schedule, counts, noEmailAttendees] = await Promise.all([
     getCertificateSchedule(),
     countCertificateStatuses(),
@@ -92,10 +95,10 @@ async function SchedulePanels() {
       <NoEmailList attendees={noEmailAttendees} />
       <CertificateScheduler
         tracks={tracks}
-        defaultStartDate={tomorrowKey}
-        minStartDate={todayKey}
+        defaultStartAt={defaultStartAt}
+        minStartAt={minStartAt}
       />
-      <CertificateScheduleView days={schedule} todayKey={todayKey} />
+      <CertificateScheduleView days={schedule} nowIso={nowIso} />
     </div>
   );
 }

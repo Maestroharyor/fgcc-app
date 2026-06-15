@@ -27,7 +27,7 @@ export function CertificateStatusBadge({
 }) {
   const label =
     status === "scheduled" && scheduledFor
-      ? `Scheduled · ${formatDate(new Date(`${scheduledFor}T12:00:00+01:00`), "MMM d")}`
+      ? `Scheduled · ${formatDate(new Date(scheduledFor), "MMM d, h:mm a")}`
       : LABELS[status];
   return (
     <span
