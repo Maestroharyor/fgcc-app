@@ -94,7 +94,7 @@ button:not(:disabled) {
   }
 
   textarea.form-input {
-    @apply h-auto min-h-[6rem] py-3;
+    @apply h-auto min-h-[6rem] resize-none py-3;
   }
 }
 
