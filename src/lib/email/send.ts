@@ -280,14 +280,17 @@ export function sendTrackChangedEmail(
 
 export function sendCertificateEmail(
   to: string,
-  props: CertificateEmailProps,
+  props: Omit<CertificateEmailProps, "feedbackUrl">,
   pdfBuffer: Buffer,
 ) {
   return dispatch({
     to,
     subject: "Your SkillUp 1.0 certificate of participation",
     Component: CertificateEmail,
-    props,
+    props: {
+      ...props,
+      feedbackUrl: `${env.NEXT_PUBLIC_SITE_URL}/skillup/feedback`,
+    },
     attachments: [
       {
         filename: `SkillUp-1.0-Certificate.pdf`,

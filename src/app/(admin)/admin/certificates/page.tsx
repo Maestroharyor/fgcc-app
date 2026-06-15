@@ -8,6 +8,7 @@ import { CertificateScheduler } from "@/components/admin/CertificateScheduler";
 import { CertificateScheduleView } from "@/components/admin/CertificateScheduleView";
 import { CertificateStatusBadge } from "@/components/admin/CertificateStatusBadge";
 import { CertificatesFilters } from "@/components/admin/CertificatesFilters";
+import { CertificateTestEmail } from "@/components/admin/CertificateTestEmail";
 import { SignatoryEditor } from "@/components/admin/SignatoryEditor";
 import { TRACKS, TRACKS_BY_CODE } from "@/content/tracks";
 import { requireRole } from "@/lib/auth/require-role";
@@ -64,6 +65,8 @@ export default async function CertificatesPage({ searchParams }: PageProps) {
       <Suspense fallback={<SignatorySkeleton />}>
         <SignatoryPanel />
       </Suspense>
+
+      <CertificateTestEmail />
 
       <h2 className="mt-10 font-display text-lg font-semibold text-navy">
         Send certificates
