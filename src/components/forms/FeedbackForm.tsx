@@ -125,14 +125,14 @@ export function FeedbackForm() {
       <ErrorSummary errors={errors} summaryRef={summaryRef} />
 
       <div>
-        <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
+        <span className="block font-sans text-[10px] uppercase tracking-[0.18em] text-navy/60">
           Find your registration
         </span>
-        <div className="mt-2 inline-flex rounded-full border border-navy/12 bg-navy/5 p-1">
+        <div className="mt-2 flex w-full rounded-full border border-navy/12 bg-navy/5 p-1">
           {(
             [
-              ["reference", "Reference number"],
               ["email", "Name & email"],
+              ["reference", "Reference number"],
             ] as const
           ).map(([value, labelText]) => {
             const active = lookup === value;
@@ -142,7 +142,7 @@ export function FeedbackForm() {
                 type="button"
                 onClick={() => setValue("lookup", value)}
                 aria-pressed={active}
-                className={`rounded-full px-4 py-1.5 font-display text-sm font-semibold transition ${
+                className={`flex-1 rounded-full px-4 py-2 font-display text-sm font-semibold transition ${
                   active
                     ? "bg-white text-navy shadow-sm"
                     : "text-navy/60 hover:text-navy"

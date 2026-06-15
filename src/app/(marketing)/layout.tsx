@@ -27,7 +27,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
 
 function SiteHeader({ phase }: { phase: RegistrationPhase }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-navy/8 bg-cream/85 backdrop-blur supports-[backdrop-filter]:bg-cream/70">
+    <header className="sticky top-0 z-30 transform-gpu border-b border-navy/8 bg-cream/85 backdrop-blur [will-change:transform] supports-[backdrop-filter]:bg-cream/70">
       <div className="mx-auto max-w-6xl px-6 sm:px-10 py-4 flex items-center justify-between gap-4">
         <Link href="/skillup" className="flex items-center gap-3">
           <BrandMark size={36} />
