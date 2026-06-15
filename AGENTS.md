@@ -228,6 +228,27 @@ curl -H "Authorization: Bearer $CRON_SECRET" \
 
 Idempotent — already-stamped rows are skipped.
 
+### Send scheduled certificates
+
+Certificates go out in per-day batches to stay under Resend's free-plan cap
+(100/day). Superadmins queue a send from `/admin/certificates` (audience by
+attended day + optional track, a per-day count, and a start date); each
+recipient is stamped `scheduled` with a `certificate_scheduled_for` Lagos day.
+
+The daily cron sends everything due on or before today, capped at the per-day
+limit, throttled ~0.6s/email for Resend's rate limit. Trigger it locally (or
+use the "Send due batch now" button, which calls `/api/admin/certificates/run`):
+
+```
+curl -H "Authorization: Bearer $CRON_SECRET" \
+     "http://localhost:3000/api/cron/certificates"
+```
+
+Idempotent — rows with `certificate_sent_at` set are skipped; failures are
+stamped `failed` with the error and retried on the next run or via per-row
+resend. Shared logic lives in `src/lib/certificates/` (`schedule`, `send-batch`,
+`run`). Requires migration `20260615_006_certificate_schedule.sql`.
+
 ---
 
 ## 9 · What NOT to do
