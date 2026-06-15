@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth/require-role";
 import { assignScheduleDays, planSchedule } from "@/lib/certificates/schedule";
-import { listCertificateRecipients } from "@/lib/db/registrations";
+import { getCertificateAudience } from "@/lib/db/registrations";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { attendanceDayKey } from "@/lib/utils/date";
 import { CertificateScheduleSchema } from "@/lib/validation/schemas";
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     );
   }
-  const { dayKeys, trackCode, perDay, startDate } = parsed.data;
+  const { trackCode, perDay, startDate } = parsed.data;
 
   if (startDate < attendanceDayKey()) {
     return NextResponse.json(
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const recipients = await listCertificateRecipients({ dayKeys, trackCode });
+  const { recipients } = await getCertificateAudience({ trackCode });
   if (recipients.length === 0) {
     return NextResponse.json(
       { ok: false, error: "No eligible recipients for that selection" },

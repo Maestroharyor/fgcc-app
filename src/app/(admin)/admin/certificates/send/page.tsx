@@ -1,0 +1,125 @@
+import { addDays } from "date-fns";
+import { ArrowLeft } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Suspense } from "react";
+import { CertificateScheduler } from "@/components/admin/CertificateScheduler";
+import { CertificateScheduleView } from "@/components/admin/CertificateScheduleView";
+import { CertificateTestEmail } from "@/components/admin/CertificateTestEmail";
+import { TRACKS } from "@/content/tracks";
+import { requireRole } from "@/lib/auth/require-role";
+import {
+  countCertificateStatuses,
+  getCertificateSchedule,
+} from "@/lib/db/registrations";
+import { attendanceDayKey } from "@/lib/utils/date";
+
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Send certificates · SkillUp Admin",
+  robots: { index: false, follow: false },
+};
+
+export default async function CertificatesSendPage() {
+  await requireRole("superadmin");
+
+  return (
+    <div className="px-6 md:px-10 py-10">
+      <Link
+        href="/admin/certificates"
+        className="inline-flex items-center gap-1 text-sm font-display font-medium text-navy/70 hover:text-navy"
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden /> Back to certificates
+      </Link>
+
+      <span className="mt-4 block font-sans text-[10px] uppercase tracking-[0.2em] text-primary">
+        Superadmin · Certificates
+      </span>
+      <h1 className="font-display text-3xl font-semibold tracking-tight text-navy">
+        Send certificates
+      </h1>
+      <p className="mt-1 text-sm text-navy/65">
+        Everyone who attended and has an email is eligible. Batches go out daily
+        to stay under Resend&apos;s free-plan cap. Track each recipient&apos;s
+        status below and resend any that fail.
+      </p>
+
+      <div className="mt-6">
+        <CertificateTestEmail />
+      </div>
+
+      <Suspense fallback={<PanelSkeleton />}>
+        <SchedulePanels />
+      </Suspense>
+    </div>
+  );
+}
+
+async function SchedulePanels() {
+  const todayKey = attendanceDayKey();
+  const tomorrowKey = attendanceDayKey(addDays(new Date(), 1));
+  const [schedule, counts] = await Promise.all([
+    getCertificateSchedule(),
+    countCertificateStatuses(),
+  ]);
+  const tracks = TRACKS.map((t) => ({ code: t.code, name: t.name }));
+
+  return (
+    <div className="mt-6 space-y-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <StatCard label="Awaiting" value={counts.none} tone="navy" />
+        <StatCard label="Scheduled" value={counts.scheduled} tone="primary" />
+        <StatCard label="Sent" value={counts.sent} tone="emerald" />
+        <StatCard label="Failed" value={counts.failed} tone="red" />
+        <StatCard label="No email" value={counts.noEmail} tone="amber" />
+      </div>
+      <CertificateScheduler
+        tracks={tracks}
+        defaultStartDate={tomorrowKey}
+        minStartDate={todayKey}
+      />
+      <CertificateScheduleView days={schedule} todayKey={todayKey} />
+    </div>
+  );
+}
+
+const STAT_TONE: Record<string, string> = {
+  navy: "text-navy",
+  primary: "text-primary",
+  emerald: "text-emerald-700",
+  red: "text-red-700",
+  amber: "text-amber-700",
+};
+
+function StatCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: keyof typeof STAT_TONE;
+}) {
+  return (
+    <div className="rounded-2xl border border-navy/8 bg-white p-4 shadow-card">
+      <span className="font-sans text-[10px] uppercase tracking-[0.18em] text-navy/55">
+        {label}
+      </span>
+      <div
+        className={`mt-1 font-display text-2xl font-semibold ${STAT_TONE[tone]}`}
+      >
+        {value.toLocaleString()}
+      </div>
+    </div>
+  );
+}
+
+function PanelSkeleton() {
+  return (
+    <div className="mt-6 space-y-6">
+      <div className="h-20 rounded-2xl border border-navy/8 bg-white shadow-card animate-pulse" />
+      <div className="h-64 rounded-2xl border border-navy/8 bg-white shadow-card animate-pulse" />
+    </div>
+  );
+}
