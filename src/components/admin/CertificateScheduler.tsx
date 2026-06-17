@@ -138,9 +138,10 @@ export function CertificateScheduler({
       </div>
       <p className="mt-1 text-sm text-navy/65">
         Everyone who attended (any day) and has an email is eligible.
-        Certificates go out in daily batches to stay under Resend&apos;s 100/day
-        cap - set a per-day count and a start date &amp; time and we&apos;ll
-        split the work, sending at that time each day.
+        Certificates split into daily batches to stay under Resend&apos;s
+        100/day cap - set a per-day count and a start date &amp; time. The daily
+        cron sends each batch once its time has passed; to send at the exact
+        time, use &ldquo;Send due batch now&rdquo; below.
       </p>
 
       <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">

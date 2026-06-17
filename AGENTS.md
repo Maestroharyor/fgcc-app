@@ -237,10 +237,11 @@ routing for no-email participants, a per-day count, and a **start date & time**)
 each recipient is stamped `scheduled` with a `certificate_scheduled_for`
 timestamptz — the same Lagos clock time on each successive day.
 
-The **hourly** cron sends everything whose scheduled instant has passed, capped
-at the per-day limit, throttled ~0.6s/email for Resend's rate limit. So a batch
-set for 9:00 AM goes out at the 9:00 cron tick. Trigger it locally (or use the
-"Send due batch now" button, which calls `/api/admin/certificates/run`):
+The **daily** cron (09:00 Lagos — Vercel Hobby allows daily crons only) sends
+everything whose scheduled instant has passed, capped at the per-day limit,
+throttled ~0.6s/email for Resend's rate limit. For an exact-time send use the
+**"Send due batch now"** button (`/api/admin/certificates/run`) at that moment;
+the daily cron is the automatic backstop. Trigger the cron locally:
 
 ```
 curl -H "Authorization: Bearer $CRON_SECRET" \
