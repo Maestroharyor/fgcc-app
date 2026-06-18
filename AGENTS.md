@@ -231,13 +231,17 @@ Idempotent — already-stamped rows are skipped.
 ### Send scheduled certificates
 
 Certificates go out in per-day batches to stay under Resend's free-plan cap
-(100/day). Superadmins queue a send from `/admin/certificates` (audience by
-attended day + optional track, a per-day count, and a start date); each
-recipient is stamped `scheduled` with a `certificate_scheduled_for` Lagos day.
+(100/day). Superadmins queue a send from `/admin/certificates/send` (eligible =
+attended any day + has a real email, optional track filter, optional registrar
+routing for no-email participants, a per-day count, and a **start date & time**);
+each recipient is stamped `scheduled` with a `certificate_scheduled_for`
+timestamptz — the same Lagos clock time on each successive day.
 
-The daily cron sends everything due on or before today, capped at the per-day
-limit, throttled ~0.6s/email for Resend's rate limit. Trigger it locally (or
-use the "Send due batch now" button, which calls `/api/admin/certificates/run`):
+The **daily** cron (09:00 Lagos — Vercel Hobby allows daily crons only) sends
+everything whose scheduled instant has passed, capped at the per-day limit,
+throttled ~0.6s/email for Resend's rate limit. For an exact-time send use the
+**"Send due batch now"** button (`/api/admin/certificates/run`) at that moment;
+the daily cron is the automatic backstop. Trigger the cron locally:
 
 ```
 curl -H "Authorization: Bearer $CRON_SECRET" \
@@ -247,7 +251,8 @@ curl -H "Authorization: Bearer $CRON_SECRET" \
 Idempotent — rows with `certificate_sent_at` set are skipped; failures are
 stamped `failed` with the error and retried on the next run or via per-row
 resend. Shared logic lives in `src/lib/certificates/` (`schedule`, `send-batch`,
-`run`). Requires migration `20260615_006_certificate_schedule.sql`.
+`run`). Requires migrations `20260615_006_certificate_schedule.sql` (columns)
+and `20260615_007_certificate_scheduled_at.sql` (date → timestamptz).
 
 ---
 
